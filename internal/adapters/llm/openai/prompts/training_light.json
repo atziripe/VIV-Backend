@@ -1,0 +1,42 @@
+{
+    "week_start": "2026-01-26",
+    "week_end": "2026-02-01",
+    "meta": {
+        "plan_type": "light_guidance",
+        "guidance_level": "light",
+        "domain": "training",
+        "notes_for_ui": "Cycle day 3 (menstrual); energy focus; morning training preference; 3–4 sessions typical."
+    },
+    "weekly_lens": {
+        "sentence": "This week reads as a steadier, lower-friction performance week where consistency matters more than intensity spikes."
+    },
+    "priorities": [
+        {
+            "label": "Session-to-session energy trend",
+            "explanation": "Energy and drive may fluctuate more than usual, so the week is best interpreted through overall momentum rather than any single session."
+        },
+        {
+            "label": "Quality over novelty",
+            "explanation": "Familiar strength + conditioning patterns reduce decision load and keep performance signals cleaner."
+        },
+        {
+            "label": "Intensity distribution",
+            "explanation": "A clearer separation between harder efforts and easier work tends to feel better than everything landing in the middle."
+        }
+    ],
+    "guardrails": [
+        {
+            "label": "Not a week to chase “extra”",
+            "why": "Cravings and early-cycle variability can make add-on volume feel disproportionately costly."
+        },
+        {
+            "label": "No forcing high-output days",
+            "why": "Pushing through low-readiness sessions can blur performance feedback and increase mental friction."
+        },
+        {
+            "label": "Avoid stacking multiple redline efforts",
+            "why": "Back-to-back high-intensity hits can compete with the “more energy” priority even if motivation is high."
+        }
+    ],
+    "closing_note": "If the week feels slightly muted, that still fits the context and doesn’t reduce long-term progress."
+}

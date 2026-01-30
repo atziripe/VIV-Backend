@@ -1,0 +1,580 @@
+{
+    "week_start": "2026-01-20",
+    "week_end": "2026-01-26",
+    "meta": {
+        "plan_type": "full_guidance",
+        "training_often_per_week": 5,
+        "training_duration_preference_min": 60,
+        "selected_modalities": [
+            "strength",
+            "cardio"
+        ],
+        "intensity_bias": "performance",
+        "notes_for_ui": "Menstrual phase (cycle day 3): keep intensity ceilings controlled but allow performance-focused work with strong technique. Morning sessions, 45–60 min each."
+    },
+    "weekly_overview": {
+        "headline": "5 sessions: 3 strength + 2 steady cardio (performance-focused, controlled ceilings)",
+        "strategy": "Prioritize full-body strength with a lower-body emphasis early week, an upper-body day midweek, and a posterior-chain + full-body day late week. Cardio stays steady and moderate/easy to support energy and recovery without adding fatigue.",
+        "volume_intensity_adjustments": [
+            {
+                "trigger": "none",
+                "adjustment": "Maintain planned volume and intensity; keep top sets controlled (no true max attempts).",
+                "reason": "Stress is light, mental energy is high, sleep is consistent, and body status is neutral."
+            }
+        ]
+    },
+    "days": [
+        {
+            "date": "2026-01-20",
+            "weekday": "Tuesday",
+            "is_rest_day": false,
+            "session": {
+                "modality": "Strength",
+                "title": "Strength A — Lower + Core (controlled strength focus)",
+                "duration_min": 60,
+                "intensity": {
+                    "label": "Hard",
+                    "ceiling": "Top work <= RPE 8",
+                    "notes": "Leave 1–2 reps in reserve on main lifts; prioritize clean technique and stable bracing."
+                },
+                "strength": {
+                    "theme": "Lower body strength + core stability",
+                    "warmup": [
+                        "5 min easy cardio (walk/bike)",
+                        "Dynamic hips/ankles + 2 lighter ramp-up sets for first lift"
+                    ],
+                    "exercises": [
+                        {
+                            "name": "Back Squat (or Goblet Squat)",
+                            "sets": 4,
+                            "reps": "5-6",
+                            "load": {
+                                "type": "RPE",
+                                "value": "RPE 7-8"
+                            },
+                            "rest_sec": 150,
+                            "notes": "Last rep should be smooth; stop if bar speed slows noticeably."
+                        },
+                        {
+                            "name": "Romanian Deadlift",
+                            "sets": 3,
+                            "reps": "8",
+                            "load": {
+                                "type": "RIR",
+                                "value": "RIR 2"
+                            },
+                            "rest_sec": 120,
+                            "notes": "Keep lats tight; slight knee bend; stretch hamstrings without losing back position."
+                        },
+                        {
+                            "name": "Walking Lunges",
+                            "sets": 3,
+                            "reps": "10-12 each side",
+                            "load": {
+                                "type": "RPE",
+                                "value": "RPE 7"
+                            },
+                            "rest_sec": 90,
+                            "notes": "Controlled steps; keep torso tall."
+                        },
+                        {
+                            "name": "Hip Thrust",
+                            "sets": 3,
+                            "reps": "8-10",
+                            "load": {
+                                "type": "RPE",
+                                "value": "RPE 7-8"
+                            },
+                            "rest_sec": 120,
+                            "notes": "Pause 1s at the top; full lockout without over-arching."
+                        },
+                        {
+                            "name": "Dead Bug",
+                            "sets": 3,
+                            "reps": "8-10 each side",
+                            "load": {
+                                "type": "RIR",
+                                "value": "RIR 2-3"
+                            },
+                            "rest_sec": 60,
+                            "notes": "Slow tempo; keep ribs down and low back stable."
+                        }
+                    ],
+                    "finisher": "Optional: 6–8 min easy incline walk if you want a cool-down flush.",
+                    "cooldown": [
+                        "2–3 min easy walk",
+                        "Light hip flexor + hamstring stretch (non-painful)"
+                    ]
+                },
+                "hiit": {
+                    "modality_style": "",
+                    "warmup": [],
+                    "intervals": {
+                        "work_sec": 0,
+                        "rest_sec": 0,
+                        "rounds": 0,
+                        "intensity_ceiling": "",
+                        "notes": ""
+                    },
+                    "cooldown": []
+                },
+                "pilates": {
+                    "theme": "",
+                    "emphasis": "",
+                    "notes": ""
+                },
+                "cardio": {
+                    "mode": "",
+                    "style": "",
+                    "target_intensity": "",
+                    "duration_min": 0,
+                    "notes": ""
+                },
+                "lighter_alternative": {
+                    "title": "Light strength technique session",
+                    "duration_min": 40,
+                    "instructions": "Keep all lifts at RPE 6–7, reduce each exercise by 1 set, and extend rest as needed."
+                }
+            }
+        },
+        {
+            "date": "2026-01-21",
+            "weekday": "Wednesday",
+            "is_rest_day": false,
+            "session": {
+                "modality": "Cardio",
+                "title": "Steady Cardio — Easy Aerobic Build",
+                "duration_min": 50,
+                "intensity": {
+                    "label": "Easy",
+                    "ceiling": "Comfortable breathing; conversational pace",
+                    "notes": "Keep it steady the entire time (no surges)."
+                },
+                "strength": {
+                    "theme": "",
+                    "warmup": [],
+                    "exercises": [],
+                    "finisher": "",
+                    "cooldown": []
+                },
+                "hiit": {
+                    "modality_style": "",
+                    "warmup": [],
+                    "intervals": {
+                        "work_sec": 0,
+                        "rest_sec": 0,
+                        "rounds": 0,
+                        "intensity_ceiling": "",
+                        "notes": ""
+                    },
+                    "cooldown": []
+                },
+                "pilates": {
+                    "theme": "",
+                    "emphasis": "",
+                    "notes": ""
+                },
+                "cardio": {
+                    "mode": "walk",
+                    "style": "steady_only",
+                    "target_intensity": "easy",
+                    "duration_min": 50,
+                    "notes": "If walking: choose a slight incline or brisk pace. If running is preferred, keep it truly easy and steady."
+                },
+                "lighter_alternative": {
+                    "title": "Short easy cardio",
+                    "duration_min": 30,
+                    "instructions": "Keep the same easy intensity, just reduce duration."
+                }
+            }
+        },
+        {
+            "date": "2026-01-22",
+            "weekday": "Thursday",
+            "is_rest_day": false,
+            "session": {
+                "modality": "Strength",
+                "title": "Strength B — Upper Push/Pull + Core",
+                "duration_min": 55,
+                "intensity": {
+                    "label": "Moderate",
+                    "ceiling": "Top work <= RPE 8",
+                    "notes": "Aim for strong reps, no grinding. Keep shoulders stable and controlled."
+                },
+                "strength": {
+                    "theme": "Upper body strength + posture + trunk control",
+                    "warmup": [
+                        "5 min easy cardio",
+                        "Shoulder circles + band pull-aparts (light) + 1–2 ramp-up sets"
+                    ],
+                    "exercises": [
+                        {
+                            "name": "Bench Press (or Dumbbell Press)",
+                            "sets": 4,
+                            "reps": "6",
+                            "load": {
+                                "type": "RPE",
+                                "value": "RPE 7-8"
+                            },
+                            "rest_sec": 150,
+                            "notes": "Pause 1s on chest if using barbell; keep elbows controlled."
+                        },
+                        {
+                            "name": "One-Arm Dumbbell Row (or Cable Row)",
+                            "sets": 4,
+                            "reps": "8-10 each side",
+                            "load": {
+                                "type": "RIR",
+                                "value": "RIR 2"
+                            },
+                            "rest_sec": 90,
+                            "notes": "Pull elbow toward hip; avoid twisting torso."
+                        },
+                        {
+                            "name": "Overhead Press (or Machine Shoulder Press)",
+                            "sets": 3,
+                            "reps": "6-8",
+                            "load": {
+                                "type": "RPE",
+                                "value": "RPE 7"
+                            },
+                            "rest_sec": 120,
+                            "notes": "Stop short of losing ribcage control; smooth reps."
+                        },
+                        {
+                            "name": "Lat Pulldown (or Assisted Pull-ups)",
+                            "sets": 3,
+                            "reps": "8-10",
+                            "load": {
+                                "type": "RPE",
+                                "value": "RPE 7-8"
+                            },
+                            "rest_sec": 120,
+                            "notes": "Full stretch at top; pull down with lats, not momentum."
+                        },
+                        {
+                            "name": "Pallof Press",
+                            "sets": 3,
+                            "reps": "10-12 each side",
+                            "load": {
+                                "type": "RIR",
+                                "value": "RIR 2-3"
+                            },
+                            "rest_sec": 60,
+                            "notes": "Hold 1–2s at extension; resist rotation."
+                        }
+                    ],
+                    "finisher": "Optional: 5 min easy walk for recovery.",
+                    "cooldown": [
+                        "Easy breathing + slow arm swings",
+                        "Light chest + lat stretch (non-painful)"
+                    ]
+                },
+                "hiit": {
+                    "modality_style": "",
+                    "warmup": [],
+                    "intervals": {
+                        "work_sec": 0,
+                        "rest_sec": 0,
+                        "rounds": 0,
+                        "intensity_ceiling": "",
+                        "notes": ""
+                    },
+                    "cooldown": []
+                },
+                "pilates": {
+                    "theme": "",
+                    "emphasis": "",
+                    "notes": ""
+                },
+                "cardio": {
+                    "mode": "",
+                    "style": "",
+                    "target_intensity": "",
+                    "duration_min": 0,
+                    "notes": ""
+                },
+                "lighter_alternative": {
+                    "title": "Upper body lighter strength",
+                    "duration_min": 40,
+                    "instructions": "Do 3 sets on the first two lifts, 2 sets on the rest, keep everything at RPE 6–7."
+                }
+            }
+        },
+        {
+            "date": "2026-01-23",
+            "weekday": "Friday",
+            "is_rest_day": true,
+            "session": {
+                "modality": "Rest",
+                "title": "Rest Day",
+                "duration_min": 0,
+                "intensity": {
+                    "label": "Easy",
+                    "ceiling": "Rest",
+                    "notes": ""
+                },
+                "strength": {
+                    "theme": "",
+                    "warmup": [],
+                    "exercises": [],
+                    "finisher": "",
+                    "cooldown": []
+                },
+                "hiit": {
+                    "modality_style": "",
+                    "warmup": [],
+                    "intervals": {
+                        "work_sec": 0,
+                        "rest_sec": 0,
+                        "rounds": 0,
+                        "intensity_ceiling": "",
+                        "notes": ""
+                    },
+                    "cooldown": []
+                },
+                "pilates": {
+                    "theme": "",
+                    "emphasis": "",
+                    "notes": ""
+                },
+                "cardio": {
+                    "mode": "",
+                    "style": "",
+                    "target_intensity": "",
+                    "duration_min": 0,
+                    "notes": ""
+                },
+                "lighter_alternative": {
+                    "title": "",
+                    "duration_min": 0,
+                    "instructions": ""
+                }
+            }
+        },
+        {
+            "date": "2026-01-24",
+            "weekday": "Saturday",
+            "is_rest_day": false,
+            "session": {
+                "modality": "Cardio",
+                "title": "Steady Cardio — Moderate Aerobic",
+                "duration_min": 45,
+                "intensity": {
+                    "label": "Moderate",
+                    "ceiling": "Steady effort; breathing deeper but controlled",
+                    "notes": "Keep pace steady and smooth throughout."
+                },
+                "strength": {
+                    "theme": "",
+                    "warmup": [],
+                    "exercises": [],
+                    "finisher": "",
+                    "cooldown": []
+                },
+                "hiit": {
+                    "modality_style": "",
+                    "warmup": [],
+                    "intervals": {
+                        "work_sec": 0,
+                        "rest_sec": 0,
+                        "rounds": 0,
+                        "intensity_ceiling": "",
+                        "notes": ""
+                    },
+                    "cooldown": []
+                },
+                "pilates": {
+                    "theme": "",
+                    "emphasis": "",
+                    "notes": ""
+                },
+                "cardio": {
+                    "mode": "bike",
+                    "style": "steady_only",
+                    "target_intensity": "moderate",
+                    "duration_min": 45,
+                    "notes": "Bike, brisk walk, or easy jog are fine—pick what feels best on joints and energy. No intervals."
+                },
+                "lighter_alternative": {
+                    "title": "Easy steady cardio",
+                    "duration_min": 30,
+                    "instructions": "Drop to easy intensity and keep cadence relaxed."
+                }
+            }
+        },
+        {
+            "date": "2026-01-25",
+            "weekday": "Sunday",
+            "is_rest_day": false,
+            "session": {
+                "modality": "Strength",
+                "title": "Strength C — Posterior Chain + Full Body (moderate volume)",
+                "duration_min": 60,
+                "intensity": {
+                    "label": "Hard",
+                    "ceiling": "Top work <= RPE 8",
+                    "notes": "Performance-focused but controlled; avoid maximal singles."
+                },
+                "strength": {
+                    "theme": "Posterior chain + full-body strength balance",
+                    "warmup": [
+                        "5 min easy cardio",
+                        "Hinge pattern practice + 2 lighter ramp-up sets"
+                    ],
+                    "exercises": [
+                        {
+                            "name": "Deadlift (Trap Bar preferred) or Conventional Deadlift",
+                            "sets": 4,
+                            "reps": "3-5",
+                            "load": {
+                                "type": "RPE",
+                                "value": "RPE 7-8"
+                            },
+                            "rest_sec": 180,
+                            "notes": "Stop before any form breakdown; keep reps crisp and consistent."
+                        },
+                        {
+                            "name": "Front Squat (or Leg Press)",
+                            "sets": 3,
+                            "reps": "6-8",
+                            "load": {
+                                "type": "RIR",
+                                "value": "RIR 2"
+                            },
+                            "rest_sec": 150,
+                            "notes": "Controlled descent; strong drive up."
+                        },
+                        {
+                            "name": "Incline Dumbbell Press",
+                            "sets": 3,
+                            "reps": "8",
+                            "load": {
+                                "type": "RPE",
+                                "value": "RPE 7-8"
+                            },
+                            "rest_sec": 120,
+                            "notes": "Stable shoulder blades; avoid bouncing."
+                        },
+                        {
+                            "name": "Seated Cable Row (or Chest-Supported Row)",
+                            "sets": 3,
+                            "reps": "8-10",
+                            "load": {
+                                "type": "RPE",
+                                "value": "RPE 7"
+                            },
+                            "rest_sec": 90,
+                            "notes": "Pause 1s at contraction; keep neck relaxed."
+                        },
+                        {
+                            "name": "Side Plank",
+                            "sets": 3,
+                            "reps": "30-45s each side",
+                            "load": {
+                                "type": "percent_effort",
+                                "value": "70-80%"
+                            },
+                            "rest_sec": 60,
+                            "notes": "Keep hips stacked; stop if form collapses."
+                        }
+                    ],
+                    "finisher": "Optional: 5–8 min easy walk to downshift after lifting.",
+                    "cooldown": [
+                        "2 min easy walk",
+                        "Light hamstring + glute stretch (non-painful)"
+                    ]
+                },
+                "hiit": {
+                    "modality_style": "",
+                    "warmup": [],
+                    "intervals": {
+                        "work_sec": 0,
+                        "rest_sec": 0,
+                        "rounds": 0,
+                        "intensity_ceiling": "",
+                        "notes": ""
+                    },
+                    "cooldown": []
+                },
+                "pilates": {
+                    "theme": "",
+                    "emphasis": "",
+                    "notes": ""
+                },
+                "cardio": {
+                    "mode": "",
+                    "style": "",
+                    "target_intensity": "",
+                    "duration_min": 0,
+                    "notes": ""
+                },
+                "lighter_alternative": {
+                    "title": "Reduced-fatigue full-body strength",
+                    "duration_min": 45,
+                    "instructions": "Reduce deadlift to 3 sets and keep all exercises at RPE 6–7 with longer rest."
+                }
+            }
+        },
+        {
+            "date": "2026-01-26",
+            "weekday": "Monday",
+            "is_rest_day": true,
+            "session": {
+                "modality": "Rest",
+                "title": "Rest Day",
+                "duration_min": 0,
+                "intensity": {
+                    "label": "Easy",
+                    "ceiling": "Rest",
+                    "notes": ""
+                },
+                "strength": {
+                    "theme": "",
+                    "warmup": [],
+                    "exercises": [],
+                    "finisher": "",
+                    "cooldown": []
+                },
+                "hiit": {
+                    "modality_style": "",
+                    "warmup": [],
+                    "intervals": {
+                        "work_sec": 0,
+                        "rest_sec": 0,
+                        "rounds": 0,
+                        "intensity_ceiling": "",
+                        "notes": ""
+                    },
+                    "cooldown": []
+                },
+                "pilates": {
+                    "theme": "",
+                    "emphasis": "",
+                    "notes": ""
+                },
+                "cardio": {
+                    "mode": "",
+                    "style": "",
+                    "target_intensity": "",
+                    "duration_min": 0,
+                    "notes": ""
+                },
+                "lighter_alternative": {
+                    "title": "",
+                    "duration_min": 0,
+                    "instructions": ""
+                }
+            }
+        }
+    ],
+    "safety": {
+        "max_effort_avoidance": false,
+        "constraints_respected": [
+            "training_duration_preference",
+            "training_often_per_week",
+            "selected_modalities"
+        ],
+        "injury_or_paused_rule_applied": false
+    }
+}
