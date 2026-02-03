@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -25,11 +26,6 @@ func NewGPTPlanGenerator(client *OpenAIClient, promptVersion string) *GPTPlanGen
 		client:        client,
 		promptVersion: promptVersion,
 	}
-}
-
-type trainingWeekDates struct {
-	WeekStart string `json:"week_start"`
-	WeekEnd   string `json:"week_end"`
 }
 
 func (g *GPTPlanGenerator) GeneratePlan(
@@ -87,30 +83,18 @@ func (g *GPTPlanGenerator) GeneratePlan(
 		return domain.PlanGenerationResult{}, fmt.Errorf("failed to parse gpt JSON: %w", err)
 	}
 
+	fmt.Printf("TRAINING RAW: %s\n", string(out.Training))
+
 	// 2) Extract training week_start/week_end from raw training payload
 	if len(out.Training) == 0 {
 		return domain.PlanGenerationResult{}, fmt.Errorf("gpt response missing training payload")
 	}
 
-	var td trainingWeekDates
-	if err := json.Unmarshal(out.Training, &td); err != nil {
-		return domain.PlanGenerationResult{}, fmt.Errorf("failed to parse training week_start/week_end: %w", err)
+	planStart, planEnd, usedFallback := resolveWeekDates(out.Training, time.Now())
+	if usedFallback {
+		// opcional: útil en beta para detectar drift
+		log.Printf("[plans.generate] week dates missing/invalid, fallback used: %s - %s", planStart.Format("2006-01-02"), planEnd.Format("2006-01-02"))
 	}
-	if td.WeekStart == "" || td.WeekEnd == "" {
-		return domain.PlanGenerationResult{}, fmt.Errorf("training week_start/week_end missing")
-	}
-
-	start, err := time.Parse("2006-01-02", td.WeekStart)
-	if err != nil {
-		return domain.PlanGenerationResult{}, fmt.Errorf("invalid training.week_start %q: %w", td.WeekStart, err)
-	}
-	end, err := time.Parse("2006-01-02", td.WeekEnd)
-	if err != nil {
-		return domain.PlanGenerationResult{}, fmt.Errorf("invalid training.week_end %q: %w", td.WeekEnd, err)
-	}
-
-	start = time.Date(start.Year(), start.Month(), start.Day(), 0, 0, 0, 0, time.UTC)
-	end = time.Date(end.Year(), end.Month(), end.Day(), 0, 0, 0, 0, time.UTC)
 
 	// 3) Map recommendations dto -> domain
 	recs := make([]domain.Recommendations, 0, len(out.Recommendations))
@@ -130,8 +114,8 @@ func (g *GPTPlanGenerator) GeneratePlan(
 		CheckinID: checkinID,
 		CreatedAt: now,
 
-		StartDate: start,
-		EndDate:   end,
+		StartDate: planStart,
+		EndDate:   planEnd,
 
 		WeeklyHeadline:    out.WeeklyHeadline,
 		CyclePhaseSummary: out.CyclePhaseSummary,
