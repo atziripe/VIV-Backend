@@ -2,6 +2,8 @@ package usecase
 
 import (
 	"context"
+	"fmt"
+	"log"
 
 	"viv/internal/core/domain"
 )
@@ -28,6 +30,9 @@ func NewGetPlanByIDUseCase(users UserRepository, plans PlanRepository) *GetPlanB
 }
 
 func (uc *GetPlanByIDUseCase) Execute(ctx context.Context, in GetPlanByIDInput) (*GetPlanByIDOutput, error) {
+	if uc.Users == nil || uc.Plans == nil {
+		return nil, fmt.Errorf("GetPlanByIDUseCase: missing dependencies")
+	}
 	if in.UserID == "" {
 		return nil, ErrUserNotFound("")
 	}
@@ -44,12 +49,13 @@ func (uc *GetPlanByIDUseCase) Execute(ctx context.Context, in GetPlanByIDInput) 
 		return nil, ErrUserNotFound(in.UserID)
 	}
 
+	log.Printf("[plans.getByID] userID=%s planID=%s", user.ID, in.PlanID)
 	plan, err := uc.Plans.GetByID(ctx, user.ID, in.PlanID)
 	if err != nil {
 		return nil, err
 	}
 	if plan == nil {
-		return nil, ErrPlanNotFound(*user.LastActivePlanID)
+		return nil, ErrPlanNotFound(in.PlanID)
 	}
 
 	return &GetPlanByIDOutput{Plan: plan}, nil

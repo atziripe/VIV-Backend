@@ -25,7 +25,7 @@ func EnsureUserMiddleware(userRepo usecase.UserRepository) func(http.Handler) ht
 
 			// Si no existe, lo creamos con defaults mínimos
 			if u == nil {
-				now := time.Now()
+				now := time.Now().UTC()
 
 				newUser := &domain.User{
 					ID:                  uid,

@@ -17,6 +17,7 @@ import (
 	httpadapter "viv/internal/adapters/http"
 	"viv/internal/adapters/llm/openai"
 	"viv/internal/adapters/repository"
+	"viv/internal/adapters/runner"
 	"viv/internal/config"
 	"viv/internal/core/usecase"
 )
@@ -56,6 +57,7 @@ func main() {
 	checkinRepo := repository.NewFirestoreCheckinRepository(fsClient)
 	lifestyleRepo := repository.NewFirestoreLifestyleChangeRepository(fsClient)
 	planRepo := repository.NewFirestorePlanRepository(fsClient)
+	planJobsRepo := repository.NewFirestorePlanJobsRepository(fsClient)
 
 	// Generador de planes
 	if cfg.OpenAIAPIKey == "" {
@@ -82,12 +84,16 @@ func main() {
 	adjustUC := usecase.NewAdjustPlanUseCase(userRepo, checkinRepo, planRepo, lifestyleRepo, planGen)
 	getByWeekStartUC := usecase.NewGetPlanByWeekStartUseCase(planRepo)
 
+	runner := runner.NewLocalPlanGenerationRunner(planJobsRepo, generatePlanUC, 4*time.Minute)
+	startUC := usecase.NewStartPlanGenerationUseCase(planJobsRepo, runner)
+	statusUC := usecase.NewGetPlanGenerationStatusUseCase(planJobsRepo)
+
 	// ========= 6. Crear handlers =========
 	onboardingHandler := httpadapter.NewOnboardingHandler(onboardingUC)
 	checkinHandler := httpadapter.NewCheckinHandler(createCheckinUC, latestCheckinUC)
 	lifestyleHandler := httpadapter.NewLifestyleHandler(reportLifestyleUC, listLifestyleUC)
 	meHandler := httpadapter.NewMeHandler(getMeUC)
-	plansHandler := httpadapter.NewPlansHandler(generatePlanUC, getCurrentPlanUC, getByIDUC, adjustUC, getByWeekStartUC)
+	plansHandler := httpadapter.NewPlansHandler(generatePlanUC, getCurrentPlanUC, getByIDUC, adjustUC, getByWeekStartUC, startUC, statusUC)
 	trainingHandler := httpadapter.NewTrainingHandler(resumeTrainingUC)
 
 	// ========= 7. Configurar router =========
@@ -133,6 +139,7 @@ func main() {
 	api.Get("/plans/{id}", plansHandler.GetByID)
 	api.Post("/plans/adjust", plansHandler.Adjust)
 	api.Get("/plans/week/{week_start}", plansHandler.GetByWeekStart)
+	api.Get("/plans/generate/status", plansHandler.GenerateStatus)
 
 	api.Post("/training/resume", trainingHandler.Resume)
 

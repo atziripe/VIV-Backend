@@ -521,9 +521,8 @@ func NutritionPlanPromptVIVV1(guidance_level string) string {
     {
       "week_start": "YYYY-MM-DD",
       "week_end": "YYYY-MM-DD",
-      "plan_type": "detailed",
+      "guidance_level": "detailed",
       "meta": {
-        "guidance_level": "detailed",
         "domain": "nutrition",
         "notes_for_ui": "string"
       },

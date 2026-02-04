@@ -20,6 +20,8 @@ type PlansHandler struct {
 	GetByIDUC        *usecase.GetPlanByIDUseCase
 	AdjustUC         *usecase.AdjustPlanUseCase
 	GetByWeekStartUC *usecase.GetPlanByWeekStartUseCase
+	StartGenUC       *usecase.StartPlanGenerationUseCase
+	JobStatusUC      *usecase.GetPlanGenerationStatusUseCase
 }
 
 type adjustPlanRequest struct {
@@ -32,6 +34,8 @@ func NewPlansHandler(
 	getByIDUC *usecase.GetPlanByIDUseCase,
 	adjustUC *usecase.AdjustPlanUseCase,
 	getByWeekStartUC *usecase.GetPlanByWeekStartUseCase,
+	startGenUC *usecase.StartPlanGenerationUseCase,
+	jobStatusUC *usecase.GetPlanGenerationStatusUseCase,
 ) *PlansHandler {
 	return &PlansHandler{
 		GenerateUC:       generateUC,
@@ -39,6 +43,8 @@ func NewPlansHandler(
 		GetByIDUC:        getByIDUC,
 		AdjustUC:         adjustUC,
 		GetByWeekStartUC: getByWeekStartUC,
+		StartGenUC:       startGenUC,
+		JobStatusUC:      jobStatusUC,
 	}
 }
 
@@ -68,8 +74,7 @@ type planResponse struct {
 	Nutrition json.RawMessage `json:"nutrition,omitempty"`
 	Recovery  json.RawMessage `json:"recovery,omitempty"`
 
-	// Mantengo tu typo actual para no romper UI: "recomendations"
-	Recomendations []recommendationResponse `json:"recomendations,omitempty"`
+	Recommendations []recommendationResponse `json:"recommendations,omitempty"`
 
 	// Meta solo cuando viene (ej. /generate)
 	ModelName     string `json:"model_name,omitempty"`
@@ -82,6 +87,16 @@ type recommendationResponse struct {
 	Title  string `json:"title"`
 	Action string `json:"action,omitempty"`
 	Why    string `json:"why,omitempty"`
+}
+
+type generatePlanAsyncResponse struct {
+	JobID string `json:"job_id"`
+}
+
+type planJobStatusResponse struct {
+	Status string  `json:"status"`
+	PlanID *string `json:"plan_id,omitempty"`
+	Error  *string `json:"error,omitempty"`
 }
 
 // ---------- HANDLERS ----------
@@ -108,37 +123,59 @@ func (h *PlansHandler) Generate(w http.ResponseWriter, r *http.Request) {
 		checkinID = strings.TrimSpace(*req.CheckinID)
 	}
 
-	// returns PlanGenerationResult
-	result, err := h.GenerateUC.Generate(ctx, userID, checkinID)
+	jobID, err := h.StartGenUC.Execute(ctx, userID, checkinID)
 	if err != nil {
-		log.Printf("[plans.generate] error: %+v\n", err)
-
-		if _, ok := err.(usecase.UserNotFoundError); ok {
-			http.Error(w, "user not found", http.StatusNotFound)
-			return
-		}
-
-		if checkinID != "" {
-			// OJO: aquí tu error type quizá sea CheckinNotFoundError (revisa)
-			if _, ok := err.(usecase.PlanNotFoundError); ok {
-				http.Error(w, "checkin not found", http.StatusNotFound)
-				return
-			}
-		}
-
-		http.Error(w, "failed to generate plan", http.StatusInternalServerError)
+		log.Printf("[plans.generate] start job error: %+v\n", err)
+		http.Error(w, "failed to start plan generation", http.StatusInternalServerError)
 		return
 	}
-
-	if result.Plan == nil {
-		http.Error(w, "failed to generate plan", http.StatusInternalServerError)
-		return
-	}
-
-	resp := mapPlanToResponse(result.Plan, result.Meta)
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusAccepted) // 202
+	_ = json.NewEncoder(w).Encode(generatePlanAsyncResponse{JobID: jobID})
+}
+
+// GET /plans/generate/status?job_id=...
+func (h *PlansHandler) GenerateStatus(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	userID, ok := UserIDFromContext(ctx)
+	if !ok || userID == "" {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	jobID := strings.TrimSpace(r.URL.Query().Get("job_id"))
+	if jobID == "" {
+		http.Error(w, "job_id is required", http.StatusBadRequest)
+		return
+	}
+
+	job, err := h.JobStatusUC.Execute(ctx, userID, jobID)
+	if err != nil {
+		log.Printf("[plans.generate.status] error: %+v\n", err)
+		http.Error(w, "failed to get job status", http.StatusInternalServerError)
+		return
+	}
+	if job == nil {
+		http.Error(w, "job not found", http.StatusNotFound)
+		return
+	}
+
+	resp := planJobStatusResponse{
+		Status: string(job.Status), // IMPORTANT: cast to string
+	}
+	if job.PlanID != "" {
+		v := job.PlanID
+		resp.PlanID = &v
+	}
+	if job.Error != "" {
+		e := job.Error
+		resp.Error = &e
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(resp)
 }
 
@@ -346,10 +383,10 @@ func mapPlanToResponse(p *domain.Plan, meta *domain.PlanGenerationMeta) planResp
 		CyclePhaseSummary: p.CyclePhaseSummary,
 		CycleDayRange:     p.CycleDayRange,
 
-		Training:       json.RawMessage(p.TrainingJSON),
-		Nutrition:      json.RawMessage(p.NutritionJSON),
-		Recovery:       json.RawMessage(p.RecoveryJSON),
-		Recomendations: recs,
+		Training:        json.RawMessage(p.TrainingJSON),
+		Nutrition:       json.RawMessage(p.NutritionJSON),
+		Recovery:        json.RawMessage(p.RecoveryJSON),
+		Recommendations: recs,
 	}
 
 	if meta != nil {

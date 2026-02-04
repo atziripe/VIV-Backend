@@ -109,11 +109,6 @@ func (uc *GeneratePlanUseCase) Generate(
 		plan.Plan.CheckinID = "" // importante para Firestore/JSON, evita basura
 	}
 
-	// 6️⃣ Persistir plan
-	if err := uc.planRepo.Create(ctx, plan.Plan); err != nil {
-		return domain.PlanGenerationResult{}, err
-	}
-
 	// 7️⃣ Marcar como plan activo en el usuario
 	user.LastActivePlanID = &plan.Plan.ID
 	if err := uc.userRepo.Save(ctx, user); err != nil {

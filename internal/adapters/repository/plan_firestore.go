@@ -48,7 +48,7 @@ type planDoc struct {
 	NutritionJSON string `firestore:"nutrition_json"`
 	RecoveryJSON  string `firestore:"recovery_json"`
 
-	Recomendations []recommendationDoc `firestore:"recomendations"`
+	Recommendations []recommendationDoc `firestore:"recommendations"`
 
 	GeneratedFrom string `firestore:"generated_from"`
 	SourceEventID string `firestore:"source_event_id"`
@@ -92,7 +92,7 @@ func (r *FirestorePlanRepository) Create(ctx context.Context, p *domain.Plan) er
 		NutritionJSON: string(p.NutritionJSON),
 		RecoveryJSON:  string(p.RecoveryJSON),
 
-		Recomendations: recs,
+		Recommendations: recs,
 
 		GeneratedFrom: p.GeneratedFrom,
 		SourceEventID: p.SourceEventID,
@@ -135,8 +135,8 @@ func (r *FirestorePlanRepository) GetByID(ctx context.Context, userID, planID st
 		checkinID = *pd.CheckinID
 	}
 
-	recs := make([]domain.Recommendations, 0, len(pd.Recomendations))
-	for _, rr := range pd.Recomendations {
+	recs := make([]domain.Recommendations, 0, len(pd.Recommendations))
+	for _, rr := range pd.Recommendations {
 		recs = append(recs, domain.Recommendations{
 			Title:  rr.Title,
 			Action: rr.Action,
@@ -200,8 +200,70 @@ func (r *FirestorePlanRepository) GetLatestByWeekStart(ctx context.Context, user
 		checkinID = *pd.CheckinID
 	}
 
-	recs := make([]domain.Recommendations, 0, len(pd.Recomendations))
-	for _, rr := range pd.Recomendations {
+	recs := make([]domain.Recommendations, 0, len(pd.Recommendations))
+	for _, rr := range pd.Recommendations {
+		recs = append(recs, domain.Recommendations{
+			Title:  rr.Title,
+			Action: rr.Action,
+			Why:    rr.Why,
+		})
+	}
+
+	plan := &domain.Plan{
+		ID:        docs[0].Ref.ID,
+		UserID:    userID,
+		Status:    pd.Status,
+		CheckinID: checkinID,
+		CreatedAt: pd.CreatedAt,
+		StartDate: pd.StartDate,
+		EndDate:   pd.EndDate,
+
+		WeeklyHeadline:    pd.WeeklyHeadline,
+		CyclePhaseSummary: pd.CyclePhaseSummary,
+		CycleDayRange:     pd.CycleDayRange,
+
+		TrainingJSON:  []byte(pd.TrainingJSON),
+		NutritionJSON: []byte(pd.NutritionJSON),
+		RecoveryJSON:  []byte(pd.RecoveryJSON),
+
+		Recommendations: recs,
+
+		GeneratedFrom: pd.GeneratedFrom,
+		SourceEventID: pd.SourceEventID,
+		PlanVersion:   pd.PlanVersion,
+	}
+
+	return plan, nil
+}
+
+func (r *FirestorePlanRepository) GetLatest(ctx context.Context, userID string) (*domain.Plan, error) {
+	q := r.client.
+		Collection("users").
+		Doc(userID).
+		Collection("plans").
+		OrderBy("created_at", firestore.Desc).
+		Limit(1)
+
+	docs, err := q.Documents(ctx).GetAll()
+	if err != nil {
+		return nil, err
+	}
+	if len(docs) == 0 {
+		return nil, nil
+	}
+
+	var pd planDoc
+	if err := docs[0].DataTo(&pd); err != nil {
+		return nil, err
+	}
+
+	checkinID := ""
+	if pd.CheckinID != nil {
+		checkinID = *pd.CheckinID
+	}
+
+	recs := make([]domain.Recommendations, 0, len(pd.Recommendations))
+	for _, rr := range pd.Recommendations {
 		recs = append(recs, domain.Recommendations{
 			Title:  rr.Title,
 			Action: rr.Action,
