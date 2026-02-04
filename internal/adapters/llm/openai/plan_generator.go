@@ -43,6 +43,7 @@ func (g *GPTPlanGenerator) GeneratePlan(
 	}
 
 	trainLevel := user.TrainingGuidanceLevel
+	nutritionLevelGuidance := user.NutritionGuidanceLevel
 
 	msgs := []openaiapi.ChatCompletionMessage{
 		{
@@ -55,7 +56,7 @@ func (g *GPTPlanGenerator) GeneratePlan(
 		},
 		{
 			Role:    openaiapi.ChatMessageRoleSystem,
-			Content: prompts.NutritionPlanPromptVIVV1(),
+			Content: prompts.NutritionPlanPromptVIVV1(nutritionLevelGuidance),
 		},
 		{
 			Role:    openaiapi.ChatMessageRoleSystem,
@@ -67,6 +68,9 @@ func (g *GPTPlanGenerator) GeneratePlan(
 		},
 	}
 
+	promptJSON, _ := json.MarshalIndent(msgs, "", "  ")
+	log.Printf("[openai.prompt] messages:\n%s", string(promptJSON))
+
 	resp, err := g.client.Chat(ctx, msgs)
 	if err != nil {
 		return domain.PlanGenerationResult{}, err
@@ -77,13 +81,14 @@ func (g *GPTPlanGenerator) GeneratePlan(
 
 	raw := sanitizeJSON(resp.Choices[0].Message.Content)
 
+	respJSON, _ := json.MarshalIndent(resp, "", "  ")
+	log.Printf("[openai.response.raw]\n%s", string(respJSON))
+
 	// 1) Unmarshal wrapper DTO
 	var out dto.GPTPlanJSON
 	if err := json.Unmarshal([]byte(raw), &out); err != nil {
 		return domain.PlanGenerationResult{}, fmt.Errorf("failed to parse gpt JSON: %w", err)
 	}
-
-	fmt.Printf("TRAINING RAW: %s\n", string(out.Training))
 
 	// 2) Extract training week_start/week_end from raw training payload
 	if len(out.Training) == 0 {

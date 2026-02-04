@@ -41,14 +41,21 @@ type meResponse struct {
 	TrainingGoals         string `json:"training_goals"`
 	TrainingGuidanceLevel string `json:"training_guidance_level"`
 
-	DietRestrictions string `json:"diet_restrictions"`
-	DietType         string `json:"diet_type"`
-	MealsPerDay      string `json:"meals_per_day"`
+	DietRestrictions       string `json:"diet_restrictions"`
+	DietProteinResources   string `json:"diet_protein_resources"`
+	MealsPerDay            string `json:"meals_per_day"`
+	MealsTimingStability   string `json:"meals_timing_stability"`
+	DigestionConditions    string `json:"digestion_conditions"`
+	NutritionIntent        string `json:"nutrition_intent"`
+	NutritionGuidanceLevel string `json:"nutrition_guidance_level"`
 
-	SleepWindow   string `json:"sleep_window"`
-	StressLevel   string `json:"stress_level"`
-	Priority      string `json:"priority"`
-	GuidanceLevel string `json:"guidance_level"`
+	SleepWindow        string `json:"sleep_window"`
+	RecoveryAfterSleep string `json:"recovery_after_sleep"`
+	SleepContinuity    string `json:"sleep_continuity"`
+	LingeringMarker    string `json:"lingering_marker"`
+	StressReactivity   string `json:"stress_reactivity"`
+	StressLevel        string `json:"stress_level"`
+	Priority           string `json:"priority"`
 
 	HasActiveInjury      bool    `json:"has_active_injury"`
 	TrainingPaused       bool    `json:"training_paused"`
@@ -118,14 +125,21 @@ func (h *MeHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 		TrainingGoals:         u.TrainingGoals,
 		TrainingGuidanceLevel: u.TrainingGuidanceLevel,
 
-		DietRestrictions: u.DietRestrictions,
-		DietType:         u.DietType,
-		MealsPerDay:      u.MealsPerDay,
+		DietRestrictions:       u.DietRestrictions,
+		DietProteinResources:   u.DietProteinResources,
+		MealsPerDay:            u.MealsPerDay,
+		MealsTimingStability:   u.MealsTimingStability,
+		DigestionConditions:    u.DigestionConditions,
+		NutritionIntent:        u.NutritionIntent,
+		NutritionGuidanceLevel: u.NutritionGuidanceLevel,
 
-		SleepWindow:   u.SleepWindow,
-		StressLevel:   u.StressLevel,
-		Priority:      u.Priority,
-		GuidanceLevel: u.GuidanceLevel,
+		SleepWindow:        u.SleepWindow,
+		RecoveryAfterSleep: u.RecoveryAfterSleep,
+		SleepContinuity:    u.SleepContinuity,
+		LingeringMarker:    u.LingeringMarker,
+		StressReactivity:   u.StressReactivity,
+		StressLevel:        u.StressLevel,
+		Priority:           u.Priority,
 
 		HasActiveInjury:      u.HasActiveInjury,
 		TrainingPaused:       u.TrainingPaused,

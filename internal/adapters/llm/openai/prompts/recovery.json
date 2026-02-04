@@ -1,0 +1,23 @@
+{
+    "recovery": {
+        "recovery_state": {
+            "label": "Sensitive"
+        },
+        "what_this_feels_like": {
+            "description": "Energy is present but not crisp, with a slightly heavier bounce-back and a muted mental edge. Effort can feel more noticeable than usual, even when nothing is obviously wrong."
+        },
+        "what_to_respect": {
+            "boundary": "Overall system sensitivity to cumulative load."
+        },
+        "why": {
+            "context": "At this point in the cycle, the body often shifts into a quieter recalibration phase where tolerance for stress is narrower."
+        },
+        "keep_in_mind": {
+            "anchor": "Weeks like this tend to be about letting things settle rather than pushing for sharpness."
+        },
+        "optional_insight": {
+            "title": "Why bounce-back feels different this week",
+            "body": "Recovery can feel less elastic during certain parts of the cycle, where steadiness supports better long-term rhythm than rapid rebounds."
+        }
+    }
+}

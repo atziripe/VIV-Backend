@@ -8,31 +8,40 @@ import (
 )
 
 type CompleteOnboardingInput struct {
-	UserID                string
-	Name                  string
-	DOB                   string
-	WeightKg              float64
-	HeightCm              float64
-	CycleType             string
-	CycleDay              string
-	CycleDuration         string
-	CyclePhase            string
-	PeriodDuration        string
-	PMSSymptoms           string
-	PeriodDetails         string
+	UserID         string
+	Name           string
+	DOB            string
+	WeightKg       float64
+	HeightCm       float64
+	CycleType      string
+	CycleDay       string
+	CycleDuration  string
+	CyclePhase     string
+	PeriodDuration string
+	PMSSymptoms    string
+
 	TrainingOften         string
 	TrainingDuration      string
 	TrainingType          string
 	TrainingTime          string
 	TrainingGuidanceLevel string
 	TrainingGoals         string
-	DietRestrictions      string
-	DietType              string
-	MealsPerDay           string
-	SleepWindow           string
-	StressLevel           string
-	Priority              string
-	GuidanceLevel         string
+
+	DietRestrictions       string
+	DietProteinResources   string
+	MealsPerDay            string
+	MealsTimingStability   string
+	DigestionConditions    string
+	NutritionIntent        string
+	NutritionGuidanceLevel string
+
+	SleepWindow        string
+	RecoveryAfterSleep string
+	SleepContinuity    string
+	LingeringMarker    string
+	StressReactivity   string
+	StressLevel        string
+	Priority           string
 }
 
 type CompleteOnboardingOutput struct {
@@ -77,20 +86,28 @@ func (uc *CompleteOnboardingUseCase) Execute(ctx context.Context, in CompleteOnb
 	user.CyclePhase = phaseForDay(cycleDayInt, cycleDurationInt, periodDurationInt)
 	user.PeriodDuration = in.PeriodDuration
 	user.PMSSymptoms = in.PMSSymptoms
-	user.PeriodDetails = in.PeriodDetails
 	user.TrainingOften = in.TrainingOften
 	user.TrainingDuration = in.TrainingDuration
 	user.TrainingType = in.TrainingType
 	user.TrainingTime = in.TrainingTime
 	user.TrainingGuidanceLevel = in.TrainingGuidanceLevel
 	user.TrainingGoals = in.TrainingGoals
+
 	user.DietRestrictions = in.DietRestrictions
-	user.DietType = in.DietType
+	user.DietProteinResources = in.DietProteinResources
 	user.MealsPerDay = in.MealsPerDay
+	user.MealsTimingStability = in.MealsTimingStability
+	user.DigestionConditions = in.DigestionConditions
+	user.NutritionIntent = in.NutritionIntent
+	user.NutritionGuidanceLevel = in.NutritionGuidanceLevel
+
 	user.SleepWindow = in.SleepWindow
+	user.RecoveryAfterSleep = in.RecoveryAfterSleep
+	user.SleepContinuity = in.SleepContinuity
+	user.LingeringMarker = in.LingeringMarker
+	user.StressReactivity = in.StressReactivity
 	user.StressLevel = in.StressLevel
 	user.Priority = in.Priority
-	user.GuidanceLevel = in.GuidanceLevel
 
 	user.OnboardingCompleted = true
 	user.UpdatedAt = now

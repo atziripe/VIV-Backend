@@ -20,7 +20,6 @@ func BuildUserPromptVIVV1(user *domain.User, checkin *domain.Checkin) string {
 
 	// Optional fields as strings
 	pms := np(user.PMSSymptoms)
-	period := np(user.PeriodDetails)
 	dietRestr := np(user.DietRestrictions)
 
 	// ---- Weekly Check-in block (supports nil) ----
@@ -41,7 +40,6 @@ func BuildUserPromptVIVV1(user *domain.User, checkin *domain.Checkin) string {
 		- cycle_duration: %s
 		- cycle_phase: %s
 		- pms_symptoms: %s
-		- period_details: %s
 		- menstrual_period_duration: %s days
 
 		Training:
@@ -54,16 +52,25 @@ func BuildUserPromptVIVV1(user *domain.User, checkin *domain.Checkin) string {
 		- training_guidance_level: %s
 		- training_goals: %s
 
+
 		Nutrition:
-		- diet_type: %s
 		- diet_restrictions: %s
+		- diet_protein_resources: %s
 		- meals_per_day: %s
+		- meals_timing_stability: %s
+		- digestion_conditions: %s
+		- nutrition_intent: %s
+		- nutrition_guidance_level: %s
+
 
 		Lifestyle:
 		- sleep_window: %s
+		- recovery_after_sleep: %s
+		- sleep_interruption: %s
+		- lingerin_fatigue: %s
+		- stress_reactivity: %s
 		- baseline_stress_level: %s
 		- priority: %s
-		- guidance_level: %s
 
 		%s
 
@@ -79,7 +86,6 @@ func BuildUserPromptVIVV1(user *domain.User, checkin *domain.Checkin) string {
 		np(fmt.Sprintf("%v", user.CycleDuration)), // idem
 		np(user.CyclePhase),
 		pms,
-		period,
 		np(user.PeriodDuration),
 
 		np(fmt.Sprintf("%v", user.TrainingOften)),
@@ -91,14 +97,21 @@ func BuildUserPromptVIVV1(user *domain.User, checkin *domain.Checkin) string {
 		np(user.TrainingGuidanceLevel),
 		np(user.TrainingGoals),
 
-		np(user.DietType),
 		dietRestr,
+		np(user.DietProteinResources),
 		np(fmt.Sprintf("%v", user.MealsPerDay)),
+		np(fmt.Sprintf("%v", user.MealsTimingStability)),
+		np(user.DigestionConditions),
+		np(fmt.Sprintf("%v", user.NutritionIntent)),
+		np(user.NutritionGuidanceLevel),
 
 		np(user.SleepWindow),
+		np(user.RecoveryAfterSleep),
+		np(user.SleepContinuity),
+		np(user.LingeringMarker),
+		np(user.StressReactivity),
 		np(user.StressLevel),
 		np(user.Priority),
-		np(fmt.Sprintf("%v", user.GuidanceLevel)),
 
 		weeklyCheckinBlock,
 	)

@@ -9,7 +9,7 @@ type GPTPlanJSON struct {
 	Training          json.RawMessage   `json:"training"`
 	Nutrition         json.RawMessage   `json:"nutrition"`
 	Recovery          json.RawMessage   `json:"recovery"`
-	Recommendations   []Recommendations `json:"recomendations"`
+	Recommendations   []Recommendations `json:"recommendations"`
 }
 
 type Recommendations struct {
