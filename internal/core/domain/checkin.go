@@ -11,9 +11,9 @@ type Checkin struct {
 	BodyStatus         string
 	Appetite           string
 	StressLevel        string
+	LastWeekFeeling    string
 	CycleStart         *time.Time
 	WorkloadPrediction string
 	MentalEnergy       string
-	WeekSessions       string
 	PromptVersion      string
 }

@@ -116,8 +116,10 @@ func (h *RPCHandler) Handle(w http.ResponseWriter, r *http.Request) {
 
 	out := rpcResponse{
 		Status: rec.Code,
-		Body:   respBody,
+		Body:   json.RawMessage(rec.Body.Bytes()),
 	}
+
+	//log.Printf("[rpc] upstream status=%d body=%s", rec.Code, json.RawMessage(rec.Body.Bytes()))
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(out)

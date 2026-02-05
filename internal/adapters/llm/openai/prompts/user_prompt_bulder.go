@@ -148,7 +148,7 @@ func buildWeeklyCheckinBlock(checkin *domain.Checkin, np func(string) string) st
 		- stress_level: %s
 		- workload_prediction: %s
 		- mental_energy (1-5): %d
-		- week_sessions_target: %d
+		- last_week_feeling: %s
 		- cycle_start (if known): %s
 		`),
 		weekStart,
@@ -157,7 +157,7 @@ func buildWeeklyCheckinBlock(checkin *domain.Checkin, np func(string) string) st
 		np(checkin.StressLevel),
 		np(checkin.WorkloadPrediction),
 		checkin.MentalEnergy,
-		checkin.WeekSessions,
+		np(checkin.LastWeekFeeling),
 		cycleStart,
 	)
 }

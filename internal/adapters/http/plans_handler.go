@@ -122,6 +122,12 @@ func (h *PlansHandler) Generate(w http.ResponseWriter, r *http.Request) {
 	if req.CheckinID != nil {
 		checkinID = strings.TrimSpace(*req.CheckinID)
 	}
+	if checkinID == "null" {
+		checkinID = ""
+	}
+	if strings.EqualFold(checkinID, "null") {
+		checkinID = ""
+	}
 
 	jobID, err := h.StartGenUC.Execute(ctx, userID, checkinID)
 	if err != nil {

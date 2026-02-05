@@ -1,7 +1,10 @@
 package http
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
+	"log"
 	"net/http"
 	"time"
 
@@ -9,14 +12,16 @@ import (
 )
 
 type createCheckinRequest struct {
-	SleepQuality       string  `json:"sleep_quality"`
-	BodyStatus         string  `json:"body_status"`
-	Appetite           string  `json:"appetite"`
-	StressLevel        string  `json:"stress_level"`
-	CycleStart         *string `json:"cycle_start"` // opcional, "2025-11-30"
-	WorkloadPrediction string  `json:"workload_prediction"`
-	MentalEnergy       string  `json:"mental_energy"`
-	WeekSessions       string  `json:"week_sessions"`
+	SleepQuality           string  `json:"sleep_quality"`
+	BodyStatus             string  `json:"body_status"`
+	Appetite               string  `json:"appetite"`
+	StressLevel            string  `json:"stress_level"`
+	LastWeekFeeling        string  `json:"last_week_feeling"`
+	CycleStart             *string `json:"cycle_start"` // opcional, "2025-11-30"
+	WorkloadPrediction     string  `json:"workload_prediction"`
+	MentalEnergy           string  `json:"mental_energy"`
+	TrainingGuidanceLevel  *string `json:"training_guidance_level,omitempty"`
+	NutritionGuidanceLevel *string `json:"nutrition_guidance_level,omitempty"`
 }
 
 type createCheckinResponse struct {
@@ -27,10 +32,10 @@ type createCheckinResponse struct {
 	BodyStatus         string  `json:"body_status"`
 	Appetite           string  `json:"appetite"`
 	StressLevel        string  `json:"stress_level"`
+	LastWeekFeeling    string  `json:"last_week_feeling"`
 	CycleStart         *string `json:"cycle_start,omitempty"`
 	WorkloadPrediction string  `json:"workload_prediction"`
 	MentalEnergy       string  `json:"mental_energy"`
-	WeekSessions       string  `json:"week_sessions"`
 	PromptVersion      string  `json:"prompt_version"`
 }
 
@@ -53,9 +58,13 @@ func (h *CheckinHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	raw, _ := io.ReadAll(r.Body)
+	log.Printf("[checkins] raw body: %s", string(raw))
+	r.Body = io.NopCloser(bytes.NewBuffer(raw))
+
 	var req createCheckinRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid JSON", http.StatusBadRequest)
+		http.Error(w, "invalid JSON "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -68,23 +77,26 @@ func (h *CheckinHandler) Create(w http.ResponseWriter, r *http.Request) {
 	if req.CycleStart != nil && *req.CycleStart != "" {
 		t, err := time.Parse("2006-01-02", *req.CycleStart)
 		if err != nil {
-			http.Error(w, "invalid cycle_start format, expected YYYY-MM-DD", http.StatusBadRequest)
+			//http.Error(w, "invalid cycle_start format, expected YYYY-MM-DD", http.StatusBadRequest)
+			http.Error(w, "invalid cycle_start: "+err.Error(), http.StatusBadRequest)
 			return
 		}
 		cycleStart = &t
 	}
 
 	in := usecase.CreateCheckinInput{
-		UserID:             userID,
-		WeekStart:          weekStart,
-		SleepQuality:       req.SleepQuality,
-		BodyStatus:         req.BodyStatus,
-		Appetite:           req.Appetite,
-		StressLevel:        req.StressLevel,
-		CycleStart:         cycleStart,
-		WorkloadPrediction: req.WorkloadPrediction,
-		MentalEnergy:       req.MentalEnergy,
-		WeekSessions:       req.WeekSessions,
+		UserID:                 userID,
+		WeekStart:              weekStart,
+		SleepQuality:           req.SleepQuality,
+		BodyStatus:             req.BodyStatus,
+		Appetite:               req.Appetite,
+		StressLevel:            req.StressLevel,
+		LastWeekFeeling:        req.LastWeekFeeling,
+		CycleStart:             cycleStart,
+		WorkloadPrediction:     req.WorkloadPrediction,
+		MentalEnergy:           req.MentalEnergy,
+		TrainingGuidanceLevel:  req.TrainingGuidanceLevel,
+		NutritionGuidanceLevel: req.NutritionGuidanceLevel,
 	}
 
 	out, err := h.CreateUC.Execute(ctx, in)
@@ -110,10 +122,10 @@ func (h *CheckinHandler) Create(w http.ResponseWriter, r *http.Request) {
 		BodyStatus:         out.Checkin.BodyStatus,
 		Appetite:           out.Checkin.Appetite,
 		StressLevel:        out.Checkin.StressLevel,
+		LastWeekFeeling:    out.Checkin.LastWeekFeeling,
 		CycleStart:         cycleStartStr,
 		WorkloadPrediction: out.Checkin.WorkloadPrediction,
 		MentalEnergy:       out.Checkin.MentalEnergy,
-		WeekSessions:       out.Checkin.WeekSessions,
 		PromptVersion:      out.Checkin.PromptVersion,
 	}
 
@@ -169,10 +181,10 @@ func (h *CheckinHandler) Latest(w http.ResponseWriter, r *http.Request) {
 		BodyStatus:         ch.BodyStatus,
 		Appetite:           ch.Appetite,
 		StressLevel:        ch.StressLevel,
+		LastWeekFeeling:    ch.LastWeekFeeling,
 		CycleStart:         cycleStartStr,
 		WorkloadPrediction: ch.WorkloadPrediction,
 		MentalEnergy:       ch.MentalEnergy,
-		WeekSessions:       ch.WeekSessions,
 		PromptVersion:      ch.PromptVersion,
 	}
 

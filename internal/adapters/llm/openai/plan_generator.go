@@ -68,9 +68,6 @@ func (g *GPTPlanGenerator) GeneratePlan(
 		},
 	}
 
-	promptJSON, _ := json.MarshalIndent(msgs, "", "  ")
-	log.Printf("[openai.prompt] messages:\n%s", string(promptJSON))
-
 	resp, err := g.client.Chat(ctx, msgs)
 	if err != nil {
 		return domain.PlanGenerationResult{}, err
@@ -80,9 +77,6 @@ func (g *GPTPlanGenerator) GeneratePlan(
 	}
 
 	raw := sanitizeJSON(resp.Choices[0].Message.Content)
-
-	respJSON, _ := json.MarshalIndent(resp, "", "  ")
-	log.Printf("[openai.response.raw]\n%s", string(respJSON))
 
 	// 1) Unmarshal wrapper DTO
 	var out dto.GPTPlanJSON

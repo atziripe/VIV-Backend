@@ -31,10 +31,10 @@ type checkinDoc struct {
 	BodyStatus         string     `firestore:"body_status"`
 	Appetite           string     `firestore:"appetite"`
 	StressLevel        string     `firestore:"stress_level"`
+	LastWeekFeeling    string     `firestore:"last_week_feeling"`
 	CycleStart         *time.Time `firestore:"cycle_start"`
 	WorkloadPrediction string     `firestore:"workload_prediction"`
 	MentalEnergy       string     `firestore:"mental_energy"`
-	WeekSessions       string     `firestore:"week_sessions"`
 	PromptVersion      string     `firestore:"prompt_version"`
 }
 
@@ -52,10 +52,10 @@ func (r *FirestoreCheckinRepository) Create(ctx context.Context, c *domain.Check
 		BodyStatus:         c.BodyStatus,
 		Appetite:           c.Appetite,
 		StressLevel:        c.StressLevel,
+		LastWeekFeeling:    c.LastWeekFeeling,
 		CycleStart:         c.CycleStart,
 		WorkloadPrediction: c.WorkloadPrediction,
 		MentalEnergy:       c.MentalEnergy,
-		WeekSessions:       c.WeekSessions,
 		PromptVersion:      c.PromptVersion,
 	}
 
@@ -98,10 +98,10 @@ func (r *FirestoreCheckinRepository) GetByID(ctx context.Context, id string, use
 		BodyStatus:         cd.BodyStatus,
 		Appetite:           cd.Appetite,
 		StressLevel:        cd.StressLevel,
+		LastWeekFeeling:    cd.LastWeekFeeling,
 		CycleStart:         cd.CycleStart,
 		WorkloadPrediction: cd.WorkloadPrediction,
 		MentalEnergy:       cd.MentalEnergy,
-		WeekSessions:       cd.WeekSessions,
 		PromptVersion:      cd.PromptVersion,
 	}
 
@@ -140,10 +140,10 @@ func (r *FirestoreCheckinRepository) GetLatestByUser(ctx context.Context, userID
 		BodyStatus:         cd.BodyStatus,
 		Appetite:           cd.Appetite,
 		StressLevel:        cd.StressLevel,
+		LastWeekFeeling:    cd.LastWeekFeeling,
 		CycleStart:         cd.CycleStart,
 		WorkloadPrediction: cd.WorkloadPrediction,
 		MentalEnergy:       cd.MentalEnergy,
-		WeekSessions:       cd.WeekSessions,
 		PromptVersion:      cd.PromptVersion,
 	}
 
