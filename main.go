@@ -65,7 +65,7 @@ func main() {
 	}
 
 	oaClient := openai.NewOpenAIClient(cfg.OpenAIAPIKey, "gpt-4.1-mini")
-	planGen := openai.NewGPTPlanGenerator(oaClient, "v1")
+	planGen := openai.NewMultiAgentPlanGenerator(oaClient, "v1")
 
 	// ========= 5. Crear casos de uso =========
 	onboardingUC := usecase.NewCompleteOnboardingUseCase(userRepo)
