@@ -198,7 +198,12 @@ func main() {
 // initFirebaseApp extrae la lógica de inicialización
 func initFirebaseApp(ctx context.Context, cfg *config.Config) (*fb.App, error) {
 	opts := []option.ClientOption{}
-	if cfg.FirebaseCredentialsFile != "" {
+
+	credsJSON := os.Getenv("FIREBASE_CREDENTIALS_JSON")
+
+	if credsJSON != "" {
+		opts = append(opts, option.WithCredentialsJSON([]byte(credsJSON)))
+	} else if cfg.FirebaseCredentialsFile != "" {
 		opts = append(opts, option.WithCredentialsFile(cfg.FirebaseCredentialsFile))
 	}
 
