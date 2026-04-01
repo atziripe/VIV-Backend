@@ -34,6 +34,8 @@ func main() {
 	defer stop()
 
 	// ========= 3. Inicializar Firebase App =========
+	log.Printf("FIREBASE_PROJECT_ID=%q", cfg.FirebaseProjectID)
+	log.Printf("GOOGLE_APPLICATION_CREDENTIALS=%q", cfg.FirebaseCredentialsFile)
 	app, err := initFirebaseApp(ctx, cfg)
 	if err != nil {
 		log.Fatalf("failed to init firebase app: %v", err)

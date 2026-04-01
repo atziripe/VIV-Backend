@@ -1,0 +1,6 @@
+.git
+.gitignore
+.env
+firebase.json
+__MACOSX
+.DS_Store
