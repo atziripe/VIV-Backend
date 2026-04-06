@@ -23,17 +23,17 @@ import (
 )
 
 func main() {
-	// ========= 1. Cargar config =========
+	// ========= Config load =========
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
-	// ========= 2. Context de app + graceful shutdown =========
+	// ========= Context de app + graceful shutdown =========
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	// ========= 3. Inicializar Firebase App =========
+	// ========= Firebase App Initialization =========
 	log.Printf("FIREBASE_PROJECT_ID=%q", cfg.FirebaseProjectID)
 	log.Printf("GOOGLE_APPLICATION_CREDENTIALS=%q", cfg.FirebaseCredentialsFile)
 	app, err := initFirebaseApp(ctx, cfg)
@@ -54,14 +54,13 @@ func main() {
 	}
 	defer fsClient.Close()
 
-	// ========= 4. Crear repositorios =========
+	// ========= Repositories =========
 	userRepo := repository.NewFirestoreUserRepository(fsClient)
 	checkinRepo := repository.NewFirestoreCheckinRepository(fsClient)
 	lifestyleRepo := repository.NewFirestoreLifestyleChangeRepository(fsClient)
 	planRepo := repository.NewFirestorePlanRepository(fsClient)
 	planJobsRepo := repository.NewFirestorePlanJobsRepository(fsClient)
 
-	// Generador de planes
 	if cfg.OpenAIAPIKey == "" {
 		log.Fatal("OPENAI_API_KEY is not set")
 	}
@@ -69,10 +68,11 @@ func main() {
 	oaClient := openai.NewOpenAIClient(cfg.OpenAIAPIKey, "gpt-4.1-mini")
 	planGen := openai.NewGPTPlanGenerator(oaClient, "v1")
 
-	// ========= 5. Crear casos de uso =========
+	// ========= Usecases =========
 	onboardingUC := usecase.NewCompleteOnboardingUseCase(userRepo)
 	createCheckinUC := usecase.NewCreateCheckinUseCase(checkinRepo, userRepo, "v1")
 	latestCheckinUC := usecase.NewGetLatestCheckinUseCase(checkinRepo)
+	statusCheckinUC := usecase.NewGetCheckinStatusUseCase(checkinRepo)
 
 	reportLifestyleUC := usecase.NewReportLifestyleChangeUseCase(lifestyleRepo, userRepo)
 	listLifestyleUC := usecase.NewListLifestyleChangesUseCase(lifestyleRepo)
@@ -90,15 +90,15 @@ func main() {
 	startUC := usecase.NewStartPlanGenerationUseCase(planJobsRepo, runner)
 	statusUC := usecase.NewGetPlanGenerationStatusUseCase(planJobsRepo)
 
-	// ========= 6. Crear handlers =========
+	// ========= Handlers =========
 	onboardingHandler := httpadapter.NewOnboardingHandler(onboardingUC)
-	checkinHandler := httpadapter.NewCheckinHandler(createCheckinUC, latestCheckinUC)
+	checkinHandler := httpadapter.NewCheckinHandler(createCheckinUC, latestCheckinUC, statusCheckinUC)
 	lifestyleHandler := httpadapter.NewLifestyleHandler(reportLifestyleUC, listLifestyleUC)
 	meHandler := httpadapter.NewMeHandler(getMeUC)
 	plansHandler := httpadapter.NewPlansHandler(generatePlanUC, getCurrentPlanUC, getByIDUC, adjustUC, getByWeekStartUC, startUC, statusUC)
 	trainingHandler := httpadapter.NewTrainingHandler(resumeTrainingUC)
 
-	// ========= 7. Configurar router =========
+	// ========= Router config =========
 	r := chi.NewRouter()
 
 	// middlewares core
@@ -108,7 +108,7 @@ func main() {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(90 * time.Second))
 
-	// Health check público
+	// Public health check
 	r.Get("/health", func(w stdhttp.ResponseWriter, r *stdhttp.Request) {
 		w.WriteHeader(stdhttp.StatusOK)
 		_, _ = w.Write([]byte(`{"status":"ok"}`))
@@ -126,6 +126,7 @@ func main() {
 
 	api.Post("/checkins", checkinHandler.Create)
 	api.Get("/checkins/latest", checkinHandler.Latest)
+	api.Get("/checkins/status", checkinHandler.Status)
 
 	api.Post("/lifestyle-changes", lifestyleHandler.Report)
 	api.Get("/lifestyle-changes", lifestyleHandler.List)
@@ -150,14 +151,11 @@ func main() {
 	protected.Use(httpadapter.FirebaseAuthMiddleware(authClient))
 	protected.Use(httpadapter.EnsureUserMiddleware(userRepo))
 
-	// 👇 RPC proxy (la única call que usaría FlutterFlow)
 	rpcHandler := httpadapter.NewRPCHandler(api)
 	protected.Post("/rpc", rpcHandler.Handle)
 
-	// (opcional pero recomendado) Mantener rutas normales también bajo auth
 	protected.Mount("/", api)
 
-	// Montar el router protegido en el root
 	r.Mount("/", protected)
 
 	// ========= 8. Levantar servidor HTTP =========

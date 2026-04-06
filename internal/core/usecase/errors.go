@@ -1,5 +1,7 @@
 package usecase
 
+import "time"
+
 // -------- user not found --------
 type UserNotFoundError struct {
 	UserID string
@@ -40,4 +42,13 @@ func (e PlanNotFoundError) Error() string {
 
 func ErrPlanNotFound(id string) error {
 	return PlanNotFoundError{PlanID: id}
+}
+
+// -------- check ins --------
+type CheckinLockedError struct {
+	NextAvailableAt time.Time
+}
+
+func (e *CheckinLockedError) Error() string {
+	return "checkin_not_available_yet"
 }

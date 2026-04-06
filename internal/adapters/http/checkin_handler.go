@@ -3,6 +3,7 @@ package http
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 	"log"
 	"net/http"
@@ -42,10 +43,16 @@ type createCheckinResponse struct {
 type CheckinHandler struct {
 	CreateUC *usecase.CreateCheckinUseCase
 	LatestUC *usecase.GetLatestCheckinUseCase
+	StatusUC *usecase.GetCheckinStatusUseCase
 }
 
-func NewCheckinHandler(createUC *usecase.CreateCheckinUseCase, latestUC *usecase.GetLatestCheckinUseCase) *CheckinHandler {
-	return &CheckinHandler{CreateUC: createUC, LatestUC: latestUC}
+type checkinStatusResponse struct {
+	CanCheckin      bool    `json:"can_checkin"`
+	NextAvailableAt *string `json:"next_available_at,omitempty"`
+}
+
+func NewCheckinHandler(createUC *usecase.CreateCheckinUseCase, latestUC *usecase.GetLatestCheckinUseCase, statusUC *usecase.GetCheckinStatusUseCase) *CheckinHandler {
+	return &CheckinHandler{CreateUC: createUC, LatestUC: latestUC, StatusUC: statusUC}
 }
 
 // Método para registrar en el router: r.Post("/checkins", checkinHandler.Create)
@@ -101,6 +108,16 @@ func (h *CheckinHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	out, err := h.CreateUC.Execute(ctx, in)
 	if err != nil {
+		var lockedErr *usecase.CheckinLockedError
+		if errors.As(err, &lockedErr) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusConflict)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"error":             "checkin_not_available_yet",
+				"next_available_at": lockedErr.NextAvailableAt.UTC().Format("2006-01-02"),
+			})
+			return
+		}
 		http.Error(w, "failed to create checkin", http.StatusInternalServerError)
 		return
 	}
@@ -153,12 +170,7 @@ func (h *CheckinHandler) Latest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Si no hay check-ins aún para esta user:
 	if out.Checkin == nil {
-		// puedes elegir:
-		// - 204 No Content
-		// - 200 con body { "has_checkin": false }
-		// Para MVP, 204 está bien:
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
@@ -186,6 +198,41 @@ func (h *CheckinHandler) Latest(w http.ResponseWriter, r *http.Request) {
 		WorkloadPrediction: ch.WorkloadPrediction,
 		MentalEnergy:       ch.MentalEnergy,
 		PromptVersion:      ch.PromptVersion,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(resp)
+}
+
+func (h *CheckinHandler) Status(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	userID, ok := UserIDFromContext(ctx)
+	if !ok || userID == "" {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	in := usecase.GetCheckinStatusInput{
+		UserID: userID,
+	}
+
+	out, err := h.StatusUC.Execute(ctx, in)
+	if err != nil {
+		http.Error(w, "failed to get checkin status", http.StatusInternalServerError)
+		return
+	}
+
+	var nextAvailableAt *string
+	if out.NextAvailableAt != nil {
+		s := out.NextAvailableAt.Format("2006-01-02")
+		nextAvailableAt = &s
+	}
+
+	resp := checkinStatusResponse{
+		CanCheckin:      out.CanCheckin,
+		NextAvailableAt: nextAvailableAt,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

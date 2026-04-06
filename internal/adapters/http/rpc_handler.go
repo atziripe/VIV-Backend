@@ -146,6 +146,8 @@ func isAllowedRoute(method, path string) bool {
 		return true
 	case method == "GET" && path == "/checkins/latest":
 		return true
+	case method == "GET" && path == "/checkins/status":
+		return true
 
 	case method == "POST" && path == "/lifestyle-changes":
 		return true

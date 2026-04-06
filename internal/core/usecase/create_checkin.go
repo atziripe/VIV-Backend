@@ -47,7 +47,18 @@ func NewCreateCheckinUseCase(repo CheckinRepository, userRepo UserRepository, pr
 func (uc *CreateCheckinUseCase) Execute(ctx context.Context, in CreateCheckinInput) (*CreateCheckinOutput, error) {
 	now := time.Now().UTC()
 
-	// Aquí podrías validar (ej. weekStart no vacío, rango de mentalEnergy, etc.)
+	lastCheckin, err := uc.Checkins.GetLatestByUser(ctx, in.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	if lastCheckin != nil {
+		nextAvailable := nextSunday(lastCheckin.CreatedAt)
+
+		if now.Before(nextAvailable) {
+			return nil, &CheckinLockedError{NextAvailableAt: nextAvailable}
+		}
+	}
 
 	checkin := &domain.Checkin{
 		ID:                 uuid.NewString(),
