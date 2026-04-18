@@ -1,0 +1,61 @@
+{
+    "id": "cardio_none_moderate_v1",
+    "version": 1,
+    "content_status": "draft_llm_generated",
+    "modality": "CARDIO",
+    "muscle_group": "none",
+    "intensity": "moderate",
+    "duration_minutes": 30,
+    "suitable_phases": [
+        "menstrual",
+        "follicular",
+        "ovulatory",
+        "early_luteal",
+        "late_luteal"
+    ],
+    "optimizing_for": [
+        "maintenance",
+        "body recomposition",
+        "energy and consistency"
+    ],
+    "recovery_demand": "low",
+    "time_commitment": "moderate",
+    "progression_role": "maintain",
+    "content": {
+        "warmup": {
+            "duration_minutes": 5,
+            "description": "Gradually increase heart rate and prepare for light interval changes in pace.",
+            "movements": [
+                "Easy walk or cycle x 3 minutes",
+                "Gradual pace increase to light effort x 2 minutes"
+            ]
+        },
+        "main_exercises": [
+            {
+                "name": "Light Interval Cardio (Alternating Effort)",
+                "sets": 1,
+                "reps": "continuous intervals",
+                "rest_seconds": 0,
+                "load_guidance": "Alternate between zone 2 (60-70% effort) for 2 minutes and zone 3 (70-75% effort) for 1 minute, maintaining control and avoiding breathlessness",
+                "form_cue": "During higher effort intervals, slightly increase pace while keeping breathing controlled and posture relaxed"
+            }
+        ],
+        "cooldown": {
+            "duration_minutes": 5,
+            "description": "Bring heart rate down gradually and return to a relaxed state.",
+            "movements": [
+                "Slow walk or easy cycle x 3 minutes",
+                "Deep breathing x 2 minutes"
+            ]
+        }
+    },
+    "phase_notes": {
+        "menstrual": "Keep intervals gentle and shorten higher-effort segments if needed—focus on maintaining a comfortable rhythm rather than pushing pace.",
+        "follicular": "Great phase to engage with light intervals—slightly increase pace during higher-effort segments while staying controlled.",
+        "ovulatory": "You may feel capable of pushing harder, but keep intervals moderate and avoid turning this into a high-intensity session.",
+        "early_luteal": "Maintain steady effort and avoid overreaching—focus on smooth transitions between effort levels.",
+        "late_luteal": "Reduce intensity of higher-effort intervals if needed—keep the session feeling manageable and focus on consistency over performance."
+    },
+    "author": null,
+    "created_at": "2026-04-15"
+}

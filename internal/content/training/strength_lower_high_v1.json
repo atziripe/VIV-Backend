@@ -1,0 +1,104 @@
+{
+    "id": "strength_lower_high_v1",
+    "version": 1,
+    "content_status": "draft_llm_generated",
+    "modality": "STRENGTH",
+    "muscle_group": "lower",
+    "intensity": "high",
+    "duration_minutes": 60,
+    "suitable_phases": [
+        "menstrual",
+        "follicular",
+        "ovulatory",
+        "early_luteal"
+    ],
+    "optimizing_for": [
+        "strength and resilience",
+        "body recomposition",
+        "performance and progression"
+    ],
+    "recovery_demand": "high",
+    "time_commitment": "high",
+    "progression_role": "build",
+    "content": {
+        "warmup": {
+            "duration_minutes": 10,
+            "description": "Prepare hips, knees, and posterior chain for heavy compound lifting with progressive activation.",
+            "movements": [
+                "Bodyweight squats x 12",
+                "Glute bridges x 12",
+                "Walking lunges x 10 each leg",
+                "Good mornings (light) x 10",
+                "Ankle mobility rocks x 10 each side"
+            ]
+        },
+        "main_exercises": [
+            {
+                "name": "Barbell Back Squat",
+                "sets": 5,
+                "reps": "4-6",
+                "rest_seconds": 150,
+                "load_guidance": "Use a heavy load at 8/10 effort, leaving 1-2 reps in reserve",
+                "form_cue": "Brace core and drive through midfoot while keeping chest tall"
+            },
+            {
+                "name": "Barbell Romanian Deadlift",
+                "sets": 4,
+                "reps": "6-8",
+                "rest_seconds": 120,
+                "load_guidance": "Moderate-heavy load with strong hamstring tension, stopping before form breaks",
+                "form_cue": "Hinge at hips and keep bar close to legs throughout"
+            },
+            {
+                "name": "Bulgarian Split Squat (Dumbbell)",
+                "sets": 4,
+                "reps": "6-8 each leg",
+                "rest_seconds": 120,
+                "load_guidance": "Choose a challenging load that allows full depth with control",
+                "form_cue": "Keep front knee tracking forward and torso slightly leaned over front leg"
+            },
+            {
+                "name": "Hip Thrust (Barbell)",
+                "sets": 4,
+                "reps": "8-10",
+                "rest_seconds": 90,
+                "load_guidance": "Use a load that allows a strong glute contraction with 1-2 reps in reserve",
+                "form_cue": "Pause at the top and fully extend hips without over-arching"
+            },
+            {
+                "name": "Leg Extension",
+                "sets": 3,
+                "reps": "10-12",
+                "rest_seconds": 75,
+                "load_guidance": "Moderate load with controlled tempo, avoiding momentum",
+                "form_cue": "Squeeze quads at the top and lower slowly"
+            },
+            {
+                "name": "Standing Calf Raises",
+                "sets": 3,
+                "reps": "12-15",
+                "rest_seconds": 60,
+                "load_guidance": "Bodyweight or moderate load with full stretch and contraction",
+                "form_cue": "Pause briefly at the top and lower under control"
+            }
+        ],
+        "cooldown": {
+            "duration_minutes": 5,
+            "description": "Reduce lower body tension and support recovery after heavy lifting.",
+            "movements": [
+                "Seated hamstring stretch x 30s each side",
+                "Kneeling hip flexor stretch x 30s each side",
+                "Figure 4 glute stretch x 30s each side"
+            ]
+        }
+    },
+    "phase_notes": {
+        "menstrual": "Heavy compound lifts like squats may feel more demanding—consider reducing load or sets while maintaining good movement quality. Focus on controlled reps and longer rest periods.",
+        "follicular": "Ideal phase to push strength—aim to increase load on squats and RDLs while maintaining strong technique. You may feel more powerful and resilient.",
+        "ovulatory": "Take advantage of peak strength and coordination to push your heaviest sets, especially on squats and split squats. Stay mindful of knee and hip alignment.",
+        "early_luteal": "You can still train hard, but avoid pushing to failure—keep loads challenging but controlled. Focus on consistency and strong execution across all sets.",
+        "late_luteal": "This session may feel highly taxing—consider reducing volume or intensity while keeping structure. Prioritize stability and avoid grinding heavy reps."
+    },
+    "author": null,
+    "created_at": "2026-04-15"
+}

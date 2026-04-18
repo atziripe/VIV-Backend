@@ -1,0 +1,61 @@
+{
+    "id": "cardio_none_moderate_v1",
+    "version": 1,
+    "content_status": "draft_llm_generated",
+    "modality": "CARDIO",
+    "muscle_group": "none",
+    "intensity": "moderate",
+    "duration_minutes": 25,
+    "suitable_phases": [
+        "menstrual",
+        "follicular",
+        "ovulatory",
+        "early_luteal",
+        "late_luteal"
+    ],
+    "optimizing_for": [
+        "maintenance",
+        "energy and consistency",
+        "stress regulation"
+    ],
+    "recovery_demand": "low",
+    "time_commitment": "moderate",
+    "progression_role": "maintain",
+    "content": {
+        "warmup": {
+            "duration_minutes": 4,
+            "description": "Ease into movement with gradual pacing to prepare for controlled, adaptive cardio effort.",
+            "movements": [
+                "Easy walk or cycle x 2 minutes",
+                "Gradual pace increase to light effort x 2 minutes"
+            ]
+        },
+        "main_exercises": [
+            {
+                "name": "Phase-Adjusted Steady Cardio",
+                "sets": 1,
+                "reps": "continuous with self-adjustments",
+                "rest_seconds": 0,
+                "load_guidance": "Maintain effort between zone 2 and low zone 3 (60-75%), adjusting pace based on energy levels and perceived exertion throughout",
+                "form_cue": "Continuously check in with your body and adjust pace to keep breathing controlled and sustainable"
+            }
+        ],
+        "cooldown": {
+            "duration_minutes": 3,
+            "description": "Gradually lower heart rate and transition into recovery with calm breathing.",
+            "movements": [
+                "Slow walk or easy cycle x 2 minutes",
+                "Deep nasal breathing x 1 minute"
+            ]
+        }
+    },
+    "phase_notes": {
+        "menstrual": "Keep effort closer to zone 2 and reduce pace if needed—this session should feel supportive, not draining. Focus on gentle consistency.",
+        "follicular": "You can naturally drift toward the higher end of the effort range—maintain a steady rhythm and use this session to build aerobic consistency.",
+        "ovulatory": "You may feel capable of higher output, but keep effort controlled within moderate range—focus on smooth pacing rather than pushing intensity.",
+        "early_luteal": "Maintain a steady, moderate effort and avoid spikes in intensity—this session is ideal for sustaining routine without overexertion.",
+        "late_luteal": "Adjust effort downward if needed and prioritize comfort—keep the session consistent but gentle to support energy and recovery."
+    },
+    "author": null,
+    "created_at": "2026-04-15"
+}

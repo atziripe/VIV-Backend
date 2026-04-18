@@ -1,0 +1,96 @@
+{
+    "id": "pilates_core_low_v1",
+    "version": 1,
+    "content_status": "draft_llm_generated",
+    "modality": "PILATES",
+    "muscle_group": "core",
+    "intensity": "low",
+    "duration_minutes": 40,
+    "suitable_phases": [
+        "menstrual",
+        "follicular",
+        "ovulatory",
+        "early_luteal",
+        "late_luteal"
+    ],
+    "optimizing_for": [
+        "stress regulation",
+        "maintenance",
+        "energy and consistency"
+    ],
+    "recovery_demand": "low",
+    "time_commitment": "low",
+    "progression_role": "recover",
+    "content": {
+        "warmup": {
+            "duration_minutes": 8,
+            "description": "Gently connect breath to core activation and mobilize the spine.",
+            "movements": [
+                "Supine diaphragmatic breathing x 6 slow breaths",
+                "Pelvic tilts x 10 reps",
+                "Spine curls (bridge articulation) x 8 reps",
+                "Knee folds (marching) x 10 per side"
+            ]
+        },
+        "main_exercises": [
+            {
+                "name": "Spine articulation flow",
+                "sets": 1,
+                "reps": "8-10 slow rolls",
+                "rest_seconds": 30,
+                "load_guidance": "Bodyweight only",
+                "form_cue": "Move one vertebra at a time, lifting and lowering with control and breath."
+            },
+            {
+                "name": "Deep core activation (dead bug variations)",
+                "sets": 1,
+                "reps": "10-12 per side",
+                "rest_seconds": 30,
+                "load_guidance": "Bodyweight only",
+                "form_cue": "Keep lower back gently anchored as limbs move slowly and deliberately."
+            },
+            {
+                "name": "Side-lying oblique engagement",
+                "sets": 1,
+                "reps": "12-15 per side",
+                "rest_seconds": 30,
+                "load_guidance": "Bodyweight only",
+                "form_cue": "Lift through the waist rather than pushing from the shoulder or legs."
+            },
+            {
+                "name": "Front body length and control (modified plank holds)",
+                "sets": 1,
+                "reps": "20-30s holds x 3",
+                "rest_seconds": 30,
+                "load_guidance": "Bodyweight only",
+                "form_cue": "Keep a long line from head to heels, maintaining gentle core engagement."
+            },
+            {
+                "name": "Seated rotation and control",
+                "sets": 1,
+                "reps": "8-10 per side",
+                "rest_seconds": 30,
+                "load_guidance": "Bodyweight only",
+                "form_cue": "Rotate from the ribcage while keeping hips grounded and stable."
+            }
+        ],
+        "cooldown": {
+            "duration_minutes": 6,
+            "description": "Release tension and encourage relaxation through breath and gentle stretching.",
+            "movements": [
+                "Child’s pose with slow breathing x 90s",
+                "Supine twist x 60s per side",
+                "Happy baby pose x 60s"
+            ]
+        }
+    },
+    "phase_notes": {
+        "menstrual": "This gentle, breath-focused session is well-suited here—move slowly and prioritize comfort, especially in spine articulation work.",
+        "follicular": "Use this session to refine control and connection—slightly increase precision and range of motion where it feels good.",
+        "ovulatory": "You may feel more mobile and stable—explore slightly longer holds or deeper engagement while maintaining smooth, controlled movement.",
+        "early_luteal": "A great session to maintain consistency—focus on steady pacing and clean transitions between movements.",
+        "late_luteal": "Lean into the calming nature of this session—prioritize breath, reduce range if needed, and focus on gentle core engagement."
+    },
+    "author": null,
+    "created_at": "2026-04-15"
+}

@@ -1,0 +1,104 @@
+{
+    "id": "strength_upper_high_v2",
+    "version": 1,
+    "content_status": "draft_llm_generated",
+    "modality": "STRENGTH",
+    "muscle_group": "upper",
+    "intensity": "high",
+    "duration_minutes": 60,
+    "suitable_phases": [
+        "menstrual",
+        "follicular",
+        "ovulatory",
+        "early_luteal"
+    ],
+    "optimizing_for": [
+        "strength and resilience",
+        "body recomposition",
+        "performance and progression"
+    ],
+    "recovery_demand": "high",
+    "time_commitment": "high",
+    "progression_role": "build",
+    "content": {
+        "warmup": {
+            "duration_minutes": 10,
+            "description": "Prime upper body with emphasis on shoulder stability, scapular control, and unilateral activation.",
+            "movements": [
+                "Resistance band external rotations x 12 each side",
+                "Single-arm dumbbell rows (light) x 10 each side",
+                "Incline push-ups x 10",
+                "Shoulder CARs (controlled rotations) x 5 each side",
+                "Plank shoulder taps x 20 alternating"
+            ]
+        },
+        "main_exercises": [
+            {
+                "name": "Single-Arm Dumbbell Bench Press",
+                "sets": 4,
+                "reps": "6-8 each side",
+                "rest_seconds": 120,
+                "load_guidance": "Choose a challenging weight that leaves 1-2 reps in reserve while maintaining control",
+                "form_cue": "Keep hips stable and avoid rotating as you press"
+            },
+            {
+                "name": "Chest-Supported Dumbbell Row",
+                "sets": 4,
+                "reps": "6-8",
+                "rest_seconds": 120,
+                "load_guidance": "Heavy load at 8/10 effort with strict control at the top",
+                "form_cue": "Pause briefly at the top and squeeze shoulder blades together"
+            },
+            {
+                "name": "Arnold Press",
+                "sets": 4,
+                "reps": "6-8",
+                "rest_seconds": 120,
+                "load_guidance": "Moderate-heavy load that challenges the last reps without losing range of motion",
+                "form_cue": "Rotate smoothly through the movement and avoid rushing the press"
+            },
+            {
+                "name": "Neutral Grip Lat Pulldown",
+                "sets": 4,
+                "reps": "8-10",
+                "rest_seconds": 90,
+                "load_guidance": "Select a load where the final reps are challenging but controlled",
+                "form_cue": "Pull elbows down toward your sides, not back"
+            },
+            {
+                "name": "Lateral Raise Mechanical Drop Set",
+                "sets": 3,
+                "reps": "10-12 + partials",
+                "rest_seconds": 90,
+                "load_guidance": "Start with a weight you can control for 10-12 reps, then reduce range for partials without dropping weight",
+                "form_cue": "Lead with elbows and keep tension through the full range"
+            },
+            {
+                "name": "Superset: Hammer Curl + Overhead Dumbbell Triceps Extension",
+                "sets": 3,
+                "reps": "10-12 each",
+                "rest_seconds": 75,
+                "load_guidance": "Moderate load that allows smooth, controlled reps without swinging",
+                "form_cue": "Keep elbows stable and avoid compensating through the shoulders"
+            }
+        ],
+        "cooldown": {
+            "duration_minutes": 5,
+            "description": "Reduce upper body tension and improve mobility after unilateral and high-intensity work.",
+            "movements": [
+                "Thread the needle stretch x 30s each side",
+                "Overhead triceps stretch x 30s each side",
+                "Doorway chest stretch x 30s each side"
+            ]
+        }
+    },
+    "phase_notes": {
+        "menstrual": "Unilateral work in this session can help you stay engaged without needing maximal loads—reduce intensity if needed and focus on control and balance. Take longer rest if fatigue shows up quickly.",
+        "follicular": "Great phase to push unilateral strength and coordination—challenge yourself with heavier dumbbells and focus on symmetry between sides. You may notice improved control and energy.",
+        "ovulatory": "You can perform at your peak here—push intensity on single-arm presses and rows while maintaining strong core stability. Be mindful of joint alignment, especially in shoulders.",
+        "early_luteal": "Maintain strong effort but avoid pushing every set to near failure—focus on clean reps and controlled tempo, especially in unilateral movements where fatigue can show quickly.",
+        "late_luteal": "This session’s complexity may feel more demanding—consider reducing drop sets or lowering load slightly. Prioritize stability and clean execution over intensity."
+    },
+    "author": null,
+    "created_at": "2026-04-15"
+}

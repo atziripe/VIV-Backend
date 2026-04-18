@@ -1,0 +1,96 @@
+{
+  "id": "strength_upper_moderate_v1",
+  "version": 1,
+  "content_status": "draft_llm_generated",
+  "modality": "STRENGTH",
+  "muscle_group": "upper",
+  "intensity": "moderate",
+  "duration_minutes": 45,
+  "suitable_phases": ["menstrual", "follicular", "ovulatory", "early_luteal", "late_luteal"],
+  "optimizing_for": ["strength and resilience", "maintenance", "body recomposition", "stress regulation"],
+  "recovery_demand": "moderate",
+  "time_commitment": "high",
+  "progression_role": "maintain",
+  "content": {
+    "warmup": {
+      "duration_minutes": 7,
+      "description": "Activate the scapular stabilizers and prime the shoulder girdle before loading.",
+      "movements": [
+        "Arm circles — 10 forward, 10 backward",
+        "Band pull-aparts — 15 reps",
+        "Wall slides — 10 slow reps",
+        "Scapular push-ups — 12 reps",
+        "Thoracic rotation in half-kneeling — 8 reps each side"
+      ]
+    },
+    "main_exercises": [
+      {
+        "name": "Seated Dumbbell Overhead Press",
+        "sets": 3,
+        "reps": "10-12",
+        "rest_seconds": 75,
+        "load_guidance": "Choose a weight where rep 11 feels genuinely challenging but form stays clean — roughly 7/10 effort.",
+        "form_cue": "Press the dumbbells slightly in front of your forehead, not directly overhead, to keep the shoulder joint in a safe position."
+      },
+      {
+        "name": "Chest-Supported Dumbbell Row",
+        "sets": 3,
+        "reps": "10-12",
+        "rest_seconds": 75,
+        "load_guidance": "Drive your elbows back until you feel a full lat contraction — use a load you could do 14 reps with if you had to.",
+        "form_cue": "Keep your chest pinned to the bench and avoid shrugging your shoulders at the top of the pull."
+      },
+      {
+        "name": "Incline Dumbbell Chest Press",
+        "sets": 3,
+        "reps": "10-12",
+        "rest_seconds": 75,
+        "load_guidance": "Moderate effort — leave 2-3 reps in reserve on every set, prioritizing a controlled 2-second lowering phase.",
+        "form_cue": "Lower the dumbbells to the outside of your chest with elbows at roughly a 45-degree angle to your torso."
+      },
+      {
+        "name": "Single-Arm Dumbbell Row (elbow on bench)",
+        "sets": 3,
+        "reps": "10 each side",
+        "rest_seconds": 60,
+        "load_guidance": "Match or slightly exceed the load from the chest-supported row — unilateral work lets you focus each side independently.",
+        "form_cue": "Row the dumbbell toward your hip, not your armpit, to maximize lat engagement over bicep."
+      },
+      {
+        "name": "Dumbbell Lateral Raise",
+        "sets": 3,
+        "reps": "12-15",
+        "rest_seconds": 60,
+        "load_guidance": "Light load — you should be able to hold the top position for one count on every rep. Ego weight kills the stimulus here.",
+        "form_cue": "Lead with your pinkies slightly higher than your thumbs and stop at shoulder height, not above."
+      },
+      {
+        "name": "Dumbbell Hammer Curl",
+        "sets": 3,
+        "reps": "12 each side",
+        "rest_seconds": 45,
+        "load_guidance": "Pick a weight where the last 3 reps require genuine focus but your shoulder stays still and your elbow stays tucked.",
+        "form_cue": "Keep your wrist neutral throughout — the hammer grip targets the brachialis and forearm, so resist any urge to supinate."
+      }
+    ],
+    "cooldown": {
+      "duration_minutes": 5,
+      "description": "Lengthen the chest, lats, and shoulders after loading and bring the nervous system down.",
+      "movements": [
+        "Doorway chest stretch — 45 seconds each side",
+        "Cross-body shoulder stretch — 30 seconds each side",
+        "Child's pose with arms extended — 60 seconds",
+        "Supine thoracic extension over a rolled mat or foam roller — 60 seconds"
+      ]
+    }
+  },
+  "phase_notes": {
+    "menstrual": "If energy and discomfort allow, this session is manageable at reduced output — drop load by 10-15% and prioritize form over challenge. Skip if cramping is significant and opt for rest instead.",
+    "follicular": "Rising estrogen supports strength adaptation well here — this is a good phase to push toward the top of each rep range and note your loads for future reference.",
+    "ovulatory": "Peak power output makes this an ideal session to feel strong and coordinated; you may find the prescribed loads feel lighter than usual, which is normal and worth noting.",
+    "early_luteal": "Progesterone is rising but performance typically remains solid in early luteal — complete the session as written, staying honest about effort without pushing into late-set grinding.",
+    "late_luteal": "Fatigue and mood shifts may make the session feel harder than the numbers suggest — reduce rest periods only if energy is genuinely high, and treat leaving 3 reps in reserve as the goal rather than 2."
+  },
+  "author": null,
+  "created_at": "2026-04-15"
+}

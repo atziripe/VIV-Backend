@@ -1,0 +1,97 @@
+{
+    "id": "pilates_full_body_low_v1",
+    "version": 1,
+    "content_status": "draft_llm_generated",
+    "modality": "PILATES",
+    "muscle_group": "full_body",
+    "intensity": "low",
+    "duration_minutes": 45,
+    "suitable_phases": [
+        "menstrual",
+        "follicular",
+        "ovulatory",
+        "early_luteal",
+        "late_luteal"
+    ],
+    "optimizing_for": [
+        "stress regulation",
+        "maintenance",
+        "energy and consistency"
+    ],
+    "recovery_demand": "low",
+    "time_commitment": "low",
+    "progression_role": "recover",
+    "content": {
+        "warmup": {
+            "duration_minutes": 10,
+            "description": "Gently mobilize the whole body while connecting breath to movement.",
+            "movements": [
+                "Supine breathing with arm reaches x 6 slow breaths",
+                "Cat-cow x 8 reps",
+                "Pelvic tilts x 10 reps",
+                "Shoulder rolls and arm circles x 30s each"
+            ]
+        },
+        "main_exercises": [
+            {
+                "name": "Spinal mobility flow (roll down to roll up transitions)",
+                "sets": 1,
+                "reps": "8-10 slow reps",
+                "rest_seconds": 30,
+                "load_guidance": "Bodyweight only",
+                "form_cue": "Articulate through each vertebra, moving slowly with breath."
+            },
+            {
+                "name": "Glute and hamstring activation (bridge variations)",
+                "sets": 1,
+                "reps": "12-15 reps",
+                "rest_seconds": 30,
+                "load_guidance": "Bodyweight only",
+                "form_cue": "Lift hips with control, keeping knees aligned and core gently engaged."
+            },
+            {
+                "name": "Upper body stability (modified push-up flow)",
+                "sets": 1,
+                "reps": "8-10 reps",
+                "rest_seconds": 30,
+                "load_guidance": "Bodyweight only",
+                "form_cue": "Keep elbows soft and shoulders stable as you lower and press."
+            },
+            {
+                "name": "Standing balance and coordination",
+                "sets": 1,
+                "reps": "8-10 per side",
+                "rest_seconds": 30,
+                "load_guidance": "Bodyweight only",
+                "form_cue": "Move slowly and maintain balance by engaging the core and focusing gaze."
+            },
+            {
+                "name": "Integrated core flow (dead bug to tabletop transitions)",
+                "sets": 1,
+                "reps": "10-12 per side",
+                "rest_seconds": 30,
+                "load_guidance": "Bodyweight only",
+                "form_cue": "Keep movements controlled and avoid arching the lower back."
+            }
+        ],
+        "cooldown": {
+            "duration_minutes": 8,
+            "description": "Relax the body and lengthen muscles with slow, mindful stretching.",
+            "movements": [
+                "Child’s pose x 90s",
+                "Seated forward fold x 60s",
+                "Supine twist x 60s per side",
+                "Full body stretch with deep breathing x 90s"
+            ]
+        }
+    },
+    "phase_notes": {
+        "menstrual": "This slow, full-body session is well suited here—focus on comfort and gentle movement, especially in spinal articulation.",
+        "follicular": "Use this session to build coordination and slightly expand range of motion where it feels natural.",
+        "ovulatory": "You may feel more mobile and balanced—explore slightly deeper ranges and smoother transitions between movements.",
+        "early_luteal": "Maintain steady pacing and focus on clean, controlled movement throughout the session.",
+        "late_luteal": "Keep movements soft and fluid—prioritize relaxation and avoid pushing range or intensity."
+    },
+    "author": null,
+    "created_at": "2026-04-15"
+}

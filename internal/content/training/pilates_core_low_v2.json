@@ -1,0 +1,96 @@
+{
+    "id": "pilates_core_low_v2",
+    "version": 1,
+    "content_status": "draft_llm_generated",
+    "modality": "PILATES",
+    "muscle_group": "core",
+    "intensity": "low",
+    "duration_minutes": 40,
+    "suitable_phases": [
+        "menstrual",
+        "follicular",
+        "ovulatory",
+        "early_luteal",
+        "late_luteal"
+    ],
+    "optimizing_for": [
+        "stress regulation",
+        "maintenance",
+        "energy and consistency"
+    ],
+    "recovery_demand": "low",
+    "time_commitment": "low",
+    "progression_role": "recover",
+    "content": {
+        "warmup": {
+            "duration_minutes": 8,
+            "description": "Ease into movement with breath-led mobility and gentle lateral activation.",
+            "movements": [
+                "Side-lying rib breathing x 5 breaths per side",
+                "Cat-cow x 8 slow reps",
+                "Thread the needle x 6 per side",
+                "Hip circles in tabletop x 8 per direction"
+            ]
+        },
+        "main_exercises": [
+            {
+                "name": "Lateral core flow (side bend patterns)",
+                "sets": 1,
+                "reps": "10-12 per side",
+                "rest_seconds": 30,
+                "load_guidance": "Bodyweight only",
+                "form_cue": "Lengthen through the side body as you move, avoiding collapsing into the shoulder."
+            },
+            {
+                "name": "Posterior chain and core integration (swimming prep and lifts)",
+                "sets": 1,
+                "reps": "10-12 alternating lifts",
+                "rest_seconds": 30,
+                "load_guidance": "Bodyweight only",
+                "form_cue": "Keep neck long and lift limbs lightly while maintaining a stable torso."
+            },
+            {
+                "name": "Controlled leg lowering (supine)",
+                "sets": 1,
+                "reps": "8-10 per side",
+                "rest_seconds": 30,
+                "load_guidance": "Bodyweight only",
+                "form_cue": "Lower legs slowly while keeping the pelvis stable and core engaged."
+            },
+            {
+                "name": "Quadruped balance and reach",
+                "sets": 1,
+                "reps": "8-10 per side",
+                "rest_seconds": 30,
+                "load_guidance": "Bodyweight only",
+                "form_cue": "Reach long through opposite arm and leg without shifting hips or shoulders."
+            },
+            {
+                "name": "Gentle hollow body holds and transitions",
+                "sets": 1,
+                "reps": "15-20s holds x 3",
+                "rest_seconds": 30,
+                "load_guidance": "Bodyweight only",
+                "form_cue": "Keep lower back softly anchored and maintain steady breathing throughout."
+            }
+        ],
+        "cooldown": {
+            "duration_minutes": 6,
+            "description": "Promote relaxation and release through slow stretching and breath awareness.",
+            "movements": [
+                "Seated side stretch x 60s per side",
+                "Supine figure-4 stretch x 60s per side",
+                "Full body stretch with deep breathing x 90s"
+            ]
+        }
+    },
+    "phase_notes": {
+        "menstrual": "This session’s gentle lateral and posterior work is ideal—move slowly and keep range of motion comfortable, especially in leg lowering.",
+        "follicular": "You may feel more coordinated—focus on refining balance and control in quadruped and hollow body work.",
+        "ovulatory": "Take advantage of improved stability—slightly extend hold times or deepen control in lateral and balance movements.",
+        "early_luteal": "Use this session to maintain consistency—keep movements smooth and avoid rushing through transitions.",
+        "late_luteal": "Prioritize ease and fluidity—reduce intensity of holds if needed and focus on calming, rhythmic breathing."
+    },
+    "author": null,
+    "created_at": "2026-04-15"
+}

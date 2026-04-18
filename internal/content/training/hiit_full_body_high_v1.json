@@ -1,0 +1,95 @@
+{
+    "id": "hiit_full_body_high_v1",
+    "version": 1,
+    "content_status": "draft_llm_generated",
+    "modality": "HIIT",
+    "muscle_group": "full_body",
+    "intensity": "high",
+    "duration_minutes": 30,
+    "suitable_phases": [
+        "follicular",
+        "ovulatory",
+        "early_luteal"
+    ],
+    "optimizing_for": [
+        "body recomposition",
+        "performance and progression",
+        "energy and consistency"
+    ],
+    "recovery_demand": "high",
+    "time_commitment": "moderate",
+    "progression_role": "build",
+    "content": {
+        "warmup": {
+            "duration_minutes": 5,
+            "description": "Gradually raise heart rate and prepare joints for explosive, full-body movement.",
+            "movements": [
+                "Jumping jacks x 40s",
+                "Bodyweight squats x 15",
+                "High knees x 30s",
+                "Inchworm to plank x 6 reps"
+            ]
+        },
+        "main_exercises": [
+            {
+                "name": "Round 1: 40s work / 20s rest x 4 rounds",
+                "sets": 4,
+                "reps": "40s per exercise",
+                "rest_seconds": 60,
+                "load_guidance": "Bodyweight; aim for near max effort while maintaining good form",
+                "form_cue": "Move explosively but stay controlled, especially during landings.",
+                "exercises": [
+                    "Burpees",
+                    "Jump squats",
+                    "Push-ups",
+                    "Mountain climbers"
+                ]
+            },
+            {
+                "name": "Round 2: 30s work / 15s rest x 4 rounds",
+                "sets": 4,
+                "reps": "30s per exercise",
+                "rest_seconds": 60,
+                "load_guidance": "Bodyweight; aim for consistent high output across all rounds",
+                "form_cue": "Keep transitions quick and maintain intensity through fatigue.",
+                "exercises": [
+                    "Alternating reverse lunges (jump optional)",
+                    "Plank jacks",
+                    "Skater hops",
+                    "Bicycle crunches"
+                ]
+            },
+            {
+                "name": "Finisher: 20s work / 10s rest (Tabata style)",
+                "sets": 6,
+                "reps": "20s",
+                "rest_seconds": 10,
+                "load_guidance": "Max effort; push close to your limit while staying safe",
+                "form_cue": "Focus on speed and intensity, maintaining form despite fatigue.",
+                "exercises": [
+                    "High knees sprint in place",
+                    "Squat thrusts"
+                ]
+            }
+        ],
+        "cooldown": {
+            "duration_minutes": 5,
+            "description": "Lower heart rate and release tension in major muscle groups.",
+            "movements": [
+                "Standing quad stretch x 45s per side",
+                "Forward fold x 60s",
+                "Child’s pose x 60s",
+                "Deep breathing in seated position x 60s"
+            ]
+        }
+    },
+    "phase_notes": {
+        "menstrual": "This session is not recommended in this phase due to its high intensity and impact. Consider a lower intensity or recovery-focused session instead.",
+        "follicular": "Great time to push intensity—aim for explosive movement and consistent output across rounds. You may find recovery between intervals feels quicker.",
+        "ovulatory": "Peak energy and power make this session ideal—maximize speed and effort, especially in jumps and sprints, while maintaining strong form.",
+        "early_luteal": "You can still perform well here—focus on maintaining intensity but be mindful of fatigue creeping in during later rounds.",
+        "late_luteal": "This session may feel overly taxing—consider shortening rounds or reducing intensity to avoid excessive fatigue and stress."
+    },
+    "author": null,
+    "created_at": "2026-04-15"
+}

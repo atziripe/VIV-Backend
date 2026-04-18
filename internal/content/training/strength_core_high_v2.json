@@ -1,0 +1,104 @@
+{
+    "id": "strength_core_high_v2",
+    "version": 1,
+    "content_status": "draft_llm_generated",
+    "modality": "STRENGTH",
+    "muscle_group": "core",
+    "intensity": "high",
+    "duration_minutes": 45,
+    "suitable_phases": [
+        "menstrual",
+        "follicular",
+        "ovulatory",
+        "early_luteal"
+    ],
+    "optimizing_for": [
+        "strength and resilience",
+        "body recomposition",
+        "performance and progression"
+    ],
+    "recovery_demand": "high",
+    "time_commitment": "high",
+    "progression_role": "build",
+    "content": {
+        "warmup": {
+            "duration_minutes": 8,
+            "description": "Prepare for heavy anti-extension and anti-rotation work with dynamic core activation.",
+            "movements": [
+                "Bird dog x 10 per side (pause at full extension)",
+                "Hollow body hold x 20s x 2",
+                "Lunge with rotation x 6 per side",
+                "Plank shoulder taps x 16 total"
+            ]
+        },
+        "main_exercises": [
+            {
+                "name": "Deadlift (Core Bracing Focus)",
+                "sets": 4,
+                "reps": "4-6",
+                "rest_seconds": 120,
+                "load_guidance": "Use a heavy load you could lift for 6-7 reps, leaving 1-2 reps in reserve",
+                "form_cue": "Brace your core before lifting and maintain a neutral spine throughout the movement."
+            },
+            {
+                "name": "Toes-to-Bar (or Hanging Straight Leg Raise)",
+                "sets": 4,
+                "reps": "8-10",
+                "rest_seconds": 90,
+                "load_guidance": "Bodyweight; scale to knee raises if full range is not controlled",
+                "form_cue": "Lift legs using core control, avoiding excessive swing or kip."
+            },
+            {
+                "name": "Renegade Row",
+                "sets": 4,
+                "reps": "8-10 per side",
+                "rest_seconds": 75,
+                "load_guidance": "Moderate-heavy dumbbells that challenge stability without rotating hips",
+                "form_cue": "Keep hips square to the floor as you row, minimizing torso rotation."
+            },
+            {
+                "name": "Barbell Landmine Rotation",
+                "sets": 3,
+                "reps": "10-12 per side",
+                "rest_seconds": 75,
+                "load_guidance": "Moderate load that allows powerful but controlled rotation",
+                "form_cue": "Rotate through the torso and hips together, controlling the deceleration."
+            },
+            {
+                "name": "Ab Wheel Rollout",
+                "sets": 3,
+                "reps": "8-10",
+                "rest_seconds": 60,
+                "load_guidance": "Use a range that challenges you while maintaining full control and no lower back sag",
+                "form_cue": "Keep ribs down and brace hard as you extend forward, avoiding arching."
+            },
+            {
+                "name": "Farmer’s Carry (Double Dumbbell)",
+                "sets": 3,
+                "reps": "40-60s",
+                "rest_seconds": 75,
+                "load_guidance": "Heavy load that challenges grip and posture while allowing steady walking",
+                "form_cue": "Walk with controlled steps, shoulders down, and core fully braced."
+            }
+        ],
+        "cooldown": {
+            "duration_minutes": 6,
+            "description": "Reduce tension in the trunk and restore mobility after heavy compound and stability work.",
+            "movements": [
+                "Child’s pose with side stretch x 60s",
+                "Supine twist x 45s per side",
+                "Cobra stretch x 45s",
+                "Standing forward fold x 60s"
+            ]
+        }
+    },
+    "phase_notes": {
+        "menstrual": "This session may feel very demanding—reduce load and volume significantly, especially for deadlifts and carries. Focus on controlled reps and core engagement rather than maximal effort.",
+        "follicular": "Strong phase to push intensity—progress loads on deadlifts and challenge stability in renegade rows and carries. Prioritize quality bracing under heavier loads.",
+        "ovulatory": "Peak strength and coordination can support heavier lifts and more explosive rotations. Maintain control in rotational work to avoid overextending range.",
+        "early_luteal": "Sustain high effort but be mindful of fatigue—keep rest periods adequate and avoid rushing through sets. Focus on consistency rather than pushing maximum loads.",
+        "late_luteal": "High-intensity bracing and heavy lifts may feel taxing—consider reducing load or volume and emphasizing controlled execution over performance."
+    },
+    "author": null,
+    "created_at": "2026-04-15"
+}

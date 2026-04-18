@@ -1,0 +1,96 @@
+{
+    "id": "strength_lower_moderate_v2",
+    "version": 1,
+    "content_status": "draft_llm_generated",
+    "modality": "STRENGTH",
+    "muscle_group": "lower",
+    "intensity": "moderate",
+    "duration_minutes": 45,
+    "suitable_phases": [
+        "menstrual",
+        "follicular",
+        "ovulatory",
+        "early_luteal",
+        "late_luteal"
+    ],
+    "optimizing_for": [
+        "maintenance",
+        "strength and resilience",
+        "energy and consistency"
+    ],
+    "recovery_demand": "moderate",
+    "time_commitment": "high",
+    "progression_role": "maintain",
+    "content": {
+        "warmup": {
+            "duration_minutes": 8,
+            "description": "Prepare hips, hamstrings, and glutes with dynamic mobility and unilateral activation.",
+            "movements": [
+                "World’s greatest stretch x 5 each side",
+                "Single-leg glute bridges x 10 each side",
+                "Cossack squats x 6 each side",
+                "Ankle rocks (knee over toe) x 10 each side"
+            ]
+        },
+        "main_exercises": [
+            {
+                "name": "Front Foot Elevated Split Squat",
+                "sets": 3,
+                "reps": "8-10 each leg",
+                "rest_seconds": 90,
+                "load_guidance": "Use a moderate load that challenges balance and leaves 2 reps in reserve",
+                "form_cue": "Keep torso upright and allow front knee to travel forward under control"
+            },
+            {
+                "name": "Single-Leg Romanian Deadlift (Dumbbell)",
+                "sets": 3,
+                "reps": "8-10 each leg",
+                "rest_seconds": 90,
+                "load_guidance": "Choose a weight that allows controlled balance and a deep hamstring stretch",
+                "form_cue": "Hinge at the hips and keep hips square to the floor"
+            },
+            {
+                "name": "Leg Press (Feet High on Platform)",
+                "sets": 3,
+                "reps": "10-12",
+                "rest_seconds": 90,
+                "load_guidance": "Moderate load at 7/10 effort, stopping before full fatigue",
+                "form_cue": "Drive through heels and avoid locking out knees aggressively"
+            },
+            {
+                "name": "Kettlebell Swing",
+                "sets": 3,
+                "reps": "12-15",
+                "rest_seconds": 75,
+                "load_guidance": "Use a moderate weight that allows explosive but controlled hip drive",
+                "form_cue": "Snap hips forward and let arms stay relaxed"
+            },
+            {
+                "name": "Seated or Lying Hamstring Curl",
+                "sets": 3,
+                "reps": "10-12",
+                "rest_seconds": 75,
+                "load_guidance": "Select a load that creates tension without losing control at the end range",
+                "form_cue": "Control both the curl and the extension phases"
+            }
+        ],
+        "cooldown": {
+            "duration_minutes": 5,
+            "description": "Restore mobility and reduce tension in hips and posterior chain.",
+            "movements": [
+                "Deep squat hold x 45s",
+                "Pigeon stretch x 30s each side",
+                "Calf stretch against wall x 30s each side"
+            ]
+        }
+    },
+    "phase_notes": {
+        "menstrual": "Unilateral and controlled movements in this session can feel supportive—reduce load if needed and focus on balance and steady tempo. Take extra rest if energy fluctuates.",
+        "follicular": "Great time to challenge stability and coordination—push slightly heavier loads in split squats and RDLs. You may feel more capable in balance-demanding exercises.",
+        "ovulatory": "You can perform these movements with strong control and confidence—focus on precision and power in swings and leg press. Maintain good alignment to avoid joint strain.",
+        "early_luteal": "Maintain consistent effort and use this session to reinforce good movement patterns. Focus on smooth tempo and avoid rushing through unilateral work.",
+        "late_luteal": "Balance-heavy exercises may feel more demanding—reduce load or reps if needed and prioritize control. This session works well if you keep intensity moderate and manageable."
+    },
+    "author": null,
+    "created_at": "2026-04-15"
+}

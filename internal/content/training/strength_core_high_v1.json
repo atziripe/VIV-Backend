@@ -1,0 +1,96 @@
+{
+    "id": "strength_core_high_v1",
+    "version": 1,
+    "content_status": "draft_llm_generated",
+    "modality": "STRENGTH",
+    "muscle_group": "core",
+    "intensity": "high",
+    "duration_minutes": 45,
+    "suitable_phases": [
+        "menstrual",
+        "follicular",
+        "ovulatory",
+        "early_luteal"
+    ],
+    "optimizing_for": [
+        "strength and resilience",
+        "body recomposition",
+        "performance and progression"
+    ],
+    "recovery_demand": "high",
+    "time_commitment": "high",
+    "progression_role": "build",
+    "content": {
+        "warmup": {
+            "duration_minutes": 8,
+            "description": "Activate deep core, prep bracing under load, and mobilize hips and spine.",
+            "movements": [
+                "Dead bug x 10 per side (slow and controlled)",
+                "Glute bridge march x 10 per side",
+                "World’s greatest stretch x 5 per side",
+                "Plank hold x 30s"
+            ]
+        },
+        "main_exercises": [
+            {
+                "name": "Barbell Front Squat (Core Emphasis)",
+                "sets": 4,
+                "reps": "5-6",
+                "rest_seconds": 120,
+                "load_guidance": "Use a challenging load you could perform for 7-8 reps, leaving 1-2 reps in reserve",
+                "form_cue": "Keep elbows high and torso upright to maximize core bracing throughout the lift."
+            },
+            {
+                "name": "Weighted Hanging Leg Raise",
+                "sets": 4,
+                "reps": "8-10",
+                "rest_seconds": 90,
+                "load_guidance": "Hold a light dumbbell between feet or use ankle weights; choose a load that maintains strict control",
+                "form_cue": "Avoid swinging and lift legs by engaging the abs, finishing with a slight pelvic curl."
+            },
+            {
+                "name": "Barbell Rollout (from knees or standing progression)",
+                "sets": 4,
+                "reps": "6-8",
+                "rest_seconds": 90,
+                "load_guidance": "Use a range of motion that is challenging but allows you to maintain spinal neutrality",
+                "form_cue": "Brace hard and avoid letting the lower back sag as you extend forward."
+            },
+            {
+                "name": "Heavy Dumbbell Suitcase Carry",
+                "sets": 3,
+                "reps": "40-50s per side",
+                "rest_seconds": 75,
+                "load_guidance": "Choose a heavy load that significantly challenges your ability to resist leaning",
+                "form_cue": "Stay tall and resist any lateral shift as you walk."
+            },
+            {
+                "name": "Decline Sit-Up with Plate Reach",
+                "sets": 3,
+                "reps": "10-12",
+                "rest_seconds": 60,
+                "load_guidance": "Hold a moderate plate or dumbbell; select a weight that allows full range without jerking",
+                "form_cue": "Control both the upward and downward phases, reaching slightly forward at the top."
+            }
+        ],
+        "cooldown": {
+            "duration_minutes": 6,
+            "description": "Release tension in the core and restore spinal mobility after heavy bracing work.",
+            "movements": [
+                "Child’s pose x 60s with deep breathing",
+                "Supine spinal twist x 45s per side",
+                "Cobra stretch x 45s",
+                "Hip flexor stretch x 45s per side"
+            ]
+        }
+    },
+    "phase_notes": {
+        "menstrual": "Approach this session with caution—reduce loads and consider fewer sets, especially for front squats and rollouts. Focus on maintaining good bracing rather than pushing intensity.",
+        "follicular": "Great phase to push strength—aim to increase load slightly on front squats and carries while maintaining strong form. Take advantage of improved recovery and energy.",
+        "ovulatory": "You may feel at your strongest—challenge yourself on compound lifts and loaded core work, but stay mindful of control and alignment during dynamic movements.",
+        "early_luteal": "You can still train hard here, but be mindful of fatigue buildup—focus on clean reps and slightly longer rest if needed to sustain output.",
+        "late_luteal": "This high-intensity session may feel more demanding—consider reducing load, shortening sets, or swapping to a moderate session while maintaining good movement quality."
+    },
+    "author": null,
+    "created_at": "2026-04-15"
+}

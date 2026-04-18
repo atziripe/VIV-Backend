@@ -1,0 +1,97 @@
+{
+    "id": "strength_core_moderate_v1",
+    "version": 1,
+    "content_status": "draft_llm_generated",
+    "modality": "STRENGTH",
+    "muscle_group": "core",
+    "intensity": "moderate",
+    "duration_minutes": 35,
+    "suitable_phases": [
+        "menstrual",
+        "follicular",
+        "ovulatory",
+        "early_luteal",
+        "late_luteal"
+    ],
+    "optimizing_for": [
+        "strength and resilience",
+        "maintenance",
+        "body recomposition",
+        "stress regulation"
+    ],
+    "recovery_demand": "moderate",
+    "time_commitment": "high",
+    "progression_role": "maintain",
+    "content": {
+        "warmup": {
+            "duration_minutes": 6,
+            "description": "Activate deep core and improve spinal mobility before loading.",
+            "movements": [
+                "Cat-cow x 8 slow reps",
+                "Dead bug x 8 per side (controlled)",
+                "Glute bridge x 12 reps",
+                "Standing torso rotations x 10 per side"
+            ]
+        },
+        "main_exercises": [
+            {
+                "name": "Hanging Knee Raise (or Captain’s Chair)",
+                "sets": 3,
+                "reps": "10-12",
+                "rest_seconds": 60,
+                "load_guidance": "Bodyweight; stop 2-3 reps before losing control or swinging",
+                "form_cue": "Tilt pelvis slightly upward at the top to engage lower abs rather than hip flexors."
+            },
+            {
+                "name": "Cable or Resistance Band Woodchopper",
+                "sets": 3,
+                "reps": "10-12 per side",
+                "rest_seconds": 60,
+                "load_guidance": "Moderate resistance that challenges rotation but allows smooth control",
+                "form_cue": "Rotate through the torso, not just arms, and keep hips relatively stable."
+            },
+            {
+                "name": "Dumbbell Suitcase Carry",
+                "sets": 3,
+                "reps": "30-40s per side",
+                "rest_seconds": 60,
+                "load_guidance": "Choose a weight that challenges your ability to stay upright without leaning",
+                "form_cue": "Stand tall and resist side bending; imagine balancing a glass of water on your head."
+            },
+            {
+                "name": "Decline Bench Reverse Crunch",
+                "sets": 3,
+                "reps": "10-15",
+                "rest_seconds": 60,
+                "load_guidance": "Bodyweight; slow tempo, focusing on controlled lift rather than momentum",
+                "form_cue": "Lift hips off the bench by curling the pelvis, not by swinging legs."
+            },
+            {
+                "name": "Front Plank with Shoulder Tap",
+                "sets": 3,
+                "reps": "20 taps total",
+                "rest_seconds": 45,
+                "load_guidance": "Bodyweight; widen stance slightly if needed to maintain stability",
+                "form_cue": "Keep hips level and minimize shifting as you tap each shoulder."
+            }
+        ],
+        "cooldown": {
+            "duration_minutes": 5,
+            "description": "Release core tension and restore spinal mobility.",
+            "movements": [
+                "Child’s pose with deep breathing x 60s",
+                "Supine spinal twist x 45s per side",
+                "Cobra stretch x 45s"
+            ]
+        }
+    },
+    "phase_notes": {
+        "menstrual": "Keep effort at the lower end of moderate and shorten sets if needed; focus on controlled reps and breathing rather than pushing fatigue. Swapping hanging work for floor-based options is a good adjustment.",
+        "follicular": "You may feel more energized—lean into slightly stronger contractions and cleaner execution on rotational work like woodchoppers. This is a good phase to build consistency with form.",
+        "ovulatory": "Core strength and coordination tend to feel sharp—challenge stability during carries and plank variations while maintaining excellent control. Avoid rushing reps despite higher energy.",
+        "early_luteal": "Maintain steady effort and focus on time under tension, especially in slower movements like reverse crunches. Keep rest periods consistent to avoid unnecessary fatigue.",
+        "late_luteal": "Reduce volume slightly if needed and prioritize stability over intensity, especially in dynamic movements like shoulder taps. Keep breathing slow and controlled to manage fatigue."
+    },
+    "author": null,
+    "created_at": "2026-04-15"
+}

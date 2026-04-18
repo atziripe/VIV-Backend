@@ -1,0 +1,104 @@
+{
+    "id": "strength_upper_high_v1",
+    "version": 1,
+    "content_status": "draft_llm_generated",
+    "modality": "STRENGTH",
+    "muscle_group": "upper",
+    "intensity": "high",
+    "duration_minutes": 60,
+    "suitable_phases": [
+        "menstrual",
+        "follicular",
+        "ovulatory",
+        "early_luteal"
+    ],
+    "optimizing_for": [
+        "strength and resilience",
+        "body recomposition",
+        "performance and progression"
+    ],
+    "recovery_demand": "high",
+    "time_commitment": "high",
+    "progression_role": "build",
+    "content": {
+        "warmup": {
+            "duration_minutes": 10,
+            "description": "Activate shoulders, upper back, and core while gradually increasing pressing and pulling readiness.",
+            "movements": [
+                "Arm circles x 20 forward + 20 backward",
+                "Resistance band pull-aparts x 15",
+                "Scapular push-ups x 10",
+                "Light dumbbell shoulder press x 12",
+                "Dead hang or assisted hang x 20-30s"
+            ]
+        },
+        "main_exercises": [
+            {
+                "name": "Barbell Bench Press",
+                "sets": 4,
+                "reps": "5-6",
+                "rest_seconds": 150,
+                "load_guidance": "Use a weight that feels like an 8/10 effort, leaving 1-2 reps in reserve",
+                "form_cue": "Keep shoulder blades pinned and lower the bar with control to mid-chest"
+            },
+            {
+                "name": "Pull-Ups (assisted or weighted)",
+                "sets": 4,
+                "reps": "6-8",
+                "rest_seconds": 120,
+                "load_guidance": "Choose assistance or load so the last 2 reps are challenging but controlled",
+                "form_cue": "Lead with your chest and avoid swinging your legs"
+            },
+            {
+                "name": "Standing Barbell Overhead Press",
+                "sets": 4,
+                "reps": "5-6",
+                "rest_seconds": 120,
+                "load_guidance": "Moderate-heavy load at 7-8/10 effort, maintain strict form throughout",
+                "form_cue": "Brace core and press straight overhead without arching your lower back"
+            },
+            {
+                "name": "Bent-Over Barbell Row",
+                "sets": 4,
+                "reps": "6-8",
+                "rest_seconds": 120,
+                "load_guidance": "Use a weight that challenges your upper back without compromising posture",
+                "form_cue": "Keep a flat back and pull the bar toward your lower ribs"
+            },
+            {
+                "name": "Incline Dumbbell Chest Press",
+                "sets": 3,
+                "reps": "8-10",
+                "rest_seconds": 90,
+                "load_guidance": "Select a weight you could perform 12 reps with, stopping at 8-10",
+                "form_cue": "Control the descent and avoid locking out aggressively at the top"
+            },
+            {
+                "name": "Superset: Dumbbell Bicep Curl + Tricep Dips",
+                "sets": 3,
+                "reps": "10-12 each",
+                "rest_seconds": 75,
+                "load_guidance": "Use moderate weight for curls and bodyweight or assisted dips at steady effort",
+                "form_cue": "Keep elbows stable during curls and shoulders down during dips"
+            }
+        ],
+        "cooldown": {
+            "duration_minutes": 5,
+            "description": "Release tension in the upper body and restore shoulder mobility.",
+            "movements": [
+                "Chest stretch against wall x 30s each side",
+                "Child’s pose with arms extended x 45s",
+                "Cross-body shoulder stretch x 30s each side"
+            ]
+        }
+    },
+    "phase_notes": {
+        "menstrual": "You may want to reduce load slightly on compound lifts like bench press and overhead press while keeping movement quality high. Focus on controlled reps and longer rest if energy is lower.",
+        "follicular": "This is a great phase to push intensity in lifts like bench press and pull-ups—aim to progressively increase load or reps. You’ll likely feel more explosive and capable of handling volume.",
+        "ovulatory": "Take advantage of peak strength and coordination by pushing your heaviest sets here, especially on compound lifts. Just be mindful of joint stability and maintain strict form.",
+        "early_luteal": "You can still train hard here, but prioritize consistency over max effort—keep loads challenging but avoid grinding reps. This is a good time to reinforce solid technique under fatigue.",
+        "late_luteal": "This high-intensity session may feel more taxing—consider reducing volume (fewer sets) or slightly lowering load while maintaining structure. Focus on moving well rather than pushing limits."
+    },
+    "author": null,
+    "created_at": "2026-04-15"
+}

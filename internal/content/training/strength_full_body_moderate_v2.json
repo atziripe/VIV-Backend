@@ -1,0 +1,96 @@
+{
+    "id": "strength_full_body_moderate_v2",
+    "version": 1,
+    "content_status": "draft_llm_generated",
+    "modality": "STRENGTH",
+    "muscle_group": "full_body",
+    "intensity": "moderate",
+    "duration_minutes": 45,
+    "suitable_phases": [
+        "menstrual",
+        "follicular",
+        "ovulatory",
+        "early_luteal",
+        "late_luteal"
+    ],
+    "optimizing_for": [
+        "maintenance",
+        "strength and resilience",
+        "energy and consistency"
+    ],
+    "recovery_demand": "moderate",
+    "time_commitment": "high",
+    "progression_role": "maintain",
+    "content": {
+        "warmup": {
+            "duration_minutes": 8,
+            "description": "Activate full body with emphasis on core stability and unilateral coordination.",
+            "movements": [
+                "Dead bugs x 10 each side",
+                "Lateral lunges x 8 each side",
+                "Resistance band face pulls x 12",
+                "Inchworms x 6"
+            ]
+        },
+        "main_exercises": [
+            {
+                "name": "Barbell Deadlift",
+                "sets": 4,
+                "reps": "6-8",
+                "rest_seconds": 120,
+                "load_guidance": "Moderate load at 7/10 effort, leaving 2 reps in reserve",
+                "form_cue": "Keep bar close and drive through the floor with a braced core"
+            },
+            {
+                "name": "Dumbbell Incline Bench Press",
+                "sets": 3,
+                "reps": "8-10",
+                "rest_seconds": 90,
+                "load_guidance": "Choose a weight you could perform 12 reps with, stopping at 8-10",
+                "form_cue": "Lower with control and press without flaring elbows excessively"
+            },
+            {
+                "name": "Goblet Lateral Squat",
+                "sets": 3,
+                "reps": "8 each side",
+                "rest_seconds": 90,
+                "load_guidance": "Moderate load allowing full depth and control in lateral movement",
+                "form_cue": "Sit into one hip while keeping the opposite leg straight"
+            },
+            {
+                "name": "Half-Kneeling Single-Arm Shoulder Press",
+                "sets": 3,
+                "reps": "8-10 each side",
+                "rest_seconds": 75,
+                "load_guidance": "Moderate load that challenges stability without compromising posture",
+                "form_cue": "Brace core and avoid leaning as you press overhead"
+            },
+            {
+                "name": "Renegade Row (Dumbbell)",
+                "sets": 3,
+                "reps": "8 each side",
+                "rest_seconds": 75,
+                "load_guidance": "Light to moderate load focusing on control and anti-rotation",
+                "form_cue": "Keep hips steady and avoid twisting as you row"
+            }
+        ],
+        "cooldown": {
+            "duration_minutes": 5,
+            "description": "Restore mobility and reduce tension after full-body effort.",
+            "movements": [
+                "Child’s pose x 45s",
+                "Spinal twist x 30s each side",
+                "Hip flexor stretch x 30s each side"
+            ]
+        }
+    },
+    "phase_notes": {
+        "menstrual": "Focus on controlled, steady movement and reduce load if needed—this session’s variety allows you to scale easily. Prioritize comfort and avoid pushing intensity.",
+        "follicular": "You can increase load or reps slightly, especially on deadlifts and presses. This is a good phase to build confidence in both strength and coordination.",
+        "ovulatory": "Take advantage of peak energy to move with power and precision—push toward the higher end of rep ranges while maintaining strong core stability.",
+        "early_luteal": "Maintain consistent effort and focus on clean execution, especially in unilateral and stability-based exercises. Avoid rushing between movements.",
+        "late_luteal": "Keep loads moderate and prioritize control—reduce complexity if needed by slowing tempo. This session works well when approached with intention over intensity."
+    },
+    "author": null,
+    "created_at": "2026-04-15"
+}

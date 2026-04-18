@@ -1,0 +1,96 @@
+{
+    "id": "hiit_full_body_high_v2",
+    "version": 1,
+    "content_status": "draft_llm_generated",
+    "modality": "HIIT",
+    "muscle_group": "full_body",
+    "intensity": "high",
+    "duration_minutes": 30,
+    "suitable_phases": [
+        "follicular",
+        "ovulatory",
+        "early_luteal"
+    ],
+    "optimizing_for": [
+        "body recomposition",
+        "performance and progression",
+        "energy and consistency"
+    ],
+    "recovery_demand": "high",
+    "time_commitment": "moderate",
+    "progression_role": "build",
+    "content": {
+        "warmup": {
+            "duration_minutes": 5,
+            "description": "Activate major muscle groups and prep for fast-paced strength-power intervals.",
+            "movements": [
+                "Air squats x 15",
+                "Push-up to downward dog x 8",
+                "Butt kicks x 30s",
+                "Lateral lunges x 8 per side"
+            ]
+        },
+        "main_exercises": [
+            {
+                "name": "Block 1: Strength-Power Intervals (45s work / 15s rest)",
+                "sets": 3,
+                "reps": "45s per exercise",
+                "rest_seconds": 75,
+                "load_guidance": "Use light-to-moderate dumbbells where applicable; choose a load that allows continuous movement with effort around 8-9/10",
+                "form_cue": "Focus on powerful, controlled reps rather than rushing through movements.",
+                "exercises": [
+                    "Dumbbell thrusters",
+                    "Renegade rows",
+                    "Alternating jump lunges",
+                    "Plank up-downs"
+                ]
+            },
+            {
+                "name": "Block 2: Descending Ladder (10-8-6-4 reps)",
+                "sets": 4,
+                "reps": "Complete each round decreasing reps",
+                "rest_seconds": 60,
+                "load_guidance": "Bodyweight or light load; aim to move quickly while maintaining good form",
+                "form_cue": "Push pace as reps decrease, but keep movements clean.",
+                "exercises": [
+                    "Burpees",
+                    "V-sit crunches",
+                    "Squat jumps",
+                    "Push-ups"
+                ]
+            },
+            {
+                "name": "Finisher: EMOM (Every Minute on the Minute) x 5 minutes",
+                "sets": 5,
+                "reps": "Work within each minute",
+                "rest_seconds": 0,
+                "load_guidance": "Bodyweight; aim to complete reps quickly and use remaining time as rest",
+                "form_cue": "Stay consistent across minutes—avoid going all-out too early.",
+                "exercises": [
+                    "12 high knees per side",
+                    "10 mountain climbers per side",
+                    "8 squat thrusts"
+                ]
+            }
+        ],
+        "cooldown": {
+            "duration_minutes": 5,
+            "description": "Gradually bring heart rate down and stretch fatigued muscles.",
+            "movements": [
+                "Standing hamstring stretch x 45s per side",
+                "Chest opener stretch x 45s",
+                "Child’s pose x 60s",
+                "Slow nasal breathing x 60s"
+            ]
+        }
+    },
+    "phase_notes": {
+        "menstrual": "This high-impact, high-intensity session is not ideal here—consider swapping for a lower intensity or reducing volume significantly if attempted.",
+        "follicular": "You’ll likely feel capable of pushing intensity—aim to move powerfully in dumbbell work and keep transitions fast in the ladder.",
+        "ovulatory": "Great phase for explosive output—maximize effort in thrusters and jump lunges while maintaining control in core work.",
+        "early_luteal": "You can maintain strong performance—focus on pacing in the EMOM to avoid early burnout and sustain intensity.",
+        "late_luteal": "This session may feel especially taxing—consider simplifying the ladder or reducing jump-based movements to manage fatigue."
+    },
+    "author": null,
+    "created_at": "2026-04-15"
+}

@@ -1,0 +1,97 @@
+{
+    "id": "pilates_full_body_low_v2",
+    "version": 1,
+    "content_status": "draft_llm_generated",
+    "modality": "PILATES",
+    "muscle_group": "full_body",
+    "intensity": "low",
+    "duration_minutes": 45,
+    "suitable_phases": [
+        "menstrual",
+        "follicular",
+        "ovulatory",
+        "early_luteal",
+        "late_luteal"
+    ],
+    "optimizing_for": [
+        "stress regulation",
+        "energy and consistency",
+        "maintenance"
+    ],
+    "recovery_demand": "low",
+    "time_commitment": "low",
+    "progression_role": "recover",
+    "content": {
+        "warmup": {
+            "duration_minutes": 8,
+            "description": "Gently awaken the spine, breath, and deep core stabilizers with slow, mindful movement.",
+            "movements": [
+                "Diaphragmatic breathing x 6 slow breaths",
+                "Pelvic tilts x 10",
+                "Cat-cow x 8 slow cycles",
+                "Shoulder rolls x 10 each direction"
+            ]
+        },
+        "main_exercises": [
+            {
+                "name": "Spinal Articulation Flow",
+                "sets": 2,
+                "reps": "8 slow rolls",
+                "rest_seconds": 30,
+                "load_guidance": "Bodyweight only, focus on segmented movement through the spine",
+                "form_cue": "Move one vertebra at a time, starting from the tailbone upward"
+            },
+            {
+                "name": "Supine Core Stability Sequence",
+                "sets": 2,
+                "reps": "6-8 controlled cycles",
+                "rest_seconds": 30,
+                "load_guidance": "Bodyweight only, maintain deep abdominal engagement throughout",
+                "form_cue": "Keep lower back gently connected to the mat without gripping"
+            },
+            {
+                "name": "Side-Lying Leg Control Series",
+                "sets": 2,
+                "reps": "10 each side",
+                "rest_seconds": 30,
+                "load_guidance": "Bodyweight only with slow tempo",
+                "form_cue": "Move from the hip joint without shifting torso alignment"
+            },
+            {
+                "name": "Quadruped Stability Flow",
+                "sets": 2,
+                "reps": "8 each side",
+                "rest_seconds": 30,
+                "load_guidance": "Bodyweight only, emphasize balance over range",
+                "form_cue": "Keep hips level and avoid collapsing into the supporting shoulder"
+            },
+            {
+                "name": "Standing Postural Alignment Sequence",
+                "sets": 2,
+                "reps": "5 slow holds",
+                "rest_seconds": 30,
+                "load_guidance": "Bodyweight only with micro-adjustments",
+                "form_cue": "Stack ribs over pelvis and lengthen through crown of head"
+            }
+        ],
+        "cooldown": {
+            "duration_minutes": 7,
+            "description": "Downregulate the nervous system and release residual tension through breath-led stretching.",
+            "movements": [
+                "Child’s pose with deep breathing x 60s",
+                "Supine twist x 45s each side",
+                "Seated forward fold x 60s",
+                "Legs up the wall x 90s"
+            ]
+        }
+    },
+    "phase_notes": {
+        "menstrual": "This session supports recovery and can help reduce discomfort—move slowly and prioritize breath over range of motion. Keep everything gentle and restorative.",
+        "follicular": "Use this session to reinforce alignment and body awareness—small increases in control and precision can enhance strength work later in the cycle.",
+        "ovulatory": "Even in higher-energy phases, keep this session soft and grounding—focus on control rather than pushing range or intensity.",
+        "early_luteal": "This is an ideal phase for this type of Pilates work—use it to maintain stability and manage early signs of fatigue or tension.",
+        "late_luteal": "Highly supportive for this phase—focus on breath-led movement and nervous system downregulation to reduce stress and physical discomfort."
+    },
+    "author": null,
+    "created_at": "2026-04-15"
+}

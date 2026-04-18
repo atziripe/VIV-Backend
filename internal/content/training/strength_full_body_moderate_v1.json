@@ -1,0 +1,96 @@
+{
+    "id": "strength_full_body_moderate_v1",
+    "version": 1,
+    "content_status": "draft_llm_generated",
+    "modality": "STRENGTH",
+    "muscle_group": "full_body",
+    "intensity": "moderate",
+    "duration_minutes": 45,
+    "suitable_phases": [
+        "menstrual",
+        "follicular",
+        "ovulatory",
+        "early_luteal",
+        "late_luteal"
+    ],
+    "optimizing_for": [
+        "maintenance",
+        "body recomposition",
+        "energy and consistency"
+    ],
+    "recovery_demand": "moderate",
+    "time_commitment": "high",
+    "progression_role": "maintain",
+    "content": {
+        "warmup": {
+            "duration_minutes": 8,
+            "description": "Prepare the whole body with dynamic mobility and light activation across major movement patterns.",
+            "movements": [
+                "Bodyweight squats x 12",
+                "Incline push-ups x 10",
+                "Resistance band rows x 12",
+                "Hip openers x 8 each side"
+            ]
+        },
+        "main_exercises": [
+            {
+                "name": "Dumbbell Thruster",
+                "sets": 3,
+                "reps": "8-10",
+                "rest_seconds": 90,
+                "load_guidance": "Choose a moderate weight you could perform 12 reps with, stopping at 8-10",
+                "form_cue": "Drive through legs and transition smoothly into the overhead press"
+            },
+            {
+                "name": "Romanian Deadlift (Dumbbell)",
+                "sets": 3,
+                "reps": "8-10",
+                "rest_seconds": 90,
+                "load_guidance": "Moderate load at 7/10 effort focusing on hamstring stretch",
+                "form_cue": "Keep back flat and hinge from hips, not lower back"
+            },
+            {
+                "name": "Push-Up (floor or elevated)",
+                "sets": 3,
+                "reps": "8-12",
+                "rest_seconds": 75,
+                "load_guidance": "Choose a variation that leaves 2-3 reps in reserve",
+                "form_cue": "Keep body in a straight line and lower with control"
+            },
+            {
+                "name": "Single-Arm Dumbbell Row",
+                "sets": 3,
+                "reps": "10 each side",
+                "rest_seconds": 75,
+                "load_guidance": "Use a weight that challenges the last reps without twisting your torso",
+                "form_cue": "Pull elbow toward your hip and keep shoulders square"
+            },
+            {
+                "name": "Reverse Lunges (Dumbbell)",
+                "sets": 3,
+                "reps": "10 each leg",
+                "rest_seconds": 75,
+                "load_guidance": "Moderate load allowing balance and control throughout",
+                "form_cue": "Step back softly and keep front knee stable"
+            }
+        ],
+        "cooldown": {
+            "duration_minutes": 5,
+            "description": "Bring the body down gradually and release tension from major muscle groups.",
+            "movements": [
+                "Standing forward fold x 45s",
+                "Chest stretch x 30s each side",
+                "Figure 4 stretch x 30s each side"
+            ]
+        }
+    },
+    "phase_notes": {
+        "menstrual": "This balanced session can feel manageable—reduce load or reps if needed and move at a steady pace. Focus on maintaining energy rather than pushing intensity.",
+        "follicular": "Great phase to build momentum—slightly increase load or reps and focus on smooth transitions in compound movements like thrusters.",
+        "ovulatory": "You can perform these movements with strong coordination and power—push toward the higher end of rep ranges while maintaining good form.",
+        "early_luteal": "Keep effort consistent and avoid rushing through exercises—this is a good session to reinforce solid movement patterns across the whole body.",
+        "late_luteal": "Focus on controlled tempo and reduce intensity if needed—this session works well as a steady, lower-pressure full-body workout."
+    },
+    "author": null,
+    "created_at": "2026-04-15"
+}

@@ -1,0 +1,91 @@
+{
+    "id": "hiit_full_body_high_v3",
+    "version": 1,
+    "content_status": "draft_llm_generated",
+    "modality": "HIIT",
+    "muscle_group": "full_body",
+    "intensity": "high",
+    "duration_minutes": 25,
+    "suitable_phases": [
+        "follicular",
+        "ovulatory",
+        "early_luteal"
+    ],
+    "optimizing_for": [
+        "body recomposition",
+        "performance and progression",
+        "energy and consistency"
+    ],
+    "recovery_demand": "high",
+    "time_commitment": "moderate",
+    "progression_role": "build",
+    "content": {
+        "warmup": {
+            "duration_minutes": 4,
+            "description": "Quickly elevate heart rate and prepare for short, intense intervals.",
+            "movements": [
+                "Jump rope (or simulated) x 60s",
+                "Dynamic lunges x 8 per side",
+                "Arm circles x 30s each direction",
+                "Fast feet in place x 30s"
+            ]
+        },
+        "main_exercises": [
+            {
+                "name": "Sprint Intervals: 20s max effort / 40s walk or rest",
+                "sets": 6,
+                "reps": "20s",
+                "rest_seconds": 40,
+                "load_guidance": "Max effort sprint or fast run; aim for 9-10/10 intensity during work phase",
+                "form_cue": "Drive arms and knees powerfully while keeping posture tall."
+            },
+            {
+                "name": "Bodyweight Complex (AMRAP x 10 minutes)",
+                "sets": 1,
+                "reps": "As many rounds as possible",
+                "rest_seconds": 0,
+                "load_guidance": "Bodyweight; pace to sustain high effort without full burnout",
+                "form_cue": "Move continuously with controlled breathing and efficient transitions.",
+                "exercises": [
+                    "10 squat jumps",
+                    "10 push-ups",
+                    "10 alternating step-back lunges (each side)",
+                    "10 sit-ups"
+                ]
+            },
+            {
+                "name": "Explosive Core Finisher: 30s on / 15s off",
+                "sets": 4,
+                "reps": "30s per exercise",
+                "rest_seconds": 15,
+                "load_guidance": "Bodyweight; aim for fast, sharp reps while maintaining control",
+                "form_cue": "Stay tight through the core and avoid excessive momentum.",
+                "exercises": [
+                    "V-ups",
+                    "Russian twists",
+                    "Plank knee drives",
+                    "Flutter kicks"
+                ]
+            }
+        ],
+        "cooldown": {
+            "duration_minutes": 4,
+            "description": "Bring heart rate down and release tension after intense intervals.",
+            "movements": [
+                "Walking or slow march x 60s",
+                "Standing quad stretch x 45s per side",
+                "Seated forward fold x 60s",
+                "Deep breathing x 60s"
+            ]
+        }
+    },
+    "phase_notes": {
+        "menstrual": "This high-impact, sprint-based session is not recommended during this phase. Opt for lower intensity or reduce volume significantly if needed.",
+        "follicular": "Energy is rising—push hard on sprint intervals and aim to maintain a strong pace during the AMRAP without long breaks.",
+        "ovulatory": "Ideal phase for max output—go all-in on sprints and explosive movements while staying technically sharp.",
+        "early_luteal": "You can still perform strongly, but focus on pacing during the AMRAP to avoid early fatigue from the sprints.",
+        "late_luteal": "High intensity may feel overwhelming—consider reducing sprint rounds or swapping jumps for lower impact alternatives."
+    },
+    "author": null,
+    "created_at": "2026-04-15"
+}

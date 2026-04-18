@@ -1,0 +1,60 @@
+{
+    "id": "cardio_none_low_v1",
+    "version": 1,
+    "content_status": "draft_llm_generated",
+    "modality": "CARDIO",
+    "muscle_group": "none",
+    "intensity": "low",
+    "duration_minutes": 20,
+    "suitable_phases": [
+        "menstrual",
+        "follicular",
+        "ovulatory",
+        "early_luteal",
+        "late_luteal"
+    ],
+    "optimizing_for": [
+        "stress regulation",
+        "energy and consistency",
+        "maintenance"
+    ],
+    "recovery_demand": "low",
+    "time_commitment": "moderate",
+    "progression_role": "recover",
+    "content": {
+        "warmup": {
+            "duration_minutes": 3,
+            "description": "Ease into movement with a gentle, relaxed walking pace.",
+            "movements": [
+                "Slow walk with relaxed arms x 3 minutes"
+            ]
+        },
+        "main_exercises": [
+            {
+                "name": "Recovery Walk (Relaxed Steady Pace)",
+                "sets": 1,
+                "reps": "continuous",
+                "rest_seconds": 0,
+                "load_guidance": "Very low intensity zone 1-2 (around 50-60% effort), where breathing is effortless and fully conversational",
+                "form_cue": "Walk with relaxed posture, natural arm swing, and soft, steady steps"
+            }
+        ],
+        "cooldown": {
+            "duration_minutes": 2,
+            "description": "Gradually slow down and transition into full rest with mindful breathing.",
+            "movements": [
+                "Very slow walk x 1 minute",
+                "Standing still with deep breathing x 1 minute"
+            ]
+        }
+    },
+    "phase_notes": {
+        "menstrual": "This recovery walk is highly supportive—keep pace very gentle and focus on fresh air and relaxation rather than distance or speed.",
+        "follicular": "Use this as an easy baseline activity to stay consistent—keep it light and avoid turning it into a workout.",
+        "ovulatory": "Even if energy is higher, keep this session intentionally slow and restorative—focus on recovery rather than performance.",
+        "early_luteal": "This walk helps maintain movement without adding fatigue—keep rhythm steady and relaxed.",
+        "late_luteal": "Ideal for reducing stress and supporting mood—focus on calm breathing and a comfortable pace throughout."
+    },
+    "author": null,
+    "created_at": "2026-04-15"
+}

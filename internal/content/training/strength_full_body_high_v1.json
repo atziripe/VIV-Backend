@@ -1,0 +1,104 @@
+{
+    "id": "strength_full_body_high_v1",
+    "version": 1,
+    "content_status": "draft_llm_generated",
+    "modality": "STRENGTH",
+    "muscle_group": "full_body",
+    "intensity": "high",
+    "duration_minutes": 60,
+    "suitable_phases": [
+        "menstrual",
+        "follicular",
+        "ovulatory",
+        "early_luteal"
+    ],
+    "optimizing_for": [
+        "strength and resilience",
+        "body recomposition",
+        "performance and progression"
+    ],
+    "recovery_demand": "high",
+    "time_commitment": "high",
+    "progression_role": "build",
+    "content": {
+        "warmup": {
+            "duration_minutes": 10,
+            "description": "Prepare full body for heavy compound lifting with emphasis on mobility and activation.",
+            "movements": [
+                "Bodyweight squats x 12",
+                "Push-ups x 10",
+                "Resistance band rows x 12",
+                "Hip hinges x 10",
+                "Plank x 30s"
+            ]
+        },
+        "main_exercises": [
+            {
+                "name": "Barbell Deadlift",
+                "sets": 5,
+                "reps": "3-5",
+                "rest_seconds": 150,
+                "load_guidance": "Heavy load at 8-9/10 effort, leaving 1 rep in reserve",
+                "form_cue": "Keep bar close and drive through the floor with a strong brace"
+            },
+            {
+                "name": "Barbell Bench Press",
+                "sets": 4,
+                "reps": "4-6",
+                "rest_seconds": 120,
+                "load_guidance": "Use a heavy load that allows 1-2 reps in reserve",
+                "form_cue": "Retract shoulder blades and lower the bar with control"
+            },
+            {
+                "name": "Front Squat",
+                "sets": 4,
+                "reps": "5-6",
+                "rest_seconds": 120,
+                "load_guidance": "Moderate-heavy load with strong core engagement",
+                "form_cue": "Keep elbows high and torso upright throughout the movement"
+            },
+            {
+                "name": "Pull-Ups (assisted or weighted)",
+                "sets": 4,
+                "reps": "6-8",
+                "rest_seconds": 120,
+                "load_guidance": "Choose assistance or load that makes last reps challenging but controlled",
+                "form_cue": "Lead with chest and avoid swinging"
+            },
+            {
+                "name": "Dumbbell Walking Lunges",
+                "sets": 3,
+                "reps": "10 each leg",
+                "rest_seconds": 90,
+                "load_guidance": "Moderate load that allows consistent stride and balance",
+                "form_cue": "Step forward with control and keep torso upright"
+            },
+            {
+                "name": "Hanging Knee Raises",
+                "sets": 3,
+                "reps": "10-12",
+                "rest_seconds": 75,
+                "load_guidance": "Bodyweight with controlled tempo, avoid swinging",
+                "form_cue": "Lift knees using core, not momentum"
+            }
+        ],
+        "cooldown": {
+            "duration_minutes": 5,
+            "description": "Reduce muscle tension and support recovery after high-intensity full-body work.",
+            "movements": [
+                "Standing forward fold x 45s",
+                "Chest opener stretch x 30s each side",
+                "Hip flexor stretch x 30s each side"
+            ]
+        }
+    },
+    "phase_notes": {
+        "menstrual": "This high-intensity session may feel demanding—reduce load or sets if needed and focus on controlled execution. Prioritize rest between sets.",
+        "follicular": "Great phase to push heavy lifts like deadlifts and bench press—aim to increase load or improve rep quality. Energy and recovery are typically higher.",
+        "ovulatory": "Peak performance phase—push intensity confidently across compound lifts while maintaining strong form. You may feel strongest and most coordinated.",
+        "early_luteal": "Maintain strong effort but avoid pushing to failure—focus on consistent performance and controlled tempo across all lifts.",
+        "late_luteal": "This session may feel very taxing—consider reducing volume or intensity while maintaining structure. Focus on quality movement over max effort."
+    },
+    "author": null,
+    "created_at": "2026-04-15"
+}

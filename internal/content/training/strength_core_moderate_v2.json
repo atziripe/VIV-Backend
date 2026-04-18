@@ -1,0 +1,97 @@
+{
+    "id": "strength_core_moderate_v2",
+    "version": 1,
+    "content_status": "draft_llm_generated",
+    "modality": "STRENGTH",
+    "muscle_group": "core",
+    "intensity": "moderate",
+    "duration_minutes": 35,
+    "suitable_phases": [
+        "menstrual",
+        "follicular",
+        "ovulatory",
+        "early_luteal",
+        "late_luteal"
+    ],
+    "optimizing_for": [
+        "strength and resilience",
+        "maintenance",
+        "body recomposition",
+        "energy and consistency"
+    ],
+    "recovery_demand": "moderate",
+    "time_commitment": "high",
+    "progression_role": "maintain",
+    "content": {
+        "warmup": {
+            "duration_minutes": 6,
+            "description": "Prime deep core stabilizers and introduce anti-extension and anti-rotation control.",
+            "movements": [
+                "90/90 breathing with feet elevated x 5 slow breaths",
+                "Bird dog x 8 per side (pause at extension)",
+                "Pelvic tilts x 10 reps",
+                "Standing side bends x 10 per side"
+            ]
+        },
+        "main_exercises": [
+            {
+                "name": "Barbell or Dumbbell Front Rack Hold",
+                "sets": 3,
+                "reps": "30-40s",
+                "rest_seconds": 75,
+                "load_guidance": "Use a load that feels challenging to brace against but allows upright posture throughout",
+                "form_cue": "Keep ribs stacked over hips and avoid flaring the ribcage as you brace."
+            },
+            {
+                "name": "Stability Ball Stir the Pot",
+                "sets": 3,
+                "reps": "8-10 circles each direction",
+                "rest_seconds": 60,
+                "load_guidance": "Bodyweight; reduce circle size if losing control",
+                "form_cue": "Maintain a strong plank while slowly drawing small circles with your forearms."
+            },
+            {
+                "name": "Half-Kneeling Pallof Press",
+                "sets": 3,
+                "reps": "10-12 per side",
+                "rest_seconds": 60,
+                "load_guidance": "Light to moderate resistance that challenges anti-rotation without pulling you off balance",
+                "form_cue": "Press straight out from your chest and resist any twisting through the torso."
+            },
+            {
+                "name": "Weighted Dead Bug",
+                "sets": 3,
+                "reps": "8-10 per side",
+                "rest_seconds": 60,
+                "load_guidance": "Hold light dumbbells or plates; choose a load that allows slow, controlled movement",
+                "form_cue": "Keep lower back gently pressed into the floor as opposite arm and leg extend."
+            },
+            {
+                "name": "Side Plank with Hip Abduction",
+                "sets": 3,
+                "reps": "10-12 leg lifts per side",
+                "rest_seconds": 45,
+                "load_guidance": "Bodyweight; bend bottom knee if full position is too challenging",
+                "form_cue": "Keep hips stacked and lift top leg without letting the pelvis rotate backward."
+            }
+        ],
+        "cooldown": {
+            "duration_minutes": 5,
+            "description": "Downregulate and gently stretch the trunk and hip stabilizers.",
+            "movements": [
+                "Knees-to-chest hold x 60s",
+                "Thread the needle stretch x 45s per side",
+                "Seated forward fold x 60s"
+            ]
+        }
+    },
+    "phase_notes": {
+        "menstrual": "Focus on gentle bracing and reduce hold durations if needed; exercises like dead bugs and Pallof presses can be especially supportive without excessive strain. Keep breathing steady throughout.",
+        "follicular": "This is a great time to improve control and increase time under tension in holds like front rack and stir the pot. Aim for slightly longer holds or more precise movement quality.",
+        "ovulatory": "You may feel strong and stable—lean into more challenging variations or slightly longer sets, especially in anti-rotation work. Maintain strict form despite higher energy.",
+        "early_luteal": "Keep intensity consistent and focus on smooth, controlled reps rather than pushing duration. Prioritize quality bracing and avoid rushing transitions between movements.",
+        "late_luteal": "Dial back hold times slightly and emphasize stability over challenge, particularly in balance-demanding exercises. Keep effort moderate and focus on maintaining good alignment."
+    },
+    "author": null,
+    "created_at": "2026-04-15"
+}

@@ -1,0 +1,97 @@
+{
+  "id": "strength_upper_moderate_v2",
+  "version": 1,
+  "content_status": "draft_llm_generated",
+  "modality": "STRENGTH",
+  "muscle_group": "upper",
+  "intensity": "moderate",
+  "duration_minutes": 45,
+  "suitable_phases": ["menstrual", "follicular", "ovulatory", "early_luteal", "late_luteal"],
+  "optimizing_for": ["strength and resilience", "maintenance", "body recomposition", "stress regulation"],
+  "recovery_demand": "moderate",
+  "time_commitment": "high",
+  "progression_role": "maintain",
+  "content": {
+    "warmup": {
+      "duration_minutes": 7,
+      "description": "Open the thoracic spine and prep the rotator cuff with controlled, deliberate movement before any loaded pressing or pulling.",
+      "movements": [
+        "Cat-cow with shoulder blade squeeze at top — 10 reps",
+        "Thread-the-needle thoracic rotation — 8 reps each side",
+        "Prone Y-T-W raises (bodyweight) — 6 reps each position",
+        "Resistance band face pull — 15 slow reps",
+        "Dead hang or active hang from bar — 20–30 seconds"
+      ]
+    },
+    "main_exercises": [
+      {
+        "name": "Barbell or Smith Machine Bent-Over Row",
+        "sets": 4,
+        "reps": "8-10",
+        "rest_seconds": 90,
+        "load_guidance": "Heavier than a dumbbell row allows — find a load where the last 2 reps of each set require deliberate bracing. This is the strength anchor of the session.",
+        "form_cue": "Hinge to roughly 45 degrees, brace your core before every rep, and pull the bar into your lower sternum — not your belly button."
+      },
+      {
+        "name": "Push-Up Variation (elevated feet or weighted vest if available, or standard)",
+        "sets": 4,
+        "reps": "8-12",
+        "rest_seconds": 75,
+        "load_guidance": "Choose the hardest variation where you can maintain a perfectly rigid plank position for all reps — this is a skill-strength exercise, not a burnout movement.",
+        "form_cue": "Lower your chest to the floor, not your hips — think of the push-up as a moving plank and keep your glutes squeezed throughout."
+      },
+      {
+        "name": "Cable or Band Face Pull",
+        "sets": 3,
+        "reps": "15-20",
+        "rest_seconds": 60,
+        "load_guidance": "Very light — this is a postural corrective movement done for quality. If you can't hold the end position for one count every rep, reduce the load.",
+        "form_cue": "Pull the rope or band to your nose with external rotation at the top — thumbs should end up pointing behind you, not at the ceiling."
+      },
+      {
+        "name": "Dumbbell Pullover (flat bench)",
+        "sets": 3,
+        "reps": "12-14",
+        "rest_seconds": 60,
+        "load_guidance": "A moderate load you can control through a full range of motion — the stretch at the bottom is the stimulus, so never rush the eccentric.",
+        "form_cue": "Keep a slight bend in the elbows throughout and stop the arc when your arms are parallel to the floor — going further loads the shoulder joint rather than the lats."
+      },
+      {
+        "name": "Standing Dumbbell Arnold Press",
+        "sets": 3,
+        "reps": "10-12",
+        "rest_seconds": 75,
+        "load_guidance": "Lighter than a standard overhead press — the rotation adds range and complexity, so reduce load by roughly 20% compared to what you'd press straight.",
+        "form_cue": "Start with palms facing your shoulders at chin height and rotate outward as you press, finishing with palms forward at the top."
+      },
+      {
+        "name": "Tricep Dips (bench or parallel bars) or Overhead Tricep Extension",
+        "sets": 3,
+        "reps": "10-12",
+        "rest_seconds": 60,
+        "load_guidance": "For dips, use your bodyweight or add a dumbbell in your lap if bodyweight feels easy by rep 8. For the extension, pick a load where rep 11 is genuinely the last clean rep.",
+        "form_cue": "For dips, keep your torso upright and elbows tracking straight back — forward lean shifts work to the chest. For the extension, keep your elbows pointing at the ceiling and still."
+      }
+    ],
+    "cooldown": {
+      "duration_minutes": 5,
+      "description": "Release tension in the lats, triceps, and posterior shoulder — structures that accumulate tightness from rowing and pressing patterns.",
+      "movements": [
+        "Lat stretch in doorframe or against a wall — 45 seconds each side",
+        "Overhead tricep stretch — 30 seconds each side",
+        "Puppy pose (extended child's pose) — 60 seconds",
+        "Supine cross-body shoulder stretch — 30 seconds each side",
+        "Neck side bend with gentle hand pressure — 20 seconds each side"
+      ]
+    }
+  },
+  "phase_notes": {
+    "menstrual": "The bent-over row demands core bracing that may feel uncomfortable if cramping is present — substitute the chest-supported dumbbell row from variant 1 as needed, or rest entirely.",
+    "follicular": "Estrogen-supported recovery makes this a good week to add a small load increment to the barbell row and push-up variation and note your new baseline.",
+    "ovulatory": "Peak neuromuscular output means the push-up variation and Arnold press may feel unusually crisp — this is a reliable window to test a harder push-up progression.",
+    "early_luteal": "Complete the session as written; progesterone-driven fatigue is minimal in early luteal and most users will hit all sets without modification.",
+    "late_luteal": "The pullover and face pull are forgiving in late luteal because the loads are inherently light — lean on those movements if energy is low and treat the barbell row sets as the one place to push rather than four."
+  },
+  "author": null,
+  "created_at": "2026-04-15"
+}

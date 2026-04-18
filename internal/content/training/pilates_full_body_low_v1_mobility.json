@@ -1,0 +1,88 @@
+{
+    "id": "pilates_full_body_low_v1",
+    "version": 1,
+    "content_status": "draft_llm_generated",
+    "modality": "PILATES",
+    "muscle_group": "full_body",
+    "intensity": "low",
+    "duration_minutes": 30,
+    "suitable_phases": [
+        "menstrual",
+        "follicular",
+        "ovulatory",
+        "early_luteal",
+        "late_luteal"
+    ],
+    "optimizing_for": [
+        "stress regulation",
+        "energy and consistency",
+        "maintenance"
+    ],
+    "recovery_demand": "low",
+    "time_commitment": "low",
+    "progression_role": "recover",
+    "content": {
+        "warmup": {
+            "duration_minutes": 5,
+            "description": "Gently open joints and connect breath to movement to prepare for mobility-focused flow.",
+            "movements": [
+                "Deep diaphragmatic breathing x 5 slow breaths",
+                "Neck mobility (gentle circles) x 5 each direction",
+                "Cat-cow x 6 slow cycles",
+                "Pelvic circles x 6 each direction"
+            ]
+        },
+        "main_exercises": [
+            {
+                "name": "Spine Wave Flow",
+                "sets": 2,
+                "reps": "6-8 slow waves",
+                "rest_seconds": 20,
+                "load_guidance": "Bodyweight only, move slowly through full spinal range",
+                "form_cue": "Initiate movement from the pelvis and ripple through the spine"
+            },
+            {
+                "name": "Hip Mobility Sequence",
+                "sets": 2,
+                "reps": "6 each direction per side",
+                "rest_seconds": 20,
+                "load_guidance": "Bodyweight only, focus on smooth joint articulation",
+                "form_cue": "Keep pelvis stable while moving the hip through controlled circles"
+            },
+            {
+                "name": "Thoracic Rotation Flow",
+                "sets": 2,
+                "reps": "8 each side",
+                "rest_seconds": 20,
+                "load_guidance": "Bodyweight only, prioritize rotation over speed",
+                "form_cue": "Rotate from the mid-back, not the lower back"
+            },
+            {
+                "name": "Shoulder Mobility Sequence",
+                "sets": 2,
+                "reps": "8 slow reps",
+                "rest_seconds": 20,
+                "load_guidance": "Bodyweight only with controlled range",
+                "form_cue": "Keep shoulders relaxed and avoid shrugging during movement"
+            }
+        ],
+        "cooldown": {
+            "duration_minutes": 5,
+            "description": "Deepen mobility gains and calm the nervous system with longer, passive stretches.",
+            "movements": [
+                "Child’s pose x 60s",
+                "Thread the needle x 30s each side",
+                "Seated forward fold x 60s"
+            ]
+        }
+    },
+    "phase_notes": {
+        "menstrual": "This mobility-focused session is ideal—move gently and use breath to guide range of motion without forcing depth. It can help reduce stiffness and discomfort.",
+        "follicular": "You may notice increased range and fluidity—explore slightly deeper mobility while maintaining control and alignment.",
+        "ovulatory": "Take advantage of natural flexibility and coordination—move through fuller ranges while staying mindful of joint stability.",
+        "early_luteal": "Use this session to maintain mobility and prevent tightness—focus on smooth, consistent movement rather than increasing range.",
+        "late_luteal": "Prioritize gentle, soothing mobility—keep movements slow and controlled to reduce tension and support recovery."
+    },
+    "author": null,
+    "created_at": "2026-04-15"
+}

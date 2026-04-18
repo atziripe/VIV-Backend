@@ -1,0 +1,104 @@
+{
+    "id": "strength_lower_high_v2",
+    "version": 1,
+    "content_status": "draft_llm_generated",
+    "modality": "STRENGTH",
+    "muscle_group": "lower",
+    "intensity": "high",
+    "duration_minutes": 60,
+    "suitable_phases": [
+        "menstrual",
+        "follicular",
+        "ovulatory",
+        "early_luteal"
+    ],
+    "optimizing_for": [
+        "strength and resilience",
+        "body recomposition",
+        "performance and progression"
+    ],
+    "recovery_demand": "high",
+    "time_commitment": "high",
+    "progression_role": "build",
+    "content": {
+        "warmup": {
+            "duration_minutes": 10,
+            "description": "Activate posterior chain and prepare for hinge-dominant heavy lifting with dynamic mobility.",
+            "movements": [
+                "Hip hinges (bodyweight) x 12",
+                "Glute bridge march x 10 each side",
+                "Lateral lunges x 8 each side",
+                "Hamstring walkouts x 8",
+                "Calf raises x 15"
+            ]
+        },
+        "main_exercises": [
+            {
+                "name": "Conventional Deadlift",
+                "sets": 5,
+                "reps": "3-5",
+                "rest_seconds": 150,
+                "load_guidance": "Heavy load at 8-9/10 effort, leaving 1 rep in reserve",
+                "form_cue": "Push through the floor and keep the bar close to your body throughout the lift"
+            },
+            {
+                "name": "Front Squat",
+                "sets": 4,
+                "reps": "5-6",
+                "rest_seconds": 120,
+                "load_guidance": "Moderate-heavy load that challenges core and quad strength without losing posture",
+                "form_cue": "Keep elbows high and torso upright as you descend"
+            },
+            {
+                "name": "Step-Up (Dumbbell, High Box)",
+                "sets": 4,
+                "reps": "6-8 each leg",
+                "rest_seconds": 120,
+                "load_guidance": "Choose a challenging load that allows controlled drive through the front leg",
+                "form_cue": "Drive through the full foot and avoid pushing off the back leg"
+            },
+            {
+                "name": "Barbell Hip Thrust (Paused)",
+                "sets": 4,
+                "reps": "8",
+                "rest_seconds": 90,
+                "load_guidance": "Use a load that allows a 2-second pause at the top with strong contraction",
+                "form_cue": "Hold the top position with full glute engagement before lowering"
+            },
+            {
+                "name": "Nordic Hamstring Curl (assisted if needed)",
+                "sets": 3,
+                "reps": "5-6",
+                "rest_seconds": 90,
+                "load_guidance": "Use assistance as needed to control the lowering phase fully",
+                "form_cue": "Keep hips extended and control the descent as long as possible"
+            },
+            {
+                "name": "Seated Calf Raises",
+                "sets": 3,
+                "reps": "12-15",
+                "rest_seconds": 60,
+                "load_guidance": "Moderate load with full stretch at the bottom and pause at the top",
+                "form_cue": "Move slowly and avoid bouncing between reps"
+            }
+        ],
+        "cooldown": {
+            "duration_minutes": 5,
+            "description": "Release posterior chain tension and support recovery after heavy hinge work.",
+            "movements": [
+                "Standing forward fold x 45s",
+                "Kneeling hip flexor stretch x 30s each side",
+                "Supine hamstring stretch x 30s each side"
+            ]
+        }
+    },
+    "phase_notes": {
+        "menstrual": "Heavy hinge work like deadlifts may feel more demanding—consider reducing load or sets and focus on clean, controlled reps. Prioritize rest and avoid pushing to max effort.",
+        "follicular": "Great phase to push heavy deadlifts and front squats—aim to increase load or improve rep quality. You may feel stronger and more explosive.",
+        "ovulatory": "Peak strength and coordination make this ideal for heavy lifts—push intensity on deadlifts and step-ups while maintaining strong technique. Stay mindful of joint stability.",
+        "early_luteal": "Maintain high effort but avoid going to failure—focus on consistent performance and controlled tempo, especially in eccentric-focused work like Nordics.",
+        "late_luteal": "This session may feel very taxing—reduce volume or skip the most demanding elements like Nordics if needed. Focus on maintaining movement quality and stability."
+    },
+    "author": null,
+    "created_at": "2026-04-15"
+}
