@@ -1,0 +1,96 @@
+{
+    "id": "strength_full_body_low_v2",
+    "version": 1,
+    "content_status": "draft_llm_generated",
+    "modality": "STRENGTH",
+    "muscle_group": "full_body",
+    "intensity": "low",
+    "duration_minutes": 30,
+    "suitable_phases": [
+        "menstrual",
+        "follicular",
+        "ovulatory",
+        "early_luteal",
+        "late_luteal"
+    ],
+    "optimizing_for": [
+        "maintenance",
+        "energy and consistency",
+        "stress regulation"
+    ],
+    "recovery_demand": "low",
+    "time_commitment": "high",
+    "progression_role": "recover",
+    "content": {
+        "warmup": {
+            "duration_minutes": 5,
+            "description": "Gently prepare joints and muscles for low-impact, controlled compound movements.",
+            "movements": [
+                "March in place with arm swings x 60s",
+                "Bodyweight good mornings x 10",
+                "Wall push-ups x 10",
+                "Shoulder circles x 10 each direction"
+            ]
+        },
+        "main_exercises": [
+            {
+                "name": "Box Squat (Bodyweight or Light Dumbbell)",
+                "sets": 3,
+                "reps": "10-12",
+                "rest_seconds": 60,
+                "load_guidance": "Bodyweight or light load, focus on smooth, controlled tempo",
+                "form_cue": "Sit back to the box with control and stand up by driving through heels"
+            },
+            {
+                "name": "Incline Push-Up (Bench or Wall)",
+                "sets": 3,
+                "reps": "8-12",
+                "rest_seconds": 60,
+                "load_guidance": "Choose an incline that allows 2-3 reps in reserve",
+                "form_cue": "Keep body in a straight line and lower with control"
+            },
+            {
+                "name": "Supported Dumbbell Row",
+                "sets": 3,
+                "reps": "10 each side",
+                "rest_seconds": 60,
+                "load_guidance": "Light to moderate load focusing on controlled pulling",
+                "form_cue": "Pull elbow toward hip and avoid shrugging shoulders"
+            },
+            {
+                "name": "Dumbbell Romanian Deadlift (Light)",
+                "sets": 3,
+                "reps": "10-12",
+                "rest_seconds": 60,
+                "load_guidance": "Light load, prioritizing hinge pattern and hamstring stretch",
+                "form_cue": "Keep spine neutral and hinge at hips with slight knee bend"
+            },
+            {
+                "name": "Farmer Carry (Light Dumbbells)",
+                "sets": 3,
+                "reps": "20-30s walk",
+                "rest_seconds": 60,
+                "load_guidance": "Light load that allows upright posture and steady breathing",
+                "form_cue": "Stand tall, keep shoulders relaxed, and walk with controlled steps"
+            }
+        ],
+        "cooldown": {
+            "duration_minutes": 5,
+            "description": "Relax muscles and improve joint mobility after gentle full-body work.",
+            "movements": [
+                "Child’s pose x 60s",
+                "Standing quad stretch x 30s each side",
+                "Chest stretch x 30s each side"
+            ]
+        }
+    },
+    "phase_notes": {
+        "menstrual": "This gentle, joint-friendly session is ideal—keep movements slow and prioritize comfort over range or reps.",
+        "follicular": "Use this session to build consistency and reinforce smooth, controlled movement patterns without pushing intensity.",
+        "ovulatory": "Even with higher energy, keep the focus on joint-friendly control—this session supports recovery and movement quality.",
+        "early_luteal": "Maintain steady effort and use this session to support recovery while staying active and consistent.",
+        "late_luteal": "This session is supportive for lower energy days—focus on gentle movement and reducing joint stiffness without strain."
+    },
+    "author": null,
+    "created_at": "2026-04-15"
+}

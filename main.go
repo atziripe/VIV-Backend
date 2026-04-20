@@ -19,6 +19,9 @@ import (
 	"viv/internal/adapters/repository"
 	"viv/internal/adapters/runner"
 	"viv/internal/config"
+	"viv/internal/core/rules"
+	rulestraining "viv/internal/core/rules/training"
+	coretraining "viv/internal/core/training"
 	"viv/internal/core/usecase"
 )
 
@@ -68,11 +71,28 @@ func main() {
 	oaClient := openai.NewOpenAIClient(cfg.OpenAIAPIKey, "gpt-4.1-mini")
 	planGen := openai.NewGPTPlanGenerator(oaClient, "v1")
 
+	// ========= Training Pipeline =========
+	trainingLib, err := coretraining.LoadLibrary("internal/content/training")
+	if err != nil {
+		log.Fatalf("failed to load training library: %v", err)
+	}
+	log.Printf("training library loaded: %d sessions", trainingLib.SessionCount())
+
+	trainingEngine := rules.NewEngine(rulestraining.NewTrainingRuleSet())
+	log.Printf("training rule engine initialized: %d rules", trainingEngine.RuleCount())
+	trainingStructureGen := openai.NewTrainingStructureGenerator(oaClient)
+	generateTrainingUC := usecase.NewGenerateTrainingPlanUsecase(
+		trainingStructureGen,
+		trainingEngine,
+		trainingLib,
+	)
+
 	// ========= Usecases =========
 	onboardingUC := usecase.NewCompleteOnboardingUseCase(userRepo)
 	createCheckinUC := usecase.NewCreateCheckinUseCase(checkinRepo, userRepo, "v1")
 	latestCheckinUC := usecase.NewGetLatestCheckinUseCase(checkinRepo)
 	statusCheckinUC := usecase.NewGetCheckinStatusUseCase(checkinRepo)
+	cyclePhaseLookup := usecase.NewCyclePhaseAdapter(userRepo)
 
 	reportLifestyleUC := usecase.NewReportLifestyleChangeUseCase(lifestyleRepo, userRepo)
 	listLifestyleUC := usecase.NewListLifestyleChangesUseCase(lifestyleRepo)
@@ -86,9 +106,15 @@ func main() {
 	adjustUC := usecase.NewAdjustPlanUseCase(userRepo, checkinRepo, planRepo, lifestyleRepo, planGen)
 	getByWeekStartUC := usecase.NewGetPlanByWeekStartUseCase(planRepo)
 
-	runner := runner.NewLocalPlanGenerationRunner(planJobsRepo, generatePlanUC, 4*time.Minute)
-	startUC := usecase.NewStartPlanGenerationUseCase(planJobsRepo, runner)
+	planRunner := runner.NewLocalPlanGenerationRunner(planJobsRepo, generatePlanUC, 4*time.Minute)
+	startUC := usecase.NewStartPlanGenerationUseCase(planJobsRepo, planRunner)
 	statusUC := usecase.NewGetPlanGenerationStatusUseCase(planJobsRepo)
+
+	// Training runner — reuses the same job system as plans
+	trainingRunner := runner.NewLocalTrainingPlanRunner(planJobsRepo, generateTrainingUC, userRepo, checkinRepo, cyclePhaseLookup, 2*time.Minute)
+	// Training usecases — reuse StartPlanGeneration with the training runner
+	startTrainingUC := usecase.NewStartPlanGenerationUseCase(planJobsRepo, trainingRunner)
+	statusTrainingUC := usecase.NewGetPlanGenerationStatusUseCase(planJobsRepo)
 
 	// ========= Handlers =========
 	onboardingHandler := httpadapter.NewOnboardingHandler(onboardingUC)
@@ -96,7 +122,7 @@ func main() {
 	lifestyleHandler := httpadapter.NewLifestyleHandler(reportLifestyleUC, listLifestyleUC)
 	meHandler := httpadapter.NewMeHandler(getMeUC)
 	plansHandler := httpadapter.NewPlansHandler(generatePlanUC, getCurrentPlanUC, getByIDUC, adjustUC, getByWeekStartUC, startUC, statusUC)
-	trainingHandler := httpadapter.NewTrainingHandler(resumeTrainingUC)
+	trainingHandler := httpadapter.NewTrainingHandler(startTrainingUC, statusTrainingUC, trainingEngine, resumeTrainingUC)
 
 	// ========= Router config =========
 	r := chi.NewRouter()
@@ -145,6 +171,9 @@ func main() {
 	api.Get("/plans/generate/status", plansHandler.GenerateStatus)
 
 	api.Post("/training/resume", trainingHandler.Resume)
+	api.Post("/generate", trainingHandler.Generate)
+	api.Get("/generate/status", trainingHandler.GenerateStatus)
+	api.Post("/validate-arrangement", trainingHandler.ValidateArrangement)
 
 	// Router protegido (aplica auth a TODO lo que montes dentro)
 	protected := chi.NewRouter()

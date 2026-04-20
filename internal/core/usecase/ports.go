@@ -17,6 +17,10 @@ type CheckinRepository interface {
 	GetLatestByUser(ctx context.Context, userID string) (*domain.Checkin, error)
 }
 
+type CyclePhaseLookup interface {
+	CurrentPhase(ctx context.Context, userID string) (domain.CyclePhase, error)
+}
+
 type LifestyleChangeRepository interface {
 	Create(ctx context.Context, e *domain.LifestyleChange) error
 	ListByUser(ctx context.Context, userID string, limit int) ([]*domain.LifestyleChange, error)
@@ -51,4 +55,24 @@ type PlanGenerationRunner interface {
 	// Run starts the background generation process for a previously created job.
 	// It must return immediately (non-blocking).
 	Run(userID, jobID, checkinID string)
+}
+
+type TrainingStructureGenerator interface {
+	GenerateWeekStructure(
+		ctx context.Context,
+		input StructureGenerationInput,
+	) (domain.WeekArrangement, TokenUsage, error)
+}
+
+type StructureGenerationInput struct {
+	Phase         domain.CyclePhase
+	Budget        domain.WeekBudget
+	Constraints   []string //human readable spacing rules for the prompt
+	RetryFeedback string   // violation messages from a failed attempt ("" on first try)
+}
+
+type TokenUsage struct {
+	PromptTokens     int
+	CompletionTokens int
+	Model            string
 }

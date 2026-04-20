@@ -1,0 +1,96 @@
+{
+    "id": "strength_full_body_low_v1",
+    "version": 1,
+    "content_status": "draft_llm_generated",
+    "modality": "STRENGTH",
+    "muscle_group": "full_body",
+    "intensity": "low",
+    "duration_minutes": 30,
+    "suitable_phases": [
+        "menstrual",
+        "follicular",
+        "ovulatory",
+        "early_luteal",
+        "late_luteal"
+    ],
+    "optimizing_for": [
+        "energy and consistency",
+        "maintenance",
+        "stress regulation"
+    ],
+    "recovery_demand": "low",
+    "time_commitment": "high",
+    "progression_role": "recover",
+    "content": {
+        "warmup": {
+            "duration_minutes": 5,
+            "description": "Gently activate full body with emphasis on coordination and joint control.",
+            "movements": [
+                "Marching in place with arm swings x 60s",
+                "Cat-cow x 6 slow cycles",
+                "Hip circles x 6 each direction",
+                "Arm reaches overhead x 10"
+            ]
+        },
+        "main_exercises": [
+            {
+                "name": "Single-Leg Sit-to-Stand (assisted if needed)",
+                "sets": 3,
+                "reps": "6-8 each leg",
+                "rest_seconds": 60,
+                "load_guidance": "Bodyweight only, use support as needed for balance",
+                "form_cue": "Control the descent and keep knee aligned over toes"
+            },
+            {
+                "name": "Bird Dog (with pause)",
+                "sets": 3,
+                "reps": "8 each side",
+                "rest_seconds": 45,
+                "load_guidance": "Bodyweight only, focus on slow and controlled movement",
+                "form_cue": "Pause at full extension and keep hips level"
+            },
+            {
+                "name": "Lateral Step and Reach",
+                "sets": 3,
+                "reps": "8 each side",
+                "rest_seconds": 45,
+                "load_guidance": "Bodyweight only, focus on coordination and control",
+                "form_cue": "Step softly and reach across the body with control"
+            },
+            {
+                "name": "Half-Kneeling Anti-Rotation Hold (Band)",
+                "sets": 3,
+                "reps": "20-30s hold each side",
+                "rest_seconds": 45,
+                "load_guidance": "Light resistance band, prioritize stability over tension",
+                "form_cue": "Keep torso upright and resist rotation through the core"
+            },
+            {
+                "name": "Heel-to-Toe Balance Walk",
+                "sets": 3,
+                "reps": "10-12 steps",
+                "rest_seconds": 45,
+                "load_guidance": "Bodyweight only, slow controlled steps",
+                "form_cue": "Place each foot directly in front of the other and stay tall"
+            }
+        ],
+        "cooldown": {
+            "duration_minutes": 5,
+            "description": "Calm the body and reinforce mobility with gentle stretching and breath.",
+            "movements": [
+                "Child’s pose x 60s",
+                "Standing forward fold x 45s",
+                "Seated spinal twist x 30s each side"
+            ]
+        }
+    },
+    "phase_notes": {
+        "menstrual": "This low-intensity, coordination-focused session is ideal—move slowly and prioritize balance and comfort over precision.",
+        "follicular": "Great time to refine coordination—focus on smoother, more controlled transitions and improved balance.",
+        "ovulatory": "You may feel more stable and coordinated—use this to improve control and confidence in movement patterns.",
+        "early_luteal": "Maintain consistency and focus on clean, controlled movement—this session supports stability without fatigue.",
+        "late_luteal": "Keep movements slow and grounded—this session can help maintain coordination while reducing stress and fatigue."
+    },
+    "author": null,
+    "created_at": "2026-04-15"
+}

@@ -7,8 +7,6 @@ import (
 	"viv/internal/core/rules"
 )
 
-//CHEQUEAR ESTA REGLA CON STEFY
-
 /* NoConsecutiveHighIntensityRule verifica que no haya dos sesiones de alta
 intensidad (STRENGTH o HIIT) en días consecutivos.
 

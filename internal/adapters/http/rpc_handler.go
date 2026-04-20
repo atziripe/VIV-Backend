@@ -165,8 +165,13 @@ func isAllowedRoute(method, path string) bool {
 
 	case method == "POST" && path == "/training/resume":
 		return true
+	case method == "POST" && path == "/training/generate":
+		return true
+	case method == "GET" && path == "/training/generate/status":
+		return true
+	case method == "POST" && path == "/training/validate-arrangement":
+		return true
 	}
-
 	return false
 }
 

@@ -7,8 +7,6 @@ import (
 	"viv/internal/core/rules"
 )
 
-// CHEQUEAR CON STEFY SI ESTA REGLA DEBA SER SOFT WARNING O HARD BLOCK
-
 /* The SameMuscle72hLateLutealRule ensures that no two high-intensity muscle training sessions
 (STRENGTH or HIIT) targeting the same muscle group occur within 72 hours of each other during the late luteal phase.
 Rationale: Recovery is slower in the late luteal phase due to the increased basal metabolic rate and higher metabolic cost.
@@ -49,7 +47,7 @@ func (r SameMuscle72hLateLutealRule) Evaluate(ctx rules.Context) *rules.Violatio
 			if days[i].Session.MuscleGroup == days[j].Session.MuscleGroup {
 				return &rules.Violation{
 					RuleID:   r.ID(),
-					Severity: rules.SeverityHardBlock,
+					Severity: rules.SeveritySoftWarning,
 					Message: fmt.Sprintf(
 						"Recovery is slower this phase, your muscles need an extra day. %s sessions on day %d and day %d are less than 72hrs apart.",
 						days[i].Session.MuscleGroup,

@@ -1,0 +1,96 @@
+{
+    "id": "strength_upper_low_v1",
+    "version": 1,
+    "content_status": "draft_llm_generated",
+    "modality": "STRENGTH",
+    "muscle_group": "upper",
+    "intensity": "low",
+    "duration_minutes": 35,
+    "suitable_phases": [
+        "menstrual",
+        "follicular",
+        "ovulatory",
+        "early_luteal",
+        "late_luteal"
+    ],
+    "optimizing_for": [
+        "stress regulation",
+        "energy and consistency",
+        "maintenance"
+    ],
+    "recovery_demand": "low",
+    "time_commitment": "high",
+    "progression_role": "recover",
+    "content": {
+        "warmup": {
+            "duration_minutes": 7,
+            "description": "Activate upper back and shoulders with gentle mobility and light band engagement.",
+            "movements": [
+                "Shoulder rolls x 10 each direction",
+                "Arm circles x 10 each direction",
+                "Resistance band pull-aparts x 12",
+                "Wall slides x 8"
+            ]
+        },
+        "main_exercises": [
+            {
+                "name": "Resistance Band Face Pull",
+                "sets": 3,
+                "reps": "12-15",
+                "rest_seconds": 60,
+                "load_guidance": "Light resistance band, focus on controlled contraction",
+                "form_cue": "Pull band toward face while keeping elbows high and shoulders down"
+            },
+            {
+                "name": "Resistance Band External Rotation",
+                "sets": 3,
+                "reps": "10-12 each side",
+                "rest_seconds": 60,
+                "load_guidance": "Very light band, prioritize slow and controlled movement",
+                "form_cue": "Keep elbow pinned to your side and rotate only through the shoulder"
+            },
+            {
+                "name": "Wall-Supported Y-T Raises",
+                "sets": 3,
+                "reps": "8-10 each position",
+                "rest_seconds": 60,
+                "load_guidance": "Bodyweight or very light resistance, focus on activation",
+                "form_cue": "Keep arms long and avoid shrugging shoulders upward"
+            },
+            {
+                "name": "Resistance Band Row (Seated or Standing)",
+                "sets": 3,
+                "reps": "12-15",
+                "rest_seconds": 60,
+                "load_guidance": "Light band, focus on scapular retraction rather than load",
+                "form_cue": "Pull shoulder blades together before bending elbows"
+            },
+            {
+                "name": "Scapular Push-Ups",
+                "sets": 3,
+                "reps": "10-12",
+                "rest_seconds": 60,
+                "load_guidance": "Bodyweight only, small controlled range",
+                "form_cue": "Keep arms straight and move only through the shoulder blades"
+            }
+        ],
+        "cooldown": {
+            "duration_minutes": 6,
+            "description": "Release upper body tension and reinforce relaxed, aligned posture.",
+            "movements": [
+                "Chest stretch against wall x 30s each side",
+                "Upper trap stretch x 30s each side",
+                "Child’s pose with arms extended x 60s"
+            ]
+        }
+    },
+    "phase_notes": {
+        "menstrual": "This gentle, posture-focused session is ideal—keep movements slow and focus on releasing tension while maintaining light activation.",
+        "follicular": "Use this session to reinforce strong posture and scapular control—these foundations will support heavier upper body training later.",
+        "ovulatory": "Even with higher energy, keep the focus on precision and control—this is a great time to refine movement quality.",
+        "early_luteal": "Maintain consistency and focus on clean execution—this session helps support shoulder health and posture as fatigue may begin to rise.",
+        "late_luteal": "This session is highly supportive—keep movements gentle and controlled, focusing on reducing tension and maintaining alignment."
+    },
+    "author": null,
+    "created_at": "2026-04-15"
+}

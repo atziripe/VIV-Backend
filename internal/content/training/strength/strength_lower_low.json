@@ -1,0 +1,96 @@
+{
+    "id": "strength_lower_low_v1",
+    "version": 1,
+    "content_status": "draft_llm_generated",
+    "modality": "STRENGTH",
+    "muscle_group": "lower",
+    "intensity": "low",
+    "duration_minutes": 35,
+    "suitable_phases": [
+        "menstrual",
+        "follicular",
+        "ovulatory",
+        "early_luteal",
+        "late_luteal"
+    ],
+    "optimizing_for": [
+        "strength and resilience",
+        "energy and consistency",
+        "maintenance"
+    ],
+    "recovery_demand": "low",
+    "time_commitment": "high",
+    "progression_role": "recover",
+    "content": {
+        "warmup": {
+            "duration_minutes": 7,
+            "description": "Prepare hips, knees, and ankles with controlled mobility and activation for squat and hinge patterns.",
+            "movements": [
+                "Bodyweight squat to reach x 10",
+                "Hip hinge drill (hands on hips) x 10",
+                "Glute bridges x 12",
+                "Ankle mobility rocks x 10 each side"
+            ]
+        },
+        "main_exercises": [
+            {
+                "name": "Tempo Bodyweight Squat",
+                "sets": 3,
+                "reps": "8-10",
+                "rest_seconds": 75,
+                "load_guidance": "Bodyweight only, slow tempo (3 seconds down, 1 pause, controlled up)",
+                "form_cue": "Sit hips down between heels while keeping chest lifted"
+            },
+            {
+                "name": "Hip Hinge Drill (Wall Tap or Dowel)",
+                "sets": 3,
+                "reps": "10-12",
+                "rest_seconds": 60,
+                "load_guidance": "Bodyweight only, focus on patterning rather than fatigue",
+                "form_cue": "Push hips back while keeping spine neutral and ribs down"
+            },
+            {
+                "name": "Split Squat (Bodyweight)",
+                "sets": 3,
+                "reps": "8 each leg",
+                "rest_seconds": 75,
+                "load_guidance": "Bodyweight with controlled depth and balance",
+                "form_cue": "Lower straight down and keep front knee tracking forward"
+            },
+            {
+                "name": "Single-Leg Glute Bridge",
+                "sets": 3,
+                "reps": "8 each leg",
+                "rest_seconds": 60,
+                "load_guidance": "Bodyweight only, focus on glute activation",
+                "form_cue": "Keep hips level and avoid arching the lower back"
+            },
+            {
+                "name": "Supported Romanian Deadlift (Light Dumbbells optional)",
+                "sets": 3,
+                "reps": "10",
+                "rest_seconds": 60,
+                "load_guidance": "Bodyweight or very light load, prioritizing hinge control",
+                "form_cue": "Maintain slight knee bend and feel stretch through hamstrings"
+            }
+        ],
+        "cooldown": {
+            "duration_minutes": 6,
+            "description": "Reinforce mobility and release tension in hips and posterior chain.",
+            "movements": [
+                "Deep squat hold (supported if needed) x 60s",
+                "Hamstring stretch x 30s each side",
+                "Figure 4 stretch x 30s each side"
+            ]
+        }
+    },
+    "phase_notes": {
+        "menstrual": "This technique-focused session is ideal—move slowly and use it to reconnect with movement patterns without fatigue. Prioritize comfort and range of motion.",
+        "follicular": "Great time to refine technique—focus on precision in squat and hinge mechanics, building a strong foundation for heavier training later.",
+        "ovulatory": "Even with higher energy, keep this session controlled—use it to improve movement quality and reinforce strong patterns.",
+        "early_luteal": "Use this session to maintain consistency and clean technique—focus on smooth, controlled reps rather than intensity.",
+        "late_luteal": "This low-intensity session is supportive—move gently and focus on control and stability without pushing effort."
+    },
+    "author": null,
+    "created_at": "2026-04-15"
+}
