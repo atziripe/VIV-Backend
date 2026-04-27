@@ -46,7 +46,6 @@ func (h *RPCHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// seguridad básica
 	if !strings.HasPrefix(path, "/") {
 		http.Error(w, "invalid path", http.StatusBadRequest)
 		return
@@ -91,7 +90,7 @@ func (h *RPCHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	internalReq, err := http.NewRequestWithContext(
-		context.Background(), // 👈 contexto limpio
+		context.Background(),
 		method,
 		internalURL,
 		bytes.NewReader(bodyBytes),
@@ -102,7 +101,6 @@ func (h *RPCHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Reinyectar userID en el contexto (sin chi route ctx sucio)
 	internalReq = internalReq.WithContext(WithUserID(internalReq.Context(), userID))
 	internalReq.Header.Set("Content-Type", "application/json")
 
@@ -133,7 +131,7 @@ func normalizePath(p string) string {
 	return p
 }
 
-// 👇 WHITELIST CLARA Y SIMPLE
+// WHITELIST
 func isAllowedRoute(method, path string) bool {
 	switch {
 	case method == "GET" && path == "/me":
@@ -171,6 +169,10 @@ func isAllowedRoute(method, path string) bool {
 		return true
 	case method == "POST" && path == "/training/validate-arrangement":
 		return true
+	case method == "GET" && strings.HasPrefix(path, "/training/"):
+		return true
+	case method == "POST" && strings.HasPrefix(path, "/training/"):
+		return true
 	}
 	return false
 }
@@ -185,14 +187,11 @@ func selectSubBody(path string, body map[string]any) any {
 		return map[string]any{}
 
 	case "/plans/generate":
-		// Esperamos que FlutterFlow mande algo como:
 		// body: { "plan_generate": { "checkin_id": "..." } }
 		// o body: { "plan_generate": {} }
 		if v, ok := body["plan_generate"]; ok {
-			// Si viene un map, verificamos checkin_id
 			if m, ok := v.(map[string]any); ok {
 				if raw, exists := m["checkin_id"]; exists {
-					// si viene nil, "", o whitespace → starter plan → {}
 					if raw == nil {
 						return map[string]any{}
 					}
@@ -200,45 +199,62 @@ func selectSubBody(path string, body map[string]any) any {
 						if strings.TrimSpace(s) == "" {
 							return map[string]any{}
 						}
-						// valor válido
 						return map[string]any{"checkin_id": strings.TrimSpace(s)}
 					}
-					// si viene de otro tipo, lo devolvemos tal cual (por si FF manda algo raro)
 					return m
 				}
-				// no existe checkin_id → starter plan
 				return map[string]any{}
 			}
 
-			// Si FlutterFlow manda directamente un string checkin_id (no recomendado)
 			if s, ok := v.(string); ok && strings.TrimSpace(s) != "" {
 				return map[string]any{"checkin_id": strings.TrimSpace(s)}
 			}
 
-			// Cualquier otro caso → starter plan
 			return map[string]any{}
 		}
 
-		// Si no viene plan_generate → starter plan
 		return map[string]any{}
 
-	case "/checkins":
-		// Esperamos que FlutterFlow mande:
-		// body: { "checkins": { ... } }
-		v, ok := body["checkins"]
+	case "/training/generate":
+		if v, ok := body["training_generate"]; ok {
+			if m, ok := v.(map[string]any); ok {
+				if raw, exists := m["checkin_id"]; exists {
+					if raw == nil {
+						return map[string]any{}
+					}
+					if s, ok := raw.(string); ok {
+						if strings.TrimSpace(s) == "" {
+							return map[string]any{}
+						}
+						return map[string]any{"checkin_id": strings.TrimSpace(s)}
+					}
+					return m
+				}
+				return map[string]any{}
+			}
+
+			if s, ok := v.(string); ok && strings.TrimSpace(s) != "" {
+				return map[string]any{"checkin_id": strings.TrimSpace(s)}
+			}
+
+			return map[string]any{}
+		}
+
+		return map[string]any{}
+
+	case "/training/complete-day":
+		v, ok := body["training_completed"]
 		if !ok || v == nil {
 			return map[string]any{}
 		}
 
 		m, ok := v.(map[string]any)
 		if !ok {
-			// Si FlutterFlow manda algo raro, no rompemos: devolvemos empty
 			return map[string]any{}
 		}
 
 		out := map[string]any{}
 
-		// helper: copia si existe, y si es string -> trim
 		copyTrim := func(key string) {
 			raw, exists := m[key]
 			if !exists || raw == nil {
@@ -252,7 +268,121 @@ func selectSubBody(path string, body map[string]any) any {
 				out[key] = t
 				return
 			}
-			// otros tipos (bool, number, array, map) se pasan tal cual
+			out[key] = raw
+		}
+
+		copyTrim("plan_id")
+		copyTrim("weekday")
+
+		if len(out) == 0 {
+			return map[string]any{}
+		}
+		return out
+
+	case "/training/save-arrangement":
+		v, ok := body["training_save_arrangement"]
+		if !ok || v == nil {
+			return map[string]any{}
+		}
+
+		m, ok := v.(map[string]any)
+		if !ok {
+			return map[string]any{}
+		}
+
+		out := map[string]any{}
+
+		copyTrim := func(key string) {
+			raw, exists := m[key]
+			if !exists || raw == nil {
+				return
+			}
+			if s, ok := raw.(string); ok {
+				t := strings.TrimSpace(s)
+				if t == "" {
+					return
+				}
+				out[key] = t
+				return
+			}
+			out[key] = raw
+		}
+
+		copyTrim("training_plan_id")
+		copyTrim("days_json")
+
+		if len(out) == 0 {
+			return map[string]any{}
+		}
+		return out
+
+	case "/training/validate-arrangement":
+		v, ok := body["training_validate_arrangement"]
+		if !ok || v == nil {
+			return map[string]any{}
+		}
+
+		m, ok := v.(map[string]any)
+		if !ok {
+			return map[string]any{}
+		}
+
+		out := map[string]any{}
+
+		copyTrim := func(key string) {
+			raw, exists := m[key]
+			if !exists || raw == nil {
+				return
+			}
+			if s, ok := raw.(string); ok {
+				t := strings.TrimSpace(s)
+				if t == "" {
+					return
+				}
+				out[key] = t
+				return
+			}
+			out[key] = raw
+		}
+
+		copyTrim("phase")
+
+		if raw, exists := m["days"]; exists && raw != nil {
+			out["days"] = raw
+		}
+
+		if len(out) == 0 {
+			return map[string]any{}
+		}
+		return out
+
+	case "/checkins":
+		// body: { "checkins": { ... } }
+		v, ok := body["checkins"]
+		if !ok || v == nil {
+			return map[string]any{}
+		}
+
+		m, ok := v.(map[string]any)
+		if !ok {
+			return map[string]any{}
+		}
+
+		out := map[string]any{}
+
+		copyTrim := func(key string) {
+			raw, exists := m[key]
+			if !exists || raw == nil {
+				return
+			}
+			if s, ok := raw.(string); ok {
+				t := strings.TrimSpace(s)
+				if t == "" {
+					return
+				}
+				out[key] = t
+				return
+			}
 			out[key] = raw
 		}
 
@@ -265,13 +395,11 @@ func selectSubBody(path string, body map[string]any) any {
 		copyTrim("mental_energy")
 		copyTrim("week_sessions")
 
-		// Si no vino nada usable, regresa {}
 		if len(out) == 0 {
 			return map[string]any{}
 		}
 		return out
 	case "/lifestyle-changes":
-		// Esperamos:
 		// body: { "change_lifestyle": { "type": "...", "space_train": "...", ... } }
 		v, ok := body["change_lifestyle"]
 		if !ok || v == nil {
@@ -301,7 +429,6 @@ func selectSubBody(path string, body map[string]any) any {
 			out[key] = raw
 		}
 
-		// según tu schema
 		copyTrim("type")
 		copyTrim("space_train")
 		copyTrim("possible_diet")
@@ -314,8 +441,6 @@ func selectSubBody(path string, body map[string]any) any {
 		return out
 
 	case "/plans/adjust":
-		// Esperamos:
-		// body: { "adjust_plan": { "lifestyle_change_id": "..." } }
 		if v, ok := body["adjust_plan"]; ok {
 			if m, ok := v.(map[string]any); ok {
 				raw, exists := m["lifestyle_change_id"]
@@ -329,11 +454,9 @@ func selectSubBody(path string, body map[string]any) any {
 					}
 					return map[string]any{"lifestyle_change_id": t}
 				}
-				// si viene de otro tipo raro, devolvemos el map tal cual
 				return m
 			}
 
-			// si FF manda directo el string (no ideal)
 			if s, ok := v.(string); ok && strings.TrimSpace(s) != "" {
 				return map[string]any{"lifestyle_change_id": strings.TrimSpace(s)}
 			}

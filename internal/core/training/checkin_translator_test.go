@@ -278,3 +278,22 @@ func TestTranslate_BestCase_NoPullBack(t *testing.T) {
 		t.Error("best case check-in should not trigger rest week")
 	}
 }
+
+func TestTranslate_EmptyCheckin_ReturnsDefaults(t *testing.T) {
+	checkin := domain.Checkin{} // new user, no check-in data
+
+	dims := training.TranslateCheckin(checkin)
+
+	if dims.Recovery != domain.RecoveryModerate {
+		t.Errorf("expected RecoveryModerate for empty checkin, got %q", dims.Recovery)
+	}
+	if dims.Bandwidth != domain.BandwidthModerate {
+		t.Errorf("expected BandwidthModerate for empty checkin, got %q", dims.Bandwidth)
+	}
+	if dims.Build != domain.ReadinessMaintain {
+		t.Errorf("expected ReadinessMaintain for empty checkin, got %q", dims.Build)
+	}
+	if dims.RestWeekRecommended() {
+		t.Error("should not recommend rest week for new user")
+	}
+}

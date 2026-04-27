@@ -40,7 +40,7 @@ const (
 )
 
 // ============================================================================
-// TIPOS ESTRUCTURALES — lo que el engine valida
+// TIPOS ESTRUCTURALES — lo que el engine valida TRAINING ENGINE
 // ============================================================================
 // NOTA: TrainingSession es deliberadamente LIGERA. Contiene solo los campos
 // que las reglas necesitan para validar. El contenido completo (ejercicios,
@@ -80,7 +80,7 @@ type WeekArrangement struct {
 }
 
 // ============================================================================
-// TIPOS DE LA LIBRERÍA DE TRAINING
+// TIPOS DE LA LIBRERÍA DE TRAINING TRAINING LIBRARY
 // ============================================================================
 // Estos tipos representan una sesión COMPLETA como vive en los archivos JSON
 // de la librería. Incluyen contenido (ejercicios, warmup, cooldown),
@@ -161,7 +161,7 @@ func (ls LibrarySession) SuitableForPhase(phase CyclePhase) bool {
 }
 
 // ============================================================================
-// ENRICHED TRAINING PLAN — the final output of the generation pipeline
+// ENRICHED TRAINING PLAN — the final output of the generation pipeline TRAINING PLAN - FINAL OUTPUT
 // ============================================================================
 // This is what the user receives. It combines:
 //   - The validated weekly structure (from Layer 1 + engine)

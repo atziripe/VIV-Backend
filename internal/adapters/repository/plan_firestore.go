@@ -13,7 +13,6 @@ import (
 	"viv/internal/core/usecase"
 )
 
-// Garantizamos que implementa la interfaz
 var _ usecase.PlanRepository = (*FirestorePlanRepository)(nil)
 
 type FirestorePlanRepository struct {
@@ -47,6 +46,8 @@ type planDoc struct {
 	TrainingJSON  string `firestore:"training_json"`
 	NutritionJSON string `firestore:"nutrition_json"`
 	RecoveryJSON  string `firestore:"recovery_json"`
+
+	TrainingCompleted map[string]bool `firestore:"training_completed,omitempty"`
 
 	Recommendations []recommendationDoc `firestore:"recommendations"`
 
@@ -161,6 +162,8 @@ func (r *FirestorePlanRepository) GetByID(ctx context.Context, userID, planID st
 		NutritionJSON: []byte(pd.NutritionJSON),
 		RecoveryJSON:  []byte(pd.RecoveryJSON),
 
+		TrainingCompleted: pd.TrainingCompleted,
+
 		Recommendations: recs,
 
 		GeneratedFrom: pd.GeneratedFrom,
@@ -226,6 +229,8 @@ func (r *FirestorePlanRepository) GetLatestByWeekStart(ctx context.Context, user
 		NutritionJSON: []byte(pd.NutritionJSON),
 		RecoveryJSON:  []byte(pd.RecoveryJSON),
 
+		TrainingCompleted: pd.TrainingCompleted,
+
 		Recommendations: recs,
 
 		GeneratedFrom: pd.GeneratedFrom,
@@ -288,6 +293,8 @@ func (r *FirestorePlanRepository) GetLatest(ctx context.Context, userID string) 
 		NutritionJSON: []byte(pd.NutritionJSON),
 		RecoveryJSON:  []byte(pd.RecoveryJSON),
 
+		TrainingCompleted: pd.TrainingCompleted,
+
 		Recommendations: recs,
 
 		GeneratedFrom: pd.GeneratedFrom,
@@ -296,4 +303,28 @@ func (r *FirestorePlanRepository) GetLatest(ctx context.Context, userID string) 
 	}
 
 	return plan, nil
+}
+
+func (r *FirestorePlanRepository) UpdateTrainingCompleted(ctx context.Context, userID, planID string, completed map[string]bool) error {
+	_, err := r.client.
+		Collection("users").
+		Doc(userID).
+		Collection("plans").
+		Doc(planID).
+		Update(ctx, []firestore.Update{
+			{Path: "training_completed", Value: completed},
+		})
+	return err
+}
+
+func (r *FirestorePlanRepository) UpdatedTrainingJSON(ctx context.Context, userID, trainingPlanID string, trainingJson []byte) error {
+	_, err := r.client.
+		Collection("users").
+		Doc(userID).
+		Collection("plans").
+		Doc(trainingPlanID).
+		Update(ctx, []firestore.Update{
+			{Path: "training_json", Value: string(trainingJson)},
+		})
+	return err
 }

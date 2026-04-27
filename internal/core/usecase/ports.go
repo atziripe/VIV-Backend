@@ -33,6 +33,8 @@ type PlanRepository interface {
 	GetByID(ctx context.Context, userID, planID string) (*domain.Plan, error)
 	GetLatestByWeekStart(ctx context.Context, userID string, weekStart time.Time) (*domain.Plan, error)
 	GetLatest(ctx context.Context, userID string) (*domain.Plan, error)
+	UpdateTrainingCompleted(ctx context.Context, userID, planID string, completed map[string]bool) error
+	UpdatedTrainingJSON(ctx context.Context, userID, trainingPlanID string, trianingJson []byte) error
 }
 
 type PlanJobsRepository interface {

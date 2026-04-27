@@ -74,6 +74,8 @@ type planResponse struct {
 	Nutrition json.RawMessage `json:"nutrition,omitempty"`
 	Recovery  json.RawMessage `json:"recovery,omitempty"`
 
+	TrainingCompleted map[string]bool `json:"training_completed,omitempty"`
+
 	Recommendations []recommendationResponse `json:"recommendations,omitempty"`
 
 	// Meta solo cuando viene (ej. /generate)
@@ -393,6 +395,8 @@ func mapPlanToResponse(p *domain.Plan, meta *domain.PlanGenerationMeta) planResp
 		Nutrition:       json.RawMessage(p.NutritionJSON),
 		Recovery:        json.RawMessage(p.RecoveryJSON),
 		Recommendations: recs,
+
+		TrainingCompleted: p.TrainingCompleted,
 	}
 
 	if meta != nil {

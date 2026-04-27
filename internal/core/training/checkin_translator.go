@@ -9,7 +9,12 @@ import "viv/internal/core/domain"
 // puntos. El total se mapea a low/moderate/high (o pull_back/maintain/push_forward).
 //
 // Los pesos son conservadores para MVP — se iteran con data real de uso.
+// If the checkin is empty (new user, no check-in yet), returns healthy defaults.
 func TranslateCheckin(checkin domain.Checkin) domain.CheckinDimensions {
+	if isEmptyCheckin(checkin) {
+		return defaultDimensions()
+	}
+
 	return domain.CheckinDimensions{
 		Recovery:  computeRecovery(checkin),
 		Bandwidth: computeBandwidth(checkin),
@@ -160,5 +165,22 @@ func readinessScore(r domain.CheckinReadiness) int {
 		return -2
 	default:
 		return 0
+	}
+}
+
+// isEmptyCheckin returns true if the checkin has no meaningful data.
+// This happens for new users who haven't done their first weekly check-in.
+func isEmptyCheckin(c domain.Checkin) bool {
+	return c.Sleep == "" && c.Body == "" && c.Demand == "" && c.Readiness == ""
+}
+
+// defaultDimensions returns optimistic defaults for new users.
+// The assumption: a new user is starting fresh — give her a normal plan,
+// not a reduced one. She'll calibrate via her first check-in.
+func defaultDimensions() domain.CheckinDimensions {
+	return domain.CheckinDimensions{
+		Recovery:  domain.RecoveryModerate,
+		Bandwidth: domain.BandwidthModerate,
+		Build:     domain.ReadinessMaintain,
 	}
 }

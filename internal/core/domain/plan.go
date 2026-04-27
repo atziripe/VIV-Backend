@@ -20,6 +20,11 @@ type Plan struct {
 	NutritionJSON []byte
 	RecoveryJSON  []byte
 
+	// TrainingCompleted tracks which days the user marked as done.
+	// Keys are weekday names ("monday", "tuesday", etc.), values are always true.
+	// Absent key = not completed.
+	TrainingCompleted map[string]bool `json:"training_completed,omitempty"`
+
 	Recommendations []Recommendations
 
 	GeneratedFrom string

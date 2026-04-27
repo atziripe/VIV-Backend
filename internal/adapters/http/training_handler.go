@@ -14,10 +14,12 @@ import (
 )
 
 type TrainingHandler struct {
-	StartGenUC  *usecase.StartPlanGenerationUseCase
-	JobStatusUC *usecase.GetPlanGenerationStatusUseCase
-	Engine      *rules.Engine
-	ResumeUC    *usecase.ResumeTrainingUseCase
+	StartGenUC        *usecase.StartPlanGenerationUseCase
+	JobStatusUC       *usecase.GetPlanGenerationStatusUseCase
+	Engine            *rules.Engine
+	ResumeUC          *usecase.ResumeTrainingUseCase
+	CompleteDayUC     *usecase.CompleteTrainingDayUseCase
+	SaveArrangementUC *usecase.SaveTrainingArrangementUseCase
 }
 
 func NewTrainingHandler(
@@ -25,12 +27,16 @@ func NewTrainingHandler(
 	jobStatusUC *usecase.GetPlanGenerationStatusUseCase,
 	engine *rules.Engine,
 	resumeUC *usecase.ResumeTrainingUseCase,
+	completeDayUC *usecase.CompleteTrainingDayUseCase,
+	saveArrangementUC *usecase.SaveTrainingArrangementUseCase,
 ) *TrainingHandler {
 	return &TrainingHandler{
-		StartGenUC:  startGenUC,
-		JobStatusUC: jobStatusUC,
-		Engine:      engine,
-		ResumeUC:    resumeUC,
+		StartGenUC:        startGenUC,
+		JobStatusUC:       jobStatusUC,
+		Engine:            engine,
+		ResumeUC:          resumeUC,
+		CompleteDayUC:     completeDayUC,
+		SaveArrangementUC: saveArrangementUC,
 	}
 }
 
@@ -59,6 +65,16 @@ type validateArrangementSession struct {
 
 type resumeTrainingRequest struct {
 	ClearInjury bool `json:"clear_injury"`
+}
+
+type completeTrainingDayRequest struct {
+	PlanID  string `json:"plan_id"`
+	Weekday string `json:"weekday"`
+}
+
+type saveArrangementRequest struct {
+	TrainingPlanID string `json:"training_plan_id"`
+	DaysJSON       string `json:"days_json"`
 }
 
 // Responses
@@ -254,6 +270,79 @@ func (h *TrainingHandler) Resume(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(resp)
+}
+
+// POST /training/complete-day
+func (h *TrainingHandler) CompleteDay(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	userID, ok := UserIDFromContext(ctx)
+	if !ok || userID == "" {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var req completeTrainingDayRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid json body", http.StatusBadRequest)
+		return
+	}
+
+	if req.PlanID == "" || req.Weekday == "" {
+		http.Error(w, "plan_id and weekday are required", http.StatusBadRequest)
+		return
+	}
+
+	err := h.CompleteDayUC.Execute(ctx, usecase.CompleteTrainingDayInput{
+		UserID:  userID,
+		PlanID:  req.PlanID,
+		Weekday: req.Weekday,
+	})
+	if err != nil {
+		log.Printf("[training.complete] error: %+v\n", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(map[string]string{"status": "completed"})
+}
+
+// POST /training/save-arrangement
+func (h *TrainingHandler) SaveArrangement(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	userID, ok := UserIDFromContext(ctx)
+	if !ok || userID == "" {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var req saveArrangementRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid json body", http.StatusBadRequest)
+		return
+	}
+
+	if req.TrainingPlanID == "" || req.DaysJSON == "" {
+		http.Error(w, "training_plan_id and days_json are required", http.StatusBadRequest)
+		return
+	}
+
+	err := h.SaveArrangementUC.Execute(ctx, usecase.SaveTrainingArrangementInput{
+		UserID:         userID,
+		TrainingPlanID: req.TrainingPlanID,
+		DaysJson:       req.DaysJSON,
+	})
+	if err != nil {
+		log.Printf("[training.save-arrangement] error: %v\n", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]string{"status": "saved"})
+
 }
 
 // HELPERS

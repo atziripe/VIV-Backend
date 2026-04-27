@@ -1,0 +1,72 @@
+{
+    "menstrual": {
+        "hormonal_headline": "Low hormones, high awareness. Your body is clearing — not failing.",
+        "hormonal_description": "Estrogen and progesterone hit their lowest point. Fatigue and inward focus are physiologically correct responses — not signs of weakness. This phase rewards stillness over output.",
+        "play_week_headline": "Withdraw strategically. Signal over noise. Nothing new.",
+        "play_week_description": "Your nervous system is at its most sensitive right now. Protect your attention, reduce decision load, and let the work already in motion run itself. What you don't initiate this week costs you nothing.",
+        "training_headline": "Low hormones. Move if it feels right.",
+        "training_sudheading": "Estrogen and progesterone are at their lowest. Energy varies — follow it, don't force it.",
+        "training_movement_level": "Gentle movement",
+        "training_movement_descp": "low load, honour your energy today",
+        "nutrition_headline": "Low hormones. Your appetite reflects that.",
+        "nutrition_subheading": "Estrogen and progesterone are at their lowest. Appetite tends to be lower too — prioritize nutrient density over volume.",
+        "nutrition_week_biology_headline": "Low estrogen means lower appetite signals. Don't undereat — fuel recovery.",
+        "nutrition_week_biology_subheading": "Reduced appetite this week isn't a problem to solve — it's hormonal. Keep protein consistent even when hunger is low. Iron-rich foods support replenishment if you're bleeding."
+    },
+    "follicular": {
+        "hormonal_headline": "Estrogen rising. Cognitive sharpness, drive, and physical capacity all climbing.",
+        "hormonal_description": "This is your highest-performance window of the cycle. New initiatives, hard conversations, heavy training — all cost less and return more right now. Use it.",
+        "play_week_headline": "Initiate. Push harder. Start what needs starting.",
+        "play_week_description": "Estrogen is rising and your capacity for new ideas, hard training, and difficult conversations is at its highest. This is the window that funds the rest of the cycle. Don't play it safe.",
+        "training_headline": "Drive and energy tend to follow.",
+        "training_sudheading": "Most women feel stronger and more motivated here. If that's you — use the momentum.",
+        "training_movement_level": "Strength + conditioning",
+        "training_movement_descp": "progressive load, use perceived energy as your guide",
+        "nutrition_headline": "Appetite is lower — fuel your training anyway.",
+        "nutrition_subheading": "Rising estrogen suppresses hunger. You may eat less naturally — make sure what you eat is dense enough to support increased training capacity.",
+        "nutrition_week_biology_headline": "Estrogen suppresses hunger signals — especially approaching ovulation.",
+        "nutrition_week_biology_subheading": "Lower appetite is expected and hormonal. If you're training harder this phase, don't let hunger be your guide — your energy demands are higher than your hunger signals suggest."
+    },
+    "ovulatory": {
+        "hormonal_headline": "Peak estrogen. You are at maximum visibility, persuasion, and output capacity.",
+        "hormonal_description": "LH surges and estrogen peaks simultaneously. Your verbal fluency, social confidence, and physical performance are all at their highest. The window is 2–3 days — make them count.",
+        "play_week_headline": "Pitch. Lead. Perform. This window is 48 hours.",
+        "play_week_description": "Peak estrogen makes you sharper, more persuasive, and physically stronger than any other point in your cycle. The high-stakes conversation, the presentation, the PR attempt — schedule them now. The window closes fast.",
+        "training_headline": "High perceived capacity — watch your joints.",
+        "training_sudheading": "Motivation and pain tolerance tend to peak. Ligament laxity also increases — worth knowing before you push hard.",
+        "training_movement_level": "High intensity — with form focus",
+        "training_movement_descp": "push if you feel it, protect knees and ankles",
+        "nutrition_headline": "Lowest appetite of your cycle.",
+        "nutrition_subheading": "Hunger is at its lowest right now — estrogen peaks and appetite suppression peaks with it. Eat intentionally, not by feel.",
+        "nutrition_week_biology_headline": "Appetite suppression is highest at ovulation. Your hunger signals are unreliable right now.",
+        "nutrition_week_biology_subheading": "Estrogen peaks before ovulation and suppresses appetite more than any other phase. If you're training at high intensity this week, you need to eat to performance — not to hunger. Prioritize protein and complex carbs even if meals feel forced."
+    },
+    "early_luteal": {
+        "hormonal_headline": "Progesterone rising. Execution mode — detail work, delivery, follow-through.",
+        "hormonal_description": "Post-ovulation progesterone shifts your brain toward completion over initiation. Deep work, systematic tasks, and strength training all perform well. Consolidate what you started.",
+        "play_week_headline": "Execute. Close loops. Deliver what you started.",
+        "play_week_description": "Progesterone rising shifts your brain toward precision and completion. Detailed work, systematic delivery, and follow-through cost less effort now than in any other phase. Finish things.",
+        "training_headline": "Progesterone rising. Steady effort over explosive output.",
+        "training_sudheading": "Many women find technical and precision work feels natural here. High-intensity sessions are still effective — perceived effort may be slightly higher.",
+        "training_movement_level": "Strength + technical work ",
+        "training_movement_descp": "consistent load, focus on form and execution",
+        "nutrition_headline": "Progesterone rising. Appetite coming back online.",
+        "nutrition_subheading": "Hunger increases as progesterone rises. Normal — and useful. Your body is shifting toward repair and replenishment.",
+        "nutrition_week_biology_headline": "Progesterone stimulates appetite after the ovulatory low. Work with it.",
+        "nutrition_week_biology_subheading": "Returning hunger is progesterone-driven — not a lapse in willpower. Protein and complex carbohydrates support recovery and keep energy stable as progesterone climbs. Cravings are mild here compared to late luteal — easier week to eat well."
+    },
+    "late_luteal": {
+        "hormonal_headline": "Flat energy, louder cravings, slower recovery — all biology, not you.",
+        "hormonal_description": "Progesterone peaks then drops sharply late luteal. What you're experiencing is a measurable hormonal shift — not a performance regression. Women who understand this use it.",
+        "play_week_headline": "Consolidate. Protect your output. Don't add — maintain.",
+        "play_week_description": "This is not a push week. Decisions made under late luteal load cost more than they earn. Train smart, eat well, sleep hard.",
+        "training_headline": "Hormones dropping. Recovery is slower — train accordingly.",
+        "training_sudheading": "Perceived effort is higher and recovery takes longer. Training is still effective — just costs more. Moderate load protects your output next week.",
+        "training_movement_level": "Moderate load",
+        "training_movement_descp": "shorter recovery window, injury risk elevated, form over intensity",
+        "nutrition_headline": "Cravings peak. Eating more is correct.",
+        "nutrition_subheading": "Cravings peak late luteal. Eating to stabilize blood sugar is the lever — not restriction.",
+        "nutrition_week_biology_headline": "Your body is burning more at rest right now. Eating more is correct.",
+        "nutrition_week_biology_subheading": "Progesterone raises your resting metabolic rate late luteal. The increase in appetite you're feeling is your body responding accurately — not a discipline failure."
+    }
+}

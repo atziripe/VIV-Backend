@@ -17,6 +17,7 @@ RUN adduser -D appuser
 USER appuser
 
 COPY --from=builder /app/viv-backend /app/viv-backend
+COPY --from=builder /app/internal/content /app/internal/content
 
 EXPOSE 8080
 

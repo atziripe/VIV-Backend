@@ -110,11 +110,14 @@ func main() {
 	startUC := usecase.NewStartPlanGenerationUseCase(planJobsRepo, planRunner)
 	statusUC := usecase.NewGetPlanGenerationStatusUseCase(planJobsRepo)
 
+	completeDayUC := usecase.NewCompleteTrainingDayUseCase(planRepo)
+
 	// Training runner — reuses the same job system as plans
-	trainingRunner := runner.NewLocalTrainingPlanRunner(planJobsRepo, generateTrainingUC, userRepo, checkinRepo, cyclePhaseLookup, 2*time.Minute)
+	trainingRunner := runner.NewLocalTrainingPlanRunner(planJobsRepo, generateTrainingUC, userRepo, checkinRepo, cyclePhaseLookup, planRepo, 2*time.Minute)
 	// Training usecases — reuse StartPlanGeneration with the training runner
 	startTrainingUC := usecase.NewStartPlanGenerationUseCase(planJobsRepo, trainingRunner)
 	statusTrainingUC := usecase.NewGetPlanGenerationStatusUseCase(planJobsRepo)
+	saveArrangementUC := usecase.NewSaveTrainingArrangementUseCase(planRepo, checkinRepo, trainingLib)
 
 	// ========= Handlers =========
 	onboardingHandler := httpadapter.NewOnboardingHandler(onboardingUC)
@@ -122,7 +125,7 @@ func main() {
 	lifestyleHandler := httpadapter.NewLifestyleHandler(reportLifestyleUC, listLifestyleUC)
 	meHandler := httpadapter.NewMeHandler(getMeUC)
 	plansHandler := httpadapter.NewPlansHandler(generatePlanUC, getCurrentPlanUC, getByIDUC, adjustUC, getByWeekStartUC, startUC, statusUC)
-	trainingHandler := httpadapter.NewTrainingHandler(startTrainingUC, statusTrainingUC, trainingEngine, resumeTrainingUC)
+	trainingHandler := httpadapter.NewTrainingHandler(startTrainingUC, statusTrainingUC, trainingEngine, resumeTrainingUC, completeDayUC, saveArrangementUC)
 
 	// ========= Router config =========
 	r := chi.NewRouter()
@@ -171,9 +174,11 @@ func main() {
 	api.Get("/plans/generate/status", plansHandler.GenerateStatus)
 
 	api.Post("/training/resume", trainingHandler.Resume)
-	api.Post("/generate", trainingHandler.Generate)
-	api.Get("/generate/status", trainingHandler.GenerateStatus)
-	api.Post("/validate-arrangement", trainingHandler.ValidateArrangement)
+	api.Post("/training/generate", trainingHandler.Generate)
+	api.Get("/training/generate/status", trainingHandler.GenerateStatus)
+	api.Post("/training/validate-arrangement", trainingHandler.ValidateArrangement)
+	api.Post("/training/complete-day", trainingHandler.CompleteDay)
+	api.Post("/training/save-arrangement", trainingHandler.SaveArrangement)
 
 	// Router protegido (aplica auth a TODO lo que montes dentro)
 	protected := chi.NewRouter()

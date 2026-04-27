@@ -3,6 +3,7 @@ package runner
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"strings"
 	"time"
@@ -19,6 +20,7 @@ type LocalTrainingPlanRunner struct {
 	userRepo    usecase.UserRepository
 	checkinRepo usecase.CheckinRepository
 	cycleSync   usecase.CyclePhaseLookup
+	planRepo    usecase.PlanRepository
 	timeout     time.Duration
 }
 
@@ -28,6 +30,7 @@ func NewLocalTrainingPlanRunner(
 	userRepo usecase.UserRepository,
 	checkinRepo usecase.CheckinRepository,
 	cycleSync usecase.CyclePhaseLookup,
+	planRepo usecase.PlanRepository,
 	timeout time.Duration,
 ) *LocalTrainingPlanRunner {
 	if timeout <= 0 {
@@ -39,6 +42,7 @@ func NewLocalTrainingPlanRunner(
 		userRepo:    userRepo,
 		checkinRepo: checkinRepo,
 		cycleSync:   cycleSync,
+		planRepo:    planRepo,
 		timeout:     timeout,
 	}
 }
@@ -101,30 +105,65 @@ func (r *LocalTrainingPlanRunner) Run(userID, jobID, checkinID string) {
 		}
 
 		// 5. Serialize the plan to JSON and store
-		planJSON, err := json.Marshal(output.Plan)
+		trainingJSON, err := json.Marshal(output.Plan)
 		if err != nil {
 			log.Printf("[training.runner] marshal failed user=%s job=%s err=%v", userID, jobID, err)
 			_ = r.jobsRepo.MarkFailed(context.Background(), userID, jobID, "failed to serialize plan")
 			return
 		}
 
-		// 6. Save plan (reuse existing plan infrastructure)
-		planID, err := r.savePlan(ctx, userID, checkinID, planJSON, output)
-		if err != nil {
-			log.Printf("[training.runner] save failed user=%s job=%s err=%v", userID, jobID, err)
+		// 6. Save as Plan with TrainingJSON populated
+		now := time.Now().UTC()
+		weekStart := output.Plan.Days[0].Weekday // monday
+		plan := &domain.Plan{
+			UserID:    userID,
+			Status:    "active",
+			CheckinID: checkinID,
+			CreatedAt: now,
+			StartDate: mondayOfCurrentWeek(now),
+			EndDate:   mondayOfCurrentWeek(now).AddDate(0, 0, 6),
+
+			WeeklyHeadline:    fmt.Sprintf("Training plan — %s phase", output.Plan.Phase),
+			CyclePhaseSummary: string(output.Plan.Phase),
+
+			TrainingJSON: trainingJSON,
+
+			GeneratedFrom: output.TokensUsed.Model,
+			PlanVersion:   2, // v2 = rule-based training pipeline
+		}
+		_ = weekStart // used above conceptually
+
+		if err := r.planRepo.Create(ctx, plan); err != nil {
+			log.Printf("[training.runner] save plan failed user=%s job=%s err=%v", userID, jobID, err)
 			_ = r.jobsRepo.MarkFailed(context.Background(), userID, jobID, "failed to save plan")
 			return
 		}
 
+		// Update user's active plan pointer
+		user.LastActivePlanID = &plan.ID
+		if err := r.userRepo.Save(ctx, user); err != nil {
+			log.Printf("[training.runner] update LastActivePlanID failed user=%s plan=%s err=%v", userID, plan.ID, err)
+			// Don't fail the job — plan is already saved
+		}
+
 		// 7. Log observability data
 		log.Printf("[training.runner] success user=%s job=%s plan=%s tokens=%d retried=%v",
-			userID, jobID, planID, output.TokensUsed.PromptTokens+output.TokensUsed.CompletionTokens, output.RetriedOnce)
+			userID, jobID, plan.ID, output.TokensUsed.PromptTokens+output.TokensUsed.CompletionTokens, output.RetriedOnce)
 
 		// 8. Mark job done
-		if err := r.jobsRepo.MarkDone(ctx, userID, jobID, planID); err != nil {
-			log.Printf("[training.runner] mark done failed user=%s job=%s plan=%s err=%v", userID, jobID, planID, err)
+		if err := r.jobsRepo.MarkDone(ctx, userID, jobID, plan.ID); err != nil {
+			log.Printf("[training.runner] mark done failed user=%s job=%s plan=%s err=%v", userID, jobID, plan.ID, err)
 		}
 	}()
+}
+
+func mondayOfCurrentWeek(now time.Time) time.Time {
+	wd := now.Weekday()
+	if wd == time.Sunday {
+		wd = 7
+	}
+	monday := now.AddDate(0, 0, -int(wd-time.Monday))
+	return time.Date(monday.Year(), monday.Month(), monday.Day(), 0, 0, 0, 0, time.UTC)
 }
 
 // savePlan persists the training plan. For now, stores as TrainingJSON
