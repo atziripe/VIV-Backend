@@ -11,15 +11,18 @@ type Checkin struct {
 	// ============================================================
 	// V2 fields — new check-in questions (used by training planner)
 	// ============================================================
-	Sleep          CheckinSleep          // "How did you sleep last week?"
-	Body           CheckinBody           // "How does your body feel today?"
-	AppetiteV2     CheckinAppetite       // "How has your appetite been?" (renamed to avoid collision)
-	Demand         CheckinDemand         // "How demanding does life feel?" (NEW)
-	Predictability CheckinPredictability // "What does your week ahead look like?"
-	LastWeekFeel   CheckinLastWeek       // "Last week's plan felt..."
-	Readiness      CheckinReadiness      // "Going into next week, you feel..."
+	Sleep        CheckinSleep    // "How did you sleep last week?"
+	Body         CheckinBody     // "How does your body feel today?"
+	AppetiteV2   CheckinAppetite // "How has your appetite been?" (renamed to avoid collision)
+	Demand       CheckinDemand   // "How demanding was last week?" (NEW)
+	LastWeekFeel CheckinLastWeek // "Last week's plan felt..."
 
-	CycleStart *time.Time // period start date if it arrived this week
+	CycleStart *time.Time         // period start date if it arrived this week
+	PMSSymtoms *CheckinPMSSymtoms // PMS Symptoms faced during that week (just in late luteal)
+
+	Predictability  CheckinPredictability // "What does your week ahead look like?"
+	Readiness       CheckinReadiness      // "Going into next week, you feel..."
+	AdditionalNotes string
 
 	// ============================================================
 	// V1 fields — deprecated, kept for backward compatibility
@@ -72,7 +75,7 @@ const (
 	AppetiteAllOver CheckinAppetite = "all_over"
 )
 
-// CheckinDemand representa la respuesta a "How demanding does life feel?"
+// CheckinDemand - "How demanding does life feel?"
 type CheckinDemand string
 
 const (
@@ -82,7 +85,7 @@ const (
 	DemandOverloaded CheckinDemand = "overloaded"
 )
 
-// CheckinPredictability representa la respuesta a "What does your week ahead look like?"
+// CheckinPredictability - "What does your week ahead look like?"
 type CheckinPredictability string
 
 const (
@@ -92,7 +95,7 @@ const (
 	PredictabilityChaotic         CheckinPredictability = "chaotic"
 )
 
-// CheckinLastWeek representa la respuesta a "Last week's plan felt..."
+// CheckinLastWeek - "Last week's plan felt..."
 type CheckinLastWeek string
 
 const (
@@ -101,13 +104,25 @@ const (
 	LastWeekTooLight CheckinLastWeek = "too_light"
 )
 
-// CheckinReadiness representa la respuesta a "Going into next week, you feel..."
+// CheckinReadiness - "Going into next week, you feel..."
 type CheckinReadiness string
 
 const (
 	ReadinessBuild     CheckinReadiness = "ready_to_build"
 	ReadinessFragile   CheckinReadiness = "okay_but_fragile"
 	ReadinessStabilize CheckinReadiness = "in_need_of_stabilization"
+)
+
+// PMSSymptoms - "Do you experience any of these PMS synptoms"
+type CheckinPMSSymtoms string
+
+const (
+	PMSCramps     CheckinPMSSymtoms = "cramps"
+	PMSEnergyDips CheckinPMSSymtoms = "energy_dips"
+	PMSAnxiety    CheckinPMSSymtoms = "anxiety"
+	PMSCravings   CheckinPMSSymtoms = "cravings"
+	PMSBloating   CheckinPMSSymtoms = "bloating"
+	PMSHeadache   CheckinPMSSymtoms = "headache"
 )
 
 // ============================================================================

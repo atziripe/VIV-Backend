@@ -19,6 +19,7 @@ import (
 	"viv/internal/adapters/repository"
 	"viv/internal/adapters/runner"
 	"viv/internal/config"
+	"viv/internal/core/recovery"
 	"viv/internal/core/rules"
 	rulestraining "viv/internal/core/rules/training"
 	coretraining "viv/internal/core/training"
@@ -91,11 +92,27 @@ func main() {
 	mealGen := openai.NewMealContentGenerator(oaClient)
 	generateNutritionUC := usecase.NewGenerateNutritionPlanUsecase(mealGen)
 
+	// ========= Recovery Pipeline =========
+	bannerLib, err := recovery.LoadBannerLibrary("internal/content/recovery")
+	if err != nil {
+		log.Printf("warning: banner library not loaded: %v", err)
+		// Don't fatal — banners work with fallback copy
+	} else {
+		log.Printf("recovery banner library loaded: %d entries", bannerLib.EntryCount())
+	}
+
+	movesContentLib, err := recovery.LoadMovesContentLibrary("internal/content/recovery")
+	if err != nil {
+		log.Printf("warning: moves content library not loaded: %v", err)
+	} else {
+		log.Printf("recovery moves library loaded: %d entries", movesContentLib.EntryCount())
+	}
+
 	// ========= Usecases =========
 	onboardingUC := usecase.NewCompleteOnboardingUseCase(userRepo)
 	createCheckinUC := usecase.NewCreateCheckinUseCase(checkinRepo, userRepo, "v1")
 	latestCheckinUC := usecase.NewGetLatestCheckinUseCase(checkinRepo)
-	statusCheckinUC := usecase.NewGetCheckinStatusUseCase(checkinRepo)
+	statusCheckinUC := usecase.NewGetCheckinStatusUseCase(checkinRepo, userRepo)
 	cyclePhaseLookup := usecase.NewCyclePhaseAdapter(userRepo)
 
 	reportLifestyleUC := usecase.NewReportLifestyleChangeUseCase(lifestyleRepo, userRepo)
@@ -115,14 +132,16 @@ func main() {
 	statusUC := usecase.NewGetPlanGenerationStatusUseCase(planJobsRepo)
 	completeDayUC := usecase.NewCompleteTrainingDayUseCase(planRepo)
 
-	// Training runner — reuses the same job system as plans
+	// Plan runner — reuses the same job system as plans
 	trainingRunner := runner.NewLocalTrainingPlanRunner(planJobsRepo, generateTrainingUC, generateNutritionUC, userRepo, checkinRepo, cyclePhaseLookup, planRepo, 3*time.Minute)
+
 	// Training usecases — reuse StartPlanGeneration with the training runner
 	startTrainingUC := usecase.NewStartPlanGenerationUseCase(planJobsRepo, trainingRunner)
 	statusTrainingUC := usecase.NewGetPlanGenerationStatusUseCase(planJobsRepo)
 	saveArrangementUC := usecase.NewSaveTrainingArrangementUseCase(planRepo, checkinRepo, trainingLib)
 
 	nutritionUC := usecase.NewGetNutritionPlanUseCase(userRepo, planRepo, checkinRepo, cyclePhaseLookup)
+	recoveryUC := usecase.NewGetRecoveryUseCase(userRepo, planRepo, cyclePhaseLookup, bannerLib, movesContentLib)
 
 	// ========= Handlers =========
 	onboardingHandler := httpadapter.NewOnboardingHandler(onboardingUC)
@@ -132,6 +151,7 @@ func main() {
 	plansHandler := httpadapter.NewPlansHandler(generatePlanUC, getCurrentPlanUC, getByIDUC, adjustUC, getByWeekStartUC, startUC, statusUC)
 	trainingHandler := httpadapter.NewTrainingHandler(startTrainingUC, statusTrainingUC, trainingEngine, resumeTrainingUC, completeDayUC, saveArrangementUC)
 	nutritionHandler := httpadapter.NewNutritionHandler(nutritionUC)
+	recoveryHandler := httpadapter.NewRecoveryHandler(recoveryUC)
 
 	// ========= Router config =========
 	r := chi.NewRouter()
@@ -187,6 +207,7 @@ func main() {
 	api.Post("/training/save-arrangement", trainingHandler.SaveArrangement)
 
 	api.Get("/nutrition/plan", nutritionHandler.GetPlan)
+	api.Get("/recovery/today", recoveryHandler.GetToday)
 
 	// Router protegido (aplica auth a TODO lo que montes dentro)
 	protected := chi.NewRouter()

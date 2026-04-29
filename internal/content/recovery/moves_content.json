@@ -1,0 +1,1311 @@
+[
+    {
+        "phase": "menstrual",
+        "session_type": "STRENGTH",
+        "consecutive_rest_days": 1,
+        "moves": [
+            {
+                "move_id": "F3",
+                "title": "Iron-rich meal focus",
+                "timing": "Next meal",
+                "detail": "Blood loss and prostaglandins increase fatigue and iron demand. Include heme iron with vitamin C at your next meal to stabilize energy and support oxygen delivery.",
+                "impact": "Highest"
+            },
+            {
+                "move_id": "N1",
+                "title": "4-7-8 breathing reset",
+                "timing": "Midday",
+                "detail": "Low hormones shift nervous system balance and can elevate perceived soreness. Run 4 rounds of 4-7-8 breathing before 3pm to downshift tension and improve recovery signaling.",
+                "impact": "High"
+            },
+            {
+                "move_id": "H4",
+                "title": "Electrolytes for menstrual phase",
+                "timing": "Across the day",
+                "detail": "Fluid shifts and blood loss alter hydration balance. Add electrolytes to water consistently today to support circulation and reduce fatigue signals.",
+                "impact": "Highest"
+            }
+        ]
+    },
+    {
+        "phase": "menstrual",
+        "session_type": "STRENGTH",
+        "consecutive_rest_days": 2,
+        "moves": [
+            {
+                "move_id": "F3",
+                "title": "Iron-rich meal focus",
+                "timing": "Today",
+                "detail": "Iron depletion persists beyond day one and impacts energy output. Prioritize iron-rich meals with citrus pairing today to maintain stable oxygen transport.",
+                "impact": "Highest"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Prostaglandin load increases stiffness during inactivity. Add slow, low-load movement for 10–15 minutes to keep joints mobile without increasing strain.",
+                "impact": "Medium"
+            },
+            {
+                "move_id": "H4",
+                "title": "Electrolytes for menstrual phase",
+                "timing": "All day",
+                "detail": "Circulatory demand remains elevated during menstruation. Maintain steady electrolyte intake throughout the day to support blood volume and reduce dizziness risk.",
+                "impact": "Highest"
+            }
+        ]
+    },
+    {
+        "phase": "menstrual",
+        "session_type": "HIIT",
+        "consecutive_rest_days": 1,
+        "moves": [
+            {
+                "move_id": "F3",
+                "title": "Iron-rich meal focus",
+                "timing": "Next meal",
+                "detail": "Post-HIIT stress plus blood loss elevates iron demand. Eat an iron-dense meal with vitamin C within the next eating window to stabilize fatigue.",
+                "impact": "Highest"
+            },
+            {
+                "move_id": "F4",
+                "title": "Replenish glycogen stores",
+                "timing": "Post session",
+                "detail": "Low hormones and prostaglandins amplify perceived exertion. Combine carbs and protein after HIIT to restore glycogen and reduce lingering soreness signals.",
+                "impact": "High"
+            },
+            {
+                "move_id": "H4",
+                "title": "Electrolytes for menstrual phase",
+                "timing": "Today",
+                "detail": "Sweat loss and menstrual fluid loss compound hydration needs. Use electrolyte fluids steadily today to support recovery and reduce headache risk.",
+                "impact": "Highest"
+            }
+        ]
+    },
+    {
+        "phase": "menstrual",
+        "session_type": "HIIT",
+        "consecutive_rest_days": 2,
+        "moves": [
+            {
+                "move_id": "F3",
+                "title": "Iron-rich meal focus",
+                "timing": "Today",
+                "detail": "Iron demand remains elevated after intense effort during menstruation. Include iron sources across meals today to maintain stable energy output.",
+                "impact": "Highest"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Extended rest can increase stiffness under prostaglandin influence. Move gently for 10–15 minutes to maintain circulation without adding fatigue.",
+                "impact": "Medium"
+            },
+            {
+                "move_id": "H4",
+                "title": "Electrolytes for menstrual phase",
+                "timing": "All day",
+                "detail": "Ongoing fluid shifts require consistent intake. Keep electrolyte levels steady throughout the day to support circulation and reduce lethargy.",
+                "impact": "Highest"
+            }
+        ]
+    },
+    {
+        "phase": "menstrual",
+        "session_type": "PILATES",
+        "consecutive_rest_days": 1,
+        "moves": [
+            {
+                "move_id": "F3",
+                "title": "Iron-rich meal focus",
+                "timing": "Next meal",
+                "detail": "Even low-load work during menstruation increases nutrient demand. Eat iron-rich foods with vitamin C to support energy and reduce fatigue drift.",
+                "impact": "Highest"
+            },
+            {
+                "move_id": "H1",
+                "title": "Steady hydration rhythm",
+                "timing": "All day",
+                "detail": "Fluid balance fluctuates with blood loss. Sip water consistently across the day rather than large boluses to maintain stable hydration.",
+                "impact": "Medium"
+            },
+            {
+                "move_id": "H4",
+                "title": "Electrolytes for menstrual phase",
+                "timing": "Today",
+                "detail": "Electrolyte balance is more volatile during menstruation. Add electrolytes to water across the day to support fluid retention and energy stability.",
+                "impact": "Highest"
+            }
+        ]
+    },
+    {
+        "phase": "menstrual",
+        "session_type": "PILATES",
+        "consecutive_rest_days": 2,
+        "moves": [
+            {
+                "move_id": "F3",
+                "title": "Iron-rich meal focus",
+                "timing": "Today",
+                "detail": "Iron depletion continues across rest days in menstruation. Prioritize iron intake across meals to prevent fatigue accumulation.",
+                "impact": "Highest"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Low hormone state increases perceived stiffness. Add light movement for 10–15 minutes to maintain joint comfort and circulation.",
+                "impact": "Medium"
+            },
+            {
+                "move_id": "H4",
+                "title": "Electrolytes for menstrual phase",
+                "timing": "All day",
+                "detail": "Fluid shifts remain active during this phase. Maintain electrolyte intake throughout the day to support circulation and reduce cramps.",
+                "impact": "Highest"
+            }
+        ]
+    },
+    {
+        "phase": "menstrual",
+        "session_type": "CARDIO",
+        "consecutive_rest_days": 1,
+        "moves": [
+            {
+                "move_id": "F3",
+                "title": "Iron-rich meal focus",
+                "timing": "Next meal",
+                "detail": "Cardio plus menstrual blood loss increases iron demand. Include iron-rich foods with vitamin C in your next meal to support endurance recovery.",
+                "impact": "Highest"
+            },
+            {
+                "move_id": "N2",
+                "title": "10 min walk no input",
+                "timing": "Anytime",
+                "detail": "Low hormones increase fatigue perception. Take a quiet 10-minute walk without input to reduce nervous system load and improve circulation.",
+                "impact": "Medium"
+            },
+            {
+                "move_id": "H4",
+                "title": "Electrolytes for menstrual phase",
+                "timing": "Today",
+                "detail": "Hydration needs are elevated due to fluid loss. Maintain electrolyte intake across the day to support blood volume and reduce fatigue.",
+                "impact": "Highest"
+            }
+        ]
+    },
+    {
+        "phase": "menstrual",
+        "session_type": "CARDIO",
+        "consecutive_rest_days": 2,
+        "moves": [
+            {
+                "move_id": "F3",
+                "title": "Iron-rich meal focus",
+                "timing": "Today",
+                "detail": "Iron stores remain challenged after cardio during menstruation. Distribute iron intake across meals today to support stable energy.",
+                "impact": "Highest"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Extended rest increases stiffness under prostaglandin influence. Add 10–15 minutes of light movement to maintain circulation.",
+                "impact": "Medium"
+            },
+            {
+                "move_id": "H4",
+                "title": "Electrolytes for menstrual phase",
+                "timing": "All day",
+                "detail": "Fluid regulation remains unstable in this phase. Keep electrolyte intake steady to support hydration and reduce dizziness risk.",
+                "impact": "Highest"
+            }
+        ]
+    },
+    {
+        "phase": "follicular",
+        "session_type": "STRENGTH",
+        "consecutive_rest_days": 1,
+        "moves": [
+            {
+                "move_id": "S1",
+                "title": "Sleep 7.5–9 hours",
+                "timing": "Tonight",
+                "detail": "Rising estrogen improves recovery signals and lowers soreness perception. Lock in 7.5–9 hours tonight to consolidate neural and muscular adaptation.",
+                "impact": "High"
+            },
+            {
+                "move_id": "N1",
+                "title": "4-7-8 breathing reset",
+                "timing": "Afternoon",
+                "detail": "Higher motivation can mask residual fatigue. Use 4 rounds of 4-7-8 breathing before 3pm to maintain nervous system balance.",
+                "impact": "High"
+            }
+        ]
+    },
+    {
+        "phase": "follicular",
+        "session_type": "STRENGTH",
+        "consecutive_rest_days": 2,
+        "moves": [
+            {
+                "move_id": "S1",
+                "title": "Sleep 7.5–9 hours",
+                "timing": "Tonight",
+                "detail": "Energy signals are reliable in this phase but still require consolidation. Maintain consistent sleep duration tonight to support adaptation.",
+                "impact": "High"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Lower soreness can hide stiffness buildup. Add 10–15 minutes of easy movement to maintain joint readiness.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "follicular",
+        "session_type": "HIIT",
+        "consecutive_rest_days": 1,
+        "moves": [
+            {
+                "move_id": "S1",
+                "title": "Sleep 7.5–9 hours",
+                "timing": "Tonight",
+                "detail": "Efficient recovery aligns with rising estrogen and energy. Prioritize full sleep duration tonight to reinforce training adaptations.",
+                "impact": "High"
+            },
+            {
+                "move_id": "F4",
+                "title": "Replenish glycogen stores",
+                "timing": "Post session",
+                "detail": "Higher output increases glycogen demand. Combine carbs and protein post-HIIT to restore energy availability quickly.",
+                "impact": "High"
+            }
+        ]
+    },
+    {
+        "phase": "follicular",
+        "session_type": "HIIT",
+        "consecutive_rest_days": 2,
+        "moves": [
+            {
+                "move_id": "S1",
+                "title": "Sleep 7.5–9 hours",
+                "timing": "Tonight",
+                "detail": "Energy remains high but recovery still depends on sleep. Keep duration consistent tonight to support continued performance readiness.",
+                "impact": "High"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Low soreness may reduce movement awareness. Add light motion for 10–15 minutes to maintain joint fluidity.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "follicular",
+        "session_type": "PILATES",
+        "consecutive_rest_days": 1,
+        "moves": [
+            {
+                "move_id": "S1",
+                "title": "Sleep 7.5–9 hours",
+                "timing": "Tonight",
+                "detail": "Stable energy supports consistent recovery. Maintain full sleep duration tonight to reinforce neuromuscular coordination gains.",
+                "impact": "High"
+            },
+            {
+                "move_id": "H1",
+                "title": "Steady hydration rhythm",
+                "timing": "All day",
+                "detail": "Reliable energy can mask hydration needs. Sip water regularly throughout the day to maintain optimal fluid balance.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "follicular",
+        "session_type": "PILATES",
+        "consecutive_rest_days": 2,
+        "moves": [
+            {
+                "move_id": "S1",
+                "title": "Sleep 7.5–9 hours",
+                "timing": "Tonight",
+                "detail": "Consistent recovery signals remain active. Protect sleep duration tonight to support steady adaptation.",
+                "impact": "High"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Lower soreness may reduce awareness of stiffness. Keep joints moving lightly for 10–15 minutes.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "follicular",
+        "session_type": "CARDIO",
+        "consecutive_rest_days": 1,
+        "moves": [
+            {
+                "move_id": "S1",
+                "title": "Sleep 7.5–9 hours",
+                "timing": "Tonight",
+                "detail": "Higher motivation supports strong output and recovery. Secure full sleep tonight to maintain endurance gains.",
+                "impact": "High"
+            },
+            {
+                "move_id": "N2",
+                "title": "10 min walk no input",
+                "timing": "Anytime",
+                "detail": "Energy is high but mental load can accumulate. Take a quiet 10-minute walk to reset attention and reduce fatigue signals.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "follicular",
+        "session_type": "CARDIO",
+        "consecutive_rest_days": 2,
+        "moves": [
+            {
+                "move_id": "S1",
+                "title": "Sleep 7.5–9 hours",
+                "timing": "Tonight",
+                "detail": "Recovery remains efficient but still requires consistency. Maintain sleep duration tonight to support performance stability.",
+                "impact": "High"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Reduced soreness can hide stiffness. Add light movement to maintain joint readiness.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "ovulatory",
+        "session_type": "STRENGTH",
+        "consecutive_rest_days": 1,
+        "moves": [
+            {
+                "move_id": "J1",
+                "title": "Joint mobility focus",
+                "timing": "10 min",
+                "detail": "Ligament laxity peaks and ACL risk rises in this phase. Perform controlled joint mobility to reinforce stability and alignment.",
+                "impact": "Highest"
+            },
+            {
+                "move_id": "N1",
+                "title": "4-7-8 breathing reset",
+                "timing": "Afternoon",
+                "detail": "High output can elevate nervous system load. Use 4-7-8 breathing to downregulate and stabilize recovery signaling.",
+                "impact": "High"
+            }
+        ]
+    },
+    {
+        "phase": "ovulatory",
+        "session_type": "STRENGTH",
+        "consecutive_rest_days": 2,
+        "moves": [
+            {
+                "move_id": "J1",
+                "title": "Joint mobility focus",
+                "timing": "10 min",
+                "detail": "Joint stability is critical with peak laxity. Perform controlled mobility drills to maintain alignment and reduce injury risk.",
+                "impact": "Highest"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Extended rest can reduce neuromuscular control. Add gentle movement to maintain coordination.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "ovulatory",
+        "session_type": "HIIT",
+        "consecutive_rest_days": 1,
+        "moves": [
+            {
+                "move_id": "J1",
+                "title": "Joint mobility focus",
+                "timing": "10 min",
+                "detail": "High-intensity output plus ligament laxity increases injury risk. Focus on controlled mobility to maintain joint stability.",
+                "impact": "Highest"
+            },
+            {
+                "move_id": "F4",
+                "title": "Replenish glycogen stores",
+                "timing": "Post session",
+                "detail": "Peak performance increases glycogen depletion. Restore with carbs and protein to support recovery and stability.",
+                "impact": "High"
+            }
+        ]
+    },
+    {
+        "phase": "ovulatory",
+        "session_type": "HIIT",
+        "consecutive_rest_days": 2,
+        "moves": [
+            {
+                "move_id": "J1",
+                "title": "Joint mobility focus",
+                "timing": "10 min",
+                "detail": "Joint integrity remains priority with elevated laxity. Maintain controlled mobility work to reinforce alignment.",
+                "impact": "Highest"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Reduced loading can decrease coordination. Add light movement to maintain neuromuscular engagement.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "ovulatory",
+        "session_type": "PILATES",
+        "consecutive_rest_days": 1,
+        "moves": [
+            {
+                "move_id": "J1",
+                "title": "Joint mobility focus",
+                "timing": "10 min",
+                "detail": "Even controlled work requires joint awareness at peak laxity. Perform mobility drills to maintain stability.",
+                "impact": "Highest"
+            },
+            {
+                "move_id": "H1",
+                "title": "Steady hydration rhythm",
+                "timing": "All day",
+                "detail": "Higher activity can increase fluid turnover. Sip water consistently to support joint function.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "ovulatory",
+        "session_type": "PILATES",
+        "consecutive_rest_days": 2,
+        "moves": [
+            {
+                "move_id": "J1",
+                "title": "Joint mobility focus",
+                "timing": "10 min",
+                "detail": "Joint control remains essential in this phase. Continue mobility work to support alignment.",
+                "impact": "Highest"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Inactivity can reduce coordination. Add light movement to maintain stability.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "ovulatory",
+        "session_type": "CARDIO",
+        "consecutive_rest_days": 1,
+        "moves": [
+            {
+                "move_id": "J1",
+                "title": "Joint mobility focus",
+                "timing": "10 min",
+                "detail": "Cardio impact plus ligament laxity increases joint stress. Perform mobility work to maintain alignment.",
+                "impact": "Highest"
+            },
+            {
+                "move_id": "N2",
+                "title": "10 min walk no input",
+                "timing": "Anytime",
+                "detail": "High output can increase nervous system load. Use a quiet walk to stabilize recovery signals.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "ovulatory",
+        "session_type": "CARDIO",
+        "consecutive_rest_days": 2,
+        "moves": [
+            {
+                "move_id": "J1",
+                "title": "Joint mobility focus",
+                "timing": "10 min",
+                "detail": "Joint stability remains critical post-cardio. Maintain mobility work to support alignment.",
+                "impact": "Highest"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Reduced activity lowers coordination. Add gentle movement to maintain control.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "early_luteal",
+        "session_type": "STRENGTH",
+        "consecutive_rest_days": 1,
+        "moves": [
+            {
+                "move_id": "S1",
+                "title": "Sleep 7.5–9 hours",
+                "timing": "Tonight",
+                "detail": "Progesterone begins rising and affects thermoregulation. Prioritize full sleep duration in a cool room tonight.",
+                "impact": "High"
+            },
+            {
+                "move_id": "N1",
+                "title": "4-7-8 breathing reset",
+                "timing": "Afternoon",
+                "detail": "Hormonal shift can increase internal load. Use 4-7-8 breathing to stabilize nervous system tone.",
+                "impact": "High"
+            }
+        ]
+    },
+    {
+        "phase": "early_luteal",
+        "session_type": "STRENGTH",
+        "consecutive_rest_days": 2,
+        "moves": [
+            {
+                "move_id": "S1",
+                "title": "Sleep 7.5–9 hours",
+                "timing": "Tonight",
+                "detail": "Thermoregulation changes can disrupt deep sleep onset. Keep room cool and maintain duration tonight.",
+                "impact": "High"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Rising progesterone can increase stiffness. Add light movement to maintain mobility.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "early_luteal",
+        "session_type": "HIIT",
+        "consecutive_rest_days": 1,
+        "moves": [
+            {
+                "move_id": "S1",
+                "title": "Sleep 7.5–9 hours",
+                "timing": "Tonight",
+                "detail": "Post-HIIT recovery now competes with hormonal shift. Prioritize full sleep duration in a cool environment.",
+                "impact": "High"
+            },
+            {
+                "move_id": "F4",
+                "title": "Replenish glycogen stores",
+                "timing": "Post session",
+                "detail": "Glycogen demand remains high. Combine carbs and protein post-HIIT to support energy restoration.",
+                "impact": "High"
+            }
+        ]
+    },
+    {
+        "phase": "early_luteal",
+        "session_type": "HIIT",
+        "consecutive_rest_days": 2,
+        "moves": [
+            {
+                "move_id": "S1",
+                "title": "Sleep 7.5–9 hours",
+                "timing": "Tonight",
+                "detail": "Recovery depends on stable sleep despite temperature shifts. Maintain duration and cool environment.",
+                "impact": "High"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Hormonal changes can increase stiffness. Add light movement to maintain comfort.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "early_luteal",
+        "session_type": "PILATES",
+        "consecutive_rest_days": 1,
+        "moves": [
+            {
+                "move_id": "S1",
+                "title": "Sleep 7.5–9 hours",
+                "timing": "Tonight",
+                "detail": "Thermoregulation shifts begin affecting sleep depth. Maintain full sleep duration in a cooler setting.",
+                "impact": "High"
+            },
+            {
+                "move_id": "H1",
+                "title": "Steady hydration rhythm",
+                "timing": "All day",
+                "detail": "Fluid balance shifts with progesterone rise. Sip water steadily across the day.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "early_luteal",
+        "session_type": "PILATES",
+        "consecutive_rest_days": 2,
+        "moves": [
+            {
+                "move_id": "S1",
+                "title": "Sleep 7.5–9 hours",
+                "timing": "Tonight",
+                "detail": "Sleep quality may start to fluctuate. Keep duration consistent and environment cool.",
+                "impact": "High"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Increased stiffness risk appears. Add gentle movement to maintain mobility.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "early_luteal",
+        "session_type": "CARDIO",
+        "consecutive_rest_days": 1,
+        "moves": [
+            {
+                "move_id": "S1",
+                "title": "Sleep 7.5–9 hours",
+                "timing": "Tonight",
+                "detail": "Cardio recovery meets hormonal shift. Prioritize consistent sleep duration in a cool room.",
+                "impact": "High"
+            },
+            {
+                "move_id": "N2",
+                "title": "10 min walk no input",
+                "timing": "Anytime",
+                "detail": "Internal load may rise subtly. Use a quiet walk to stabilize nervous system state.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "early_luteal",
+        "session_type": "CARDIO",
+        "consecutive_rest_days": 2,
+        "moves": [
+            {
+                "move_id": "S1",
+                "title": "Sleep 7.5–9 hours",
+                "timing": "Tonight",
+                "detail": "Sleep consistency supports recovery during hormonal transition. Maintain duration and cool conditions.",
+                "impact": "High"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Stiffness may increase with progesterone. Add light movement to maintain comfort.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "late_luteal",
+        "session_type": "STRENGTH",
+        "consecutive_rest_days": 1,
+        "moves": [
+            {
+                "move_id": "S2",
+                "title": "Sleep protected window",
+                "timing": "Tonight",
+                "detail": "Cortisol sensitivity is high and sleep disruption risk increases. Control temperature and reduce stimulation before bed.",
+                "impact": "Highest"
+            },
+            {
+                "move_id": "N1",
+                "title": "4-7-8 breathing reset",
+                "timing": "Before 3pm",
+                "detail": "Heightened stress reactivity affects recovery signals. Use 4-7-8 breathing to reduce cortisol load.",
+                "impact": "High"
+            },
+            {
+                "move_id": "F1",
+                "title": "Hit daily protein target",
+                "timing": "All meals",
+                "detail": "Higher catabolic signaling increases protein demand. Distribute protein intake across meals today.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "late_luteal",
+        "session_type": "STRENGTH",
+        "consecutive_rest_days": 2,
+        "moves": [
+            {
+                "move_id": "S2",
+                "title": "Sleep protected window",
+                "timing": "Tonight",
+                "detail": "Sleep fragmentation risk is elevated. Keep room cool and reduce evening stimulation.",
+                "impact": "Highest"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Inactivity increases stiffness under high cortisol sensitivity. Add gentle movement to maintain circulation.",
+                "impact": "Medium"
+            },
+            {
+                "move_id": "F1",
+                "title": "Hit daily protein target",
+                "timing": "All meals",
+                "detail": "Protein needs remain elevated in this phase. Maintain consistent intake across meals.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "late_luteal",
+        "session_type": "HIIT",
+        "consecutive_rest_days": 1,
+        "moves": [
+            {
+                "move_id": "S2",
+                "title": "Sleep protected window",
+                "timing": "Tonight",
+                "detail": "Post-HIIT stress plus cortisol sensitivity disrupts sleep. Control temperature and reduce stimulation.",
+                "impact": "Highest"
+            },
+            {
+                "move_id": "F4",
+                "title": "Replenish glycogen stores",
+                "timing": "Post session",
+                "detail": "Energy demand remains high but recovery is sensitive. Restore glycogen with carbs and protein.",
+                "impact": "High"
+            },
+            {
+                "move_id": "F1",
+                "title": "Hit daily protein target",
+                "timing": "All meals",
+                "detail": "Catabolic signals are elevated. Maintain consistent protein intake across the day.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "late_luteal",
+        "session_type": "HIIT",
+        "consecutive_rest_days": 2,
+        "moves": [
+            {
+                "move_id": "S2",
+                "title": "Sleep protected window",
+                "timing": "Tonight",
+                "detail": "Sleep disruption risk persists. Maintain strict sleep hygiene and temperature control.",
+                "impact": "Highest"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Extended rest can increase stiffness. Add gentle movement to support circulation.",
+                "impact": "Medium"
+            },
+            {
+                "move_id": "F1",
+                "title": "Hit daily protein target",
+                "timing": "All meals",
+                "detail": "Protein demand remains elevated. Distribute intake across meals.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "late_luteal",
+        "session_type": "PILATES",
+        "consecutive_rest_days": 1,
+        "moves": [
+            {
+                "move_id": "S2",
+                "title": "Sleep protected window",
+                "timing": "Tonight",
+                "detail": "Sleep quality is more fragile due to cortisol sensitivity. Maintain a cool, low-stimulation environment.",
+                "impact": "Highest"
+            },
+            {
+                "move_id": "H1",
+                "title": "Steady hydration rhythm",
+                "timing": "All day",
+                "detail": "Fluid retention and shifts can occur. Sip water consistently across the day.",
+                "impact": "Medium"
+            },
+            {
+                "move_id": "F1",
+                "title": "Hit daily protein target",
+                "timing": "All meals",
+                "detail": "Protein needs remain elevated. Keep intake consistent across meals.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "late_luteal",
+        "session_type": "PILATES",
+        "consecutive_rest_days": 2,
+        "moves": [
+            {
+                "move_id": "S2",
+                "title": "Sleep protected window",
+                "timing": "Tonight",
+                "detail": "Sleep disruption risk remains high. Control environment and reduce evening input.",
+                "impact": "Highest"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Stiffness increases with inactivity. Add light movement to maintain comfort.",
+                "impact": "Medium"
+            },
+            {
+                "move_id": "F1",
+                "title": "Hit daily protein target",
+                "timing": "All meals",
+                "detail": "Maintain protein intake to support recovery under stress.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "late_luteal",
+        "session_type": "CARDIO",
+        "consecutive_rest_days": 1,
+        "moves": [
+            {
+                "move_id": "S2",
+                "title": "Sleep protected window",
+                "timing": "Tonight",
+                "detail": "Cardio plus cortisol sensitivity affects sleep depth. Keep room cool and reduce stimulation.",
+                "impact": "Highest"
+            },
+            {
+                "move_id": "N2",
+                "title": "10 min walk no input",
+                "timing": "Anytime",
+                "detail": "Stress reactivity is elevated. Use a quiet walk to downregulate.",
+                "impact": "Medium"
+            },
+            {
+                "move_id": "F1",
+                "title": "Hit daily protein target",
+                "timing": "All meals",
+                "detail": "Protein demand remains elevated. Distribute across meals.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "late_luteal",
+        "session_type": "CARDIO",
+        "consecutive_rest_days": 2,
+        "moves": [
+            {
+                "move_id": "S2",
+                "title": "Sleep protected window",
+                "timing": "Tonight",
+                "detail": "Sleep disruption risk persists. Maintain strict sleep hygiene.",
+                "impact": "Highest"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Inactivity increases stiffness. Add gentle movement to maintain circulation.",
+                "impact": "Medium"
+            },
+            {
+                "move_id": "F1",
+                "title": "Hit daily protein target",
+                "timing": "All meals",
+                "detail": "Maintain consistent protein intake across meals.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "menstrual",
+        "session_type": "",
+        "consecutive_rest_days": 2,
+        "moves": [
+            {
+                "move_id": "F3",
+                "title": "Iron-rich meal focus",
+                "timing": "Today",
+                "detail": "Iron depletion continues across rest days. Prioritize iron intake with vitamin C to support energy.",
+                "impact": "Highest"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Prostaglandins increase stiffness during inactivity. Add light movement to maintain circulation.",
+                "impact": "Medium"
+            },
+            {
+                "move_id": "H4",
+                "title": "Electrolytes for menstrual phase",
+                "timing": "All day",
+                "detail": "Fluid balance remains sensitive. Maintain steady electrolyte intake.",
+                "impact": "Highest"
+            }
+        ]
+    },
+    {
+        "phase": "menstrual",
+        "session_type": "",
+        "consecutive_rest_days": 3,
+        "moves": [
+            {
+                "move_id": "F3",
+                "title": "Iron-rich meal focus",
+                "timing": "Today",
+                "detail": "Ongoing blood loss sustains iron demand. Distribute intake across meals.",
+                "impact": "Highest"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Extended rest increases stiffness. Add gentle movement to support circulation.",
+                "impact": "Medium"
+            },
+            {
+                "move_id": "H4",
+                "title": "Electrolytes for menstrual phase",
+                "timing": "All day",
+                "detail": "Hydration needs remain elevated. Maintain electrolyte intake.",
+                "impact": "Highest"
+            }
+        ]
+    },
+    {
+        "phase": "menstrual",
+        "session_type": "",
+        "consecutive_rest_days": 4,
+        "moves": [
+            {
+                "move_id": "F3",
+                "title": "Iron-rich meal focus",
+                "timing": "Today",
+                "detail": "Iron demand persists through menstruation. Keep intake consistent.",
+                "impact": "Highest"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Prolonged rest increases stiffness. Add light movement daily.",
+                "impact": "Medium"
+            },
+            {
+                "move_id": "H4",
+                "title": "Electrolytes for menstrual phase",
+                "timing": "All day",
+                "detail": "Fluid balance remains unstable. Maintain electrolyte intake.",
+                "impact": "Highest"
+            }
+        ]
+    },
+    {
+        "phase": "follicular",
+        "session_type": "",
+        "consecutive_rest_days": 2,
+        "moves": [
+            {
+                "move_id": "S1",
+                "title": "Sleep 7.5–9 hours",
+                "timing": "Tonight",
+                "detail": "Energy signals are stable and reliable. Maintain consistent sleep duration.",
+                "impact": "High"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Low soreness can hide stiffness. Add light movement.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "follicular",
+        "session_type": "",
+        "consecutive_rest_days": 3,
+        "moves": [
+            {
+                "move_id": "S1",
+                "title": "Sleep 7.5–9 hours",
+                "timing": "Tonight",
+                "detail": "Recovery remains efficient. Keep sleep duration consistent.",
+                "impact": "High"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Extended rest reduces mobility. Add gentle movement.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "follicular",
+        "session_type": "",
+        "consecutive_rest_days": 4,
+        "moves": [
+            {
+                "move_id": "S1",
+                "title": "Sleep 7.5–9 hours",
+                "timing": "Tonight",
+                "detail": "Energy remains high but requires consolidation. Maintain sleep duration.",
+                "impact": "High"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Prolonged rest increases stiffness. Add light movement.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "ovulatory",
+        "session_type": "",
+        "consecutive_rest_days": 2,
+        "moves": [
+            {
+                "move_id": "J1",
+                "title": "Joint mobility focus",
+                "timing": "10 min",
+                "detail": "Ligament laxity remains elevated. Maintain mobility work to support alignment.",
+                "impact": "Highest"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Rest reduces neuromuscular engagement. Add light movement.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "ovulatory",
+        "session_type": "",
+        "consecutive_rest_days": 3,
+        "moves": [
+            {
+                "move_id": "J1",
+                "title": "Joint mobility focus",
+                "timing": "10 min",
+                "detail": "Joint stability remains priority. Perform controlled mobility.",
+                "impact": "Highest"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Extended rest reduces coordination. Add gentle movement.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "ovulatory",
+        "session_type": "",
+        "consecutive_rest_days": 4,
+        "moves": [
+            {
+                "move_id": "J1",
+                "title": "Joint mobility focus",
+                "timing": "10 min",
+                "detail": "Laxity remains elevated. Maintain joint control with mobility.",
+                "impact": "Highest"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Inactivity reduces stability. Add light movement.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "early_luteal",
+        "session_type": "",
+        "consecutive_rest_days": 2,
+        "moves": [
+            {
+                "move_id": "S1",
+                "title": "Sleep 7.5–9 hours",
+                "timing": "Tonight",
+                "detail": "Progesterone rise affects thermoregulation. Maintain sleep in a cool room.",
+                "impact": "High"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Stiffness may increase. Add light movement.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "early_luteal",
+        "session_type": "",
+        "consecutive_rest_days": 3,
+        "moves": [
+            {
+                "move_id": "S1",
+                "title": "Sleep 7.5–9 hours",
+                "timing": "Tonight",
+                "detail": "Sleep quality may shift. Keep duration consistent.",
+                "impact": "High"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Extended rest increases stiffness. Add movement.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "early_luteal",
+        "session_type": "",
+        "consecutive_rest_days": 4,
+        "moves": [
+            {
+                "move_id": "S1",
+                "title": "Sleep 7.5–9 hours",
+                "timing": "Tonight",
+                "detail": "Thermoregulation changes persist. Maintain cool sleep environment.",
+                "impact": "High"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Inactivity increases stiffness. Add gentle movement.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "late_luteal",
+        "session_type": "",
+        "consecutive_rest_days": 2,
+        "moves": [
+            {
+                "move_id": "S2",
+                "title": "Sleep protected window",
+                "timing": "Tonight",
+                "detail": "Cortisol sensitivity is high. Control temperature and stimulation.",
+                "impact": "Highest"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Rest increases stiffness under stress. Add light movement.",
+                "impact": "Medium"
+            },
+            {
+                "move_id": "F1",
+                "title": "Hit daily protein target",
+                "timing": "All meals",
+                "detail": "Protein demand is elevated. Maintain intake.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "late_luteal",
+        "session_type": "",
+        "consecutive_rest_days": 3,
+        "moves": [
+            {
+                "move_id": "S2",
+                "title": "Sleep protected window",
+                "timing": "Tonight",
+                "detail": "Sleep disruption risk persists. Maintain strict hygiene.",
+                "impact": "Highest"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Extended rest increases stiffness. Add movement.",
+                "impact": "Medium"
+            },
+            {
+                "move_id": "F1",
+                "title": "Hit daily protein target",
+                "timing": "All meals",
+                "detail": "Maintain consistent protein intake.",
+                "impact": "Medium"
+            }
+        ]
+    },
+    {
+        "phase": "late_luteal",
+        "session_type": "",
+        "consecutive_rest_days": 4,
+        "moves": [
+            {
+                "move_id": "S2",
+                "title": "Sleep protected window",
+                "timing": "Tonight",
+                "detail": "High cortisol sensitivity disrupts sleep. Control environment.",
+                "impact": "Highest"
+            },
+            {
+                "move_id": "J3",
+                "title": "Gentle movement reset",
+                "timing": "10–15 min",
+                "detail": "Prolonged rest increases stiffness. Add gentle movement.",
+                "impact": "Medium"
+            },
+            {
+                "move_id": "F1",
+                "title": "Hit daily protein target",
+                "timing": "All meals",
+                "detail": "Protein demand remains elevated. Maintain intake.",
+                "impact": "Medium"
+            }
+        ]
+    }
+]

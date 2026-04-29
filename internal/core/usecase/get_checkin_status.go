@@ -12,15 +12,17 @@ type GetCheckinStatusInput struct {
 type GetCheckinStatusOutput struct {
 	CanCheckin      bool
 	NextAvailableAt *time.Time
+	NeedCheckin     bool
 }
 
 type GetCheckinStatusUseCase struct {
 	Checkins CheckinRepository
+	Users    UserRepository
 }
 
-func NewGetCheckinStatusUseCase(checkins CheckinRepository) *GetCheckinStatusUseCase {
+func NewGetCheckinStatusUseCase(checkins CheckinRepository, users UserRepository) *GetCheckinStatusUseCase {
 	return &GetCheckinStatusUseCase{
-		Checkins: checkins,
+		Checkins: checkins, Users: users,
 	}
 }
 
@@ -34,11 +36,21 @@ func (uc *GetCheckinStatusUseCase) Execute(ctx context.Context, in GetCheckinSta
 		return nil, err
 	}
 
+	user, err := uc.Users.GetByID(ctx, in.UserID)
+	if err != nil {
+		return nil, err
+	}
+
 	// nunca ha hecho check-in
+	need_checkin := false
 	if lastCheckin == nil {
+		if time.Since(user.UpdatedAt) > 7*24*time.Hour {
+			need_checkin = true
+		}
 		return &GetCheckinStatusOutput{
 			CanCheckin:      true,
 			NextAvailableAt: nil,
+			NeedCheckin:     need_checkin,
 		}, nil
 	}
 
@@ -49,12 +61,17 @@ func (uc *GetCheckinStatusUseCase) Execute(ctx context.Context, in GetCheckinSta
 		return &GetCheckinStatusOutput{
 			CanCheckin:      false,
 			NextAvailableAt: &nextAvailable,
+			NeedCheckin:     false,
 		}, nil
 	}
 
+	if time.Since(lastCheckin.CreatedAt) > 7*24*time.Hour {
+		need_checkin = true
+	}
 	return &GetCheckinStatusOutput{
 		CanCheckin:      true,
 		NextAvailableAt: &nextAvailable,
+		NeedCheckin:     need_checkin,
 	}, nil
 }
 

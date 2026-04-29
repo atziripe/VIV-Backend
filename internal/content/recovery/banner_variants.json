@@ -1,0 +1,387 @@
+[
+    {
+        "phase": "menstrual",
+        "session_type": "STRENGTH",
+        "consecutive_rest_days": 1,
+        "variant": "R",
+        "body": "After STRENGTH, blood loss and prostaglandin load increase perceived soreness under low hormone conditions. Prioritize iron intake, protein timing, and sleep quality to stabilize recovery signals today."
+    },
+    {
+        "phase": "menstrual",
+        "session_type": "STRENGTH",
+        "consecutive_rest_days": 2,
+        "variant": "R",
+        "body": "After STRENGTH, iron depletion and low hormones continue to elevate fatigue signals across day two. Maintain protein distribution, support iron levels, and protect sleep to sustain recovery."
+    },
+    {
+        "phase": "menstrual",
+        "session_type": "HIIT",
+        "consecutive_rest_days": 1,
+        "variant": "R",
+        "body": "After HIIT, prostaglandin load and blood loss amplify cardiovascular strain and cortisol sensitivity. Focus on glycogen replenishment, hydration, and calm nervous system input today."
+    },
+    {
+        "phase": "menstrual",
+        "session_type": "HIIT",
+        "consecutive_rest_days": 2,
+        "variant": "R",
+        "body": "After HIIT, low hormones and iron depletion continue to affect energy regulation into day two. Keep glycogen stores supported, manage cortisol, and maintain hydration."
+    },
+    {
+        "phase": "menstrual",
+        "session_type": "PILATES",
+        "consecutive_rest_days": 1,
+        "variant": "R",
+        "body": "After PILATES, prostaglandin load and low hormones increase baseline fatigue and perceived soreness. Emphasize nervous system downregulation, gentle mobility, and sleep stability."
+    },
+    {
+        "phase": "menstrual",
+        "session_type": "PILATES",
+        "consecutive_rest_days": 2,
+        "variant": "R",
+        "body": "After PILATES, blood loss and low hormones sustain reduced recovery capacity into day two. Continue light mobility, support iron levels, and prioritize restorative sleep."
+    },
+    {
+        "phase": "menstrual",
+        "session_type": "CARDIO",
+        "consecutive_rest_days": 1,
+        "variant": "R",
+        "body": "After CARDIO, blood loss and prostaglandins increase cardiovascular strain and fatigue signals. Focus on hydration, aerobic recovery support, and iron intake."
+    },
+    {
+        "phase": "menstrual",
+        "session_type": "CARDIO",
+        "consecutive_rest_days": 2,
+        "variant": "R",
+        "body": "After CARDIO, iron depletion and low hormones continue to influence endurance recovery on day two. Maintain hydration, support iron, and keep effort low."
+    },
+    {
+        "phase": "follicular",
+        "session_type": "STRENGTH",
+        "consecutive_rest_days": 1,
+        "variant": "R",
+        "body": "After STRENGTH, lower perceived soreness and reliable energy signals support efficient adaptation. Use this window to reinforce protein timing and high quality sleep."
+    },
+    {
+        "phase": "follicular",
+        "session_type": "STRENGTH",
+        "consecutive_rest_days": 2,
+        "variant": "R",
+        "body": "After STRENGTH, consistent energy signals keep recovery stable into day two. Maintain protein intake and structured sleep to consolidate adaptation."
+    },
+    {
+        "phase": "follicular",
+        "session_type": "HIIT",
+        "consecutive_rest_days": 1,
+        "variant": "R",
+        "body": "After HIIT, glycogen use is well supported by stable energy signaling and lower soreness. Replenish glycogen, maintain hydration, and regulate cortisol."
+    },
+    {
+        "phase": "follicular",
+        "session_type": "HIIT",
+        "consecutive_rest_days": 2,
+        "variant": "R",
+        "body": "After HIIT, reliable energy signals sustain recovery efficiency into day two. Continue glycogen support, hydration, and balanced cortisol input."
+    },
+    {
+        "phase": "follicular",
+        "session_type": "PILATES",
+        "consecutive_rest_days": 1,
+        "variant": "R",
+        "body": "After PILATES, lower perceived soreness supports effective nervous system integration. Maintain mobility work and consistent sleep to preserve recovery quality."
+    },
+    {
+        "phase": "follicular",
+        "session_type": "PILATES",
+        "consecutive_rest_days": 2,
+        "variant": "R",
+        "body": "After PILATES, stable energy and low soreness extend recovery into day two. Continue light mobility and support nervous system balance."
+    },
+    {
+        "phase": "follicular",
+        "session_type": "CARDIO",
+        "consecutive_rest_days": 1,
+        "variant": "R",
+        "body": "After CARDIO, aerobic recovery is supported by reliable energy signals and low soreness. Focus on hydration and mitochondrial recovery processes."
+    },
+    {
+        "phase": "follicular",
+        "session_type": "CARDIO",
+        "consecutive_rest_days": 2,
+        "variant": "R",
+        "body": "After CARDIO, consistent energy availability sustains aerobic recovery into day two. Maintain hydration and steady recovery input."
+    },
+    {
+        "phase": "ovulatory",
+        "session_type": "STRENGTH",
+        "consecutive_rest_days": 1,
+        "variant": "R",
+        "body": "After STRENGTH, ligament laxity peaks and joint stability demands increase. Prioritize sleep, protein timing, and joint-focused recovery work."
+    },
+    {
+        "phase": "ovulatory",
+        "session_type": "STRENGTH",
+        "consecutive_rest_days": 2,
+        "variant": "R",
+        "body": "After STRENGTH, elevated ligament laxity continues to require joint control on day two. Maintain sleep quality, protein intake, and stability work."
+    },
+    {
+        "phase": "ovulatory",
+        "session_type": "HIIT",
+        "consecutive_rest_days": 1,
+        "variant": "R",
+        "body": "After HIIT, ligament laxity and elevated ACL risk increase joint stress under high intensity load. Focus on glycogen replenishment, cortisol control, and joint care."
+    },
+    {
+        "phase": "ovulatory",
+        "session_type": "HIIT",
+        "consecutive_rest_days": 2,
+        "variant": "R",
+        "body": "After HIIT, joint vulnerability persists with peak ligament laxity into day two. Maintain glycogen support, manage cortisol, and reinforce joint stability."
+    },
+    {
+        "phase": "ovulatory",
+        "session_type": "PILATES",
+        "consecutive_rest_days": 1,
+        "variant": "R",
+        "body": "After PILATES, ligament laxity requires controlled mobility and precise joint alignment. Emphasize nervous system integration and joint-focused recovery."
+    },
+    {
+        "phase": "ovulatory",
+        "session_type": "PILATES",
+        "consecutive_rest_days": 2,
+        "variant": "R",
+        "body": "After PILATES, continued ligament laxity keeps joint stability as a priority on day two. Maintain mobility control and nervous system balance."
+    },
+    {
+        "phase": "ovulatory",
+        "session_type": "CARDIO",
+        "consecutive_rest_days": 1,
+        "variant": "R",
+        "body": "After CARDIO, ligament laxity increases joint stress during repetitive movement. Focus on hydration, aerobic recovery, and joint protection."
+    },
+    {
+        "phase": "ovulatory",
+        "session_type": "CARDIO",
+        "consecutive_rest_days": 2,
+        "variant": "R",
+        "body": "After CARDIO, joint sensitivity persists under ligament laxity into day two. Maintain hydration and support joint stability during recovery."
+    },
+    {
+        "phase": "early_luteal",
+        "session_type": "STRENGTH",
+        "consecutive_rest_days": 1,
+        "variant": "R",
+        "body": "After STRENGTH, rising progesterone begins to affect thermoregulation and recovery signals. Prioritize sleep quality, hydration, and consistent protein timing."
+    },
+    {
+        "phase": "early_luteal",
+        "session_type": "STRENGTH",
+        "consecutive_rest_days": 2,
+        "variant": "R",
+        "body": "After STRENGTH, progesterone continues rising and affects recovery efficiency into day two. Maintain hydration, protein intake, and structured sleep."
+    },
+    {
+        "phase": "early_luteal",
+        "session_type": "HIIT",
+        "consecutive_rest_days": 1,
+        "variant": "R",
+        "body": "After HIIT, thermoregulation is affected as progesterone rises, increasing strain. Focus on glycogen replenishment, hydration, and cortisol management."
+    },
+    {
+        "phase": "early_luteal",
+        "session_type": "HIIT",
+        "consecutive_rest_days": 2,
+        "variant": "R",
+        "body": "After HIIT, elevated temperature regulation demands persist into day two. Maintain hydration, glycogen support, and cortisol control."
+    },
+    {
+        "phase": "early_luteal",
+        "session_type": "PILATES",
+        "consecutive_rest_days": 1,
+        "variant": "R",
+        "body": "After PILATES, progesterone rise shifts nervous system balance and recovery signals. Emphasize controlled mobility, hydration, and integration work."
+    },
+    {
+        "phase": "early_luteal",
+        "session_type": "PILATES",
+        "consecutive_rest_days": 2,
+        "variant": "R",
+        "body": "After PILATES, continued progesterone effects influence recovery into day two. Maintain mobility, hydration, and nervous system balance."
+    },
+    {
+        "phase": "early_luteal",
+        "session_type": "CARDIO",
+        "consecutive_rest_days": 1,
+        "variant": "R",
+        "body": "After CARDIO, thermoregulation changes increase cardiovascular strain. Focus on hydration, aerobic recovery, and temperature management."
+    },
+    {
+        "phase": "early_luteal",
+        "session_type": "CARDIO",
+        "consecutive_rest_days": 2,
+        "variant": "R",
+        "body": "After CARDIO, elevated thermoregulation demands persist into day two. Maintain hydration and steady aerobic recovery input."
+    },
+    {
+        "phase": "late_luteal",
+        "session_type": "STRENGTH",
+        "consecutive_rest_days": 1,
+        "variant": "R",
+        "body": "After STRENGTH, cortisol sensitivity is high and sleep disruption risk increases. Prioritize sleep quality, protein timing, and stress regulation."
+    },
+    {
+        "phase": "late_luteal",
+        "session_type": "STRENGTH",
+        "consecutive_rest_days": 2,
+        "variant": "R",
+        "body": "After STRENGTH, high cortisol sensitivity continues to affect recovery on day two. Maintain protein intake, sleep consistency, and low stress input."
+    },
+    {
+        "phase": "late_luteal",
+        "session_type": "HIIT",
+        "consecutive_rest_days": 1,
+        "variant": "R",
+        "body": "After HIIT, elevated cortisol sensitivity increases strain and sleep disruption risk. Focus on glycogen replenishment, hydration, and nervous system calming."
+    },
+    {
+        "phase": "late_luteal",
+        "session_type": "HIIT",
+        "consecutive_rest_days": 2,
+        "variant": "R",
+        "body": "After HIIT, cortisol sensitivity remains high into day two, affecting recovery signals. Maintain glycogen support, hydration, and stress control."
+    },
+    {
+        "phase": "late_luteal",
+        "session_type": "PILATES",
+        "consecutive_rest_days": 1,
+        "variant": "R",
+        "body": "After PILATES, nervous system sensitivity is elevated with higher cortisol response. Emphasize calming input, mobility, and sleep stability."
+    },
+    {
+        "phase": "late_luteal",
+        "session_type": "PILATES",
+        "consecutive_rest_days": 2,
+        "variant": "R",
+        "body": "After PILATES, continued cortisol sensitivity affects recovery into day two. Maintain gentle mobility and support sleep quality."
+    },
+    {
+        "phase": "late_luteal",
+        "session_type": "CARDIO",
+        "consecutive_rest_days": 1,
+        "variant": "R",
+        "body": "After CARDIO, cortisol sensitivity and sleep disruption risk increase cardiovascular strain. Focus on hydration and controlled recovery pacing."
+    },
+    {
+        "phase": "late_luteal",
+        "session_type": "CARDIO",
+        "consecutive_rest_days": 2,
+        "variant": "R",
+        "body": "After CARDIO, elevated cortisol sensitivity persists into day two. Maintain hydration and reduce recovery stressors."
+    },
+    {
+        "phase": "menstrual",
+        "session_type": "",
+        "consecutive_rest_days": 2,
+        "variant": "N",
+        "body": "Blood loss, prostaglandin load, and low hormones increase fatigue and perceived soreness. Focus on iron support, hydration, and nervous system rest."
+    },
+    {
+        "phase": "menstrual",
+        "session_type": "",
+        "consecutive_rest_days": 3,
+        "variant": "N",
+        "body": "Ongoing iron depletion and prostaglandins maintain elevated fatigue signals. Prioritize sleep, gentle movement, and nutritional support."
+    },
+    {
+        "phase": "menstrual",
+        "session_type": "",
+        "consecutive_rest_days": 4,
+        "variant": "N",
+        "body": "Low hormones and continued blood loss sustain reduced recovery capacity. Maintain rest, iron intake, and stable sleep patterns."
+    },
+    {
+        "phase": "follicular",
+        "session_type": "",
+        "consecutive_rest_days": 2,
+        "variant": "N",
+        "body": "Reliable energy signals and lower perceived soreness support stable recovery. Use this time for light movement and consistent sleep."
+    },
+    {
+        "phase": "follicular",
+        "session_type": "",
+        "consecutive_rest_days": 3,
+        "variant": "N",
+        "body": "Energy remains stable with low soreness and high motivation signals. Maintain nervous system balance and steady activity."
+    },
+    {
+        "phase": "follicular",
+        "session_type": "",
+        "consecutive_rest_days": 4,
+        "variant": "N",
+        "body": "Consistent energy availability supports ongoing recovery processes. Focus on sleep quality and light mobility."
+    },
+    {
+        "phase": "ovulatory",
+        "session_type": "",
+        "consecutive_rest_days": 2,
+        "variant": "N",
+        "body": "Ligament laxity peaks, increasing joint sensitivity even at rest. Focus on joint stability and controlled mobility."
+    },
+    {
+        "phase": "ovulatory",
+        "session_type": "",
+        "consecutive_rest_days": 3,
+        "variant": "N",
+        "body": "Elevated ACL risk and ligament laxity persist across rest days. Maintain joint awareness and nervous system control."
+    },
+    {
+        "phase": "ovulatory",
+        "session_type": "",
+        "consecutive_rest_days": 4,
+        "variant": "N",
+        "body": "Joint vulnerability remains elevated under peak ligament laxity. Prioritize stability work and cautious movement."
+    },
+    {
+        "phase": "early_luteal",
+        "session_type": "",
+        "consecutive_rest_days": 2,
+        "variant": "N",
+        "body": "Rising progesterone affects thermoregulation and recovery signals. Focus on hydration, sleep, and nervous system balance."
+    },
+    {
+        "phase": "early_luteal",
+        "session_type": "",
+        "consecutive_rest_days": 3,
+        "variant": "N",
+        "body": "Thermoregulation demands continue as progesterone rises. Maintain hydration and controlled activity."
+    },
+    {
+        "phase": "early_luteal",
+        "session_type": "",
+        "consecutive_rest_days": 4,
+        "variant": "N",
+        "body": "Progesterone-driven shifts persist, affecting recovery patterns. Prioritize rest, hydration, and stability."
+    },
+    {
+        "phase": "late_luteal",
+        "session_type": "",
+        "consecutive_rest_days": 2,
+        "variant": "N",
+        "body": "Cortisol sensitivity is high with increased sleep disruption risk. Focus on calming the nervous system and protecting sleep."
+    },
+    {
+        "phase": "late_luteal",
+        "session_type": "",
+        "consecutive_rest_days": 3,
+        "variant": "N",
+        "body": "Elevated cortisol response continues to affect recovery signals. Maintain low stress input and consistent sleep."
+    },
+    {
+        "phase": "late_luteal",
+        "session_type": "",
+        "consecutive_rest_days": 4,
+        "variant": "N",
+        "body": "Sustained cortisol sensitivity and higher skip cost shape recovery demands. Prioritize rest, sleep quality, and nervous system regulation."
+    }
+]

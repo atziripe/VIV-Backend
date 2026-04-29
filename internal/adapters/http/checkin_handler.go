@@ -49,6 +49,7 @@ type CheckinHandler struct {
 type checkinStatusResponse struct {
 	CanCheckin      bool    `json:"can_checkin"`
 	NextAvailableAt *string `json:"next_available_at,omitempty"`
+	NeedCheckin     bool    `json:"need_checkin"`
 }
 
 func NewCheckinHandler(createUC *usecase.CreateCheckinUseCase, latestUC *usecase.GetLatestCheckinUseCase, statusUC *usecase.GetCheckinStatusUseCase) *CheckinHandler {
@@ -231,6 +232,7 @@ func (h *CheckinHandler) Status(w http.ResponseWriter, r *http.Request) {
 	resp := checkinStatusResponse{
 		CanCheckin:      out.CanCheckin,
 		NextAvailableAt: nextAvailableAt,
+		NeedCheckin:     out.NeedCheckin,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

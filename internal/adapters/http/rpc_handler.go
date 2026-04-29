@@ -177,6 +177,8 @@ func isAllowedRoute(method, path string) bool {
 		return true
 	case method == "POST" && strings.HasPrefix(path, "/nutrition/"):
 		return true
+	case method == "GET" && path == "/recovery/today":
+		return true
 	}
 	return false
 }
