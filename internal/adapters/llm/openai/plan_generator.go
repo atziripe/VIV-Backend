@@ -42,8 +42,8 @@ func (g *GPTPlanGenerator) GeneratePlan(
 		checkinID = checkin.ID
 	}
 
-	trainLevel := user.TrainingGuidanceLevel
-	nutritionLevelGuidance := user.NutritionGuidanceLevel
+	trainLevel := "moderate"
+	nutritionLevelGuidance := "moderate"
 
 	msgs := []openaiapi.ChatCompletionMessage{
 		{

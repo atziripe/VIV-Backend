@@ -34,24 +34,22 @@ type meResponse struct {
 	CycleLength    string  `json:"cycle_duration"`
 	PeriodDuration string  `json:"period_duration"`
 
-	TrainingOften         string `json:"training_often"`
-	TrainingDuration      string `json:"training_duration"`
-	TrainingType          string `json:"training_type"`
-	TrainingTime          string `json:"training_time"`
-	TrainingGoals         string `json:"training_goals"`
-	TrainingGuidanceLevel string `json:"training_guidance_level"`
+	TrainingOften    string `json:"training_often"`
+	TrainingDuration string `json:"training_duration"`
+	TrainingType     string `json:"training_type"`
+	TrainingTime     string `json:"training_time"`
+	TrainingGoals    string `json:"training_goals"`
 
-	DietRestrictions       string `json:"diet_restrictions"`
-	DietProteinResources   string `json:"diet_protein_resources"`
-	MealsPerDay            string `json:"meals_per_day"`
-	MealsTimingStability   string `json:"meals_timing_stability"`
-	DigestionConditions    string `json:"digestion_conditions"`
-	NutritionIntent        string `json:"nutrition_intent"`
-	NutritionGuidanceLevel string `json:"nutrition_guidance_level"`
+	DietRestrictions     string `json:"diet_restrictions"`
+	DietProteinResources string `json:"diet_protein_resources"`
+	MealsPerDay          string `json:"meals_per_day"`
+	MealsTimingStability string `json:"meals_timing_stability"`
+	DigestionConditions  string `json:"digestion_conditions"`
 
 	SleepWindow        string `json:"sleep_window"`
 	RecoveryAfterSleep string `json:"recovery_after_sleep"`
 	SleepContinuity    string `json:"sleep_continuity"`
+	DailyActivityLevel string `json:"daily_activity_level"`
 	LingeringMarker    string `json:"lingering_marker"`
 	StressReactivity   string `json:"stress_reactivity"`
 	StressLevel        string `json:"stress_level"`
@@ -118,25 +116,23 @@ func (h *MeHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 		CycleLength:    u.CycleDuration,
 		PeriodDuration: u.PeriodDuration,
 
-		TrainingOften:         u.TrainingOften,
-		TrainingDuration:      u.TrainingDuration,
-		TrainingType:          u.TrainingType,
-		TrainingTime:          u.TrainingTime,
-		TrainingGoals:         u.TrainingGoals,
-		TrainingGuidanceLevel: u.TrainingGuidanceLevel,
+		TrainingOften:    u.TrainingOften,
+		TrainingDuration: u.TrainingDuration,
+		TrainingType:     u.TrainingType,
+		TrainingTime:     u.TrainingTime,
+		TrainingGoals:    u.TrainingGoals,
 
-		DietRestrictions:       u.DietRestrictions,
-		DietProteinResources:   u.DietProteinResources,
-		MealsPerDay:            u.MealsPerDay,
-		MealsTimingStability:   u.MealsTimingStability,
-		DigestionConditions:    u.DigestionConditions,
-		NutritionIntent:        u.NutritionIntent,
-		NutritionGuidanceLevel: u.NutritionGuidanceLevel,
+		DietRestrictions:     u.DietRestrictions,
+		DietProteinResources: u.DietProteinResources,
+		MealsPerDay:          u.MealsPerDay,
+		MealsTimingStability: u.MealsTimingStability,
+		DigestionConditions:  u.DigestionConditions,
 
 		SleepWindow:        u.SleepWindow,
 		RecoveryAfterSleep: u.RecoveryAfterSleep,
 		SleepContinuity:    u.SleepContinuity,
 		LingeringMarker:    u.LingeringMarker,
+		DailyActivityLevel: u.DailyActivityLevel,
 		StressReactivity:   u.StressReactivity,
 		StressLevel:        u.StressLevel,
 		Priority:           u.Priority,

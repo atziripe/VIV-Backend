@@ -17,29 +17,26 @@ type User struct {
 	CycleUpdatedAt      *time.Time
 	CycleAnchorAt       *time.Time
 	PeriodDuration      string
-	PMSSymptoms         string
 
-	TrainingOften         string
-	TrainingDuration      string
-	TrainingType          string
-	TrainingTime          string
-	TrainingGuidanceLevel string
-	TrainingGoals         string
+	TrainingOften    string
+	TrainingDuration string
+	TrainingType     string
+	TrainingTime     string
+	TrainingGoals    string
 
-	DietRestrictions       string
-	DietProteinResources   string
-	MealsPerDay            string
-	MealsTimingStability   string
-	DigestionConditions    string
-	NutritionIntent        string
-	NutritionGuidanceLevel string
+	DietRestrictions     string
+	DietProteinResources string
+	MealsPerDay          string
+	MealsTimingStability string
+	DigestionConditions  string
 
 	SleepWindow        string
-	RecoveryAfterSleep string
 	SleepContinuity    string
-	LingeringMarker    string
-	StressReactivity   string
+	RecoveryAfterSleep string
 	StressLevel        string
+	DailyActivityLevel string // "Mostly sitting", "Some movement", "On my feet most of the day", "Physically demanding work"
+	StressReactivity   string
+	LingeringMarker    string
 	Priority           string
 
 	HasActiveInjury      bool

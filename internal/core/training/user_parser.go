@@ -135,3 +135,35 @@ func normalizeGoal(uiLabel string) string {
 		return ""
 	}
 }
+
+// ParseDietRestrictions converts "no meat,no dairy" to a slice.
+func ParseDietRestrictions(s string) []string {
+	if strings.TrimSpace(s) == "" || strings.ToLower(strings.TrimSpace(s)) == "none" {
+		return nil
+	}
+	parts := strings.Split(s, ",")
+	var result []string
+	for _, p := range parts {
+		trimmed := strings.TrimSpace(p)
+		if trimmed != "" {
+			result = append(result, trimmed)
+		}
+	}
+	return result
+}
+
+// ParseDigestiveIssues converts "Bloating,IBS" to a slice.
+func ParseDigestiveConditions(s string) []string {
+	if strings.TrimSpace(s) == "" || strings.ToLower(strings.TrimSpace(s)) == "none" {
+		return nil
+	}
+	parts := strings.Split(s, ",")
+	var result []string
+	for _, p := range parts {
+		trimmed := strings.TrimSpace(p)
+		if trimmed != "" {
+			result = append(result, trimmed)
+		}
+	}
+	return result
+}

@@ -73,6 +73,41 @@ type StructureGenerationInput struct {
 	RetryFeedback string   // violation messages from a failed attempt ("" on first try)
 }
 
+// MealContentGenerator generates meal options for a week.
+// The implementation calls an LLM, but the usecase doesn't know that.
+type MealContentGenerator interface {
+	GenerateWeekMeals(
+		ctx context.Context,
+		input MealGenerationInput,
+	) ([]DayMealsOutput, TokenUsage, error)
+}
+
+// MealGenerationInput is everything the LLM needs to generate meal content.
+type MealGenerationInput struct {
+	Phase               domain.CyclePhase
+	Targets             domain.MacroTargets
+	Days                []MealDayInput
+	DietRestrictions    []string
+	ProteinPreference   string   // "Plant based", "Mixed", "Mostly animal based"
+	DigestiveConditions []string // "Bloating", "IBS", etc.
+	AppetiteStatus      string   // from weekly checkin
+}
+
+// MealDayInput describes one day for meal generation.
+type MealDayInput struct {
+	Weekday       string
+	IsTrainingDay bool
+	SessionTime   string // "morning", "afternoon", "evening", "" for rest
+	Macros        domain.DayMacros
+	MealSlots     []string // slot types: "breakfast", "lunch", "dinner", "pre_training", "post_training"
+}
+
+// DayMealsOutput is the LLM's response for one day.
+type DayMealsOutput struct {
+	Weekday string            `json:"weekday"`
+	Meals   []domain.MealSlot `json:"meals"`
+}
+
 type TokenUsage struct {
 	PromptTokens     int
 	CompletionTokens int

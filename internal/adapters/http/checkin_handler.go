@@ -92,18 +92,16 @@ func (h *CheckinHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	in := usecase.CreateCheckinInput{
-		UserID:                 userID,
-		WeekStart:              weekStart,
-		SleepQuality:           req.SleepQuality,
-		BodyStatus:             req.BodyStatus,
-		Appetite:               req.Appetite,
-		StressLevel:            req.StressLevel,
-		LastWeekFeeling:        req.LastWeekFeeling,
-		CycleStart:             cycleStart,
-		WorkloadPrediction:     req.WorkloadPrediction,
-		MentalEnergy:           req.MentalEnergy,
-		TrainingGuidanceLevel:  req.TrainingGuidanceLevel,
-		NutritionGuidanceLevel: req.NutritionGuidanceLevel,
+		UserID:             userID,
+		WeekStart:          weekStart,
+		SleepQuality:       req.SleepQuality,
+		BodyStatus:         req.BodyStatus,
+		Appetite:           req.Appetite,
+		StressLevel:        req.StressLevel,
+		LastWeekFeeling:    req.LastWeekFeeling,
+		CycleStart:         cycleStart,
+		WorkloadPrediction: req.WorkloadPrediction,
+		MentalEnergy:       req.MentalEnergy,
 	}
 
 	out, err := h.CreateUC.Execute(ctx, in)

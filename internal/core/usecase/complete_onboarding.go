@@ -18,27 +18,24 @@ type CompleteOnboardingInput struct {
 	CycleDuration  string
 	CyclePhase     string
 	PeriodDuration string
-	PMSSymptoms    string
 
-	TrainingOften         string
-	TrainingDuration      string
-	TrainingType          string
-	TrainingTime          string
-	TrainingGuidanceLevel string
-	TrainingGoals         string
+	TrainingOften    string
+	TrainingDuration string
+	TrainingType     string
+	TrainingTime     string
+	TrainingGoals    string
 
-	DietRestrictions       string
-	DietProteinResources   string
-	MealsPerDay            string
-	MealsTimingStability   string
-	DigestionConditions    string
-	NutritionIntent        string
-	NutritionGuidanceLevel string
+	DietRestrictions     string
+	DietProteinResources string
+	MealsPerDay          string
+	MealsTimingStability string
+	DigestionConditions  string
 
 	SleepWindow        string
 	RecoveryAfterSleep string
 	SleepContinuity    string
 	LingeringMarker    string
+	DailyActivityLevel string
 	StressReactivity   string
 	StressLevel        string
 	Priority           string
@@ -85,12 +82,10 @@ func (uc *CompleteOnboardingUseCase) Execute(ctx context.Context, in CompleteOnb
 	user.CycleDuration = normCycleDuration
 	user.CyclePhase = phaseForDay(cycleDayInt, cycleDurationInt, periodDurationInt)
 	user.PeriodDuration = in.PeriodDuration
-	user.PMSSymptoms = in.PMSSymptoms
 	user.TrainingOften = in.TrainingOften
 	user.TrainingDuration = in.TrainingDuration
 	user.TrainingType = in.TrainingType
 	user.TrainingTime = in.TrainingTime
-	user.TrainingGuidanceLevel = in.TrainingGuidanceLevel
 	user.TrainingGoals = in.TrainingGoals
 
 	user.DietRestrictions = in.DietRestrictions
@@ -98,12 +93,11 @@ func (uc *CompleteOnboardingUseCase) Execute(ctx context.Context, in CompleteOnb
 	user.MealsPerDay = in.MealsPerDay
 	user.MealsTimingStability = in.MealsTimingStability
 	user.DigestionConditions = in.DigestionConditions
-	user.NutritionIntent = in.NutritionIntent
-	user.NutritionGuidanceLevel = in.NutritionGuidanceLevel
 
 	user.SleepWindow = in.SleepWindow
 	user.RecoveryAfterSleep = in.RecoveryAfterSleep
 	user.SleepContinuity = in.SleepContinuity
+	user.DailyActivityLevel = in.DailyActivityLevel
 	user.LingeringMarker = in.LingeringMarker
 	user.StressReactivity = in.StressReactivity
 	user.StressLevel = in.StressLevel

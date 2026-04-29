@@ -3,7 +3,6 @@ package usecase
 import (
 	"context"
 	"errors"
-	"strings"
 	"time"
 
 	"viv/internal/core/domain"
@@ -12,18 +11,16 @@ import (
 )
 
 type CreateCheckinInput struct {
-	UserID                 string
-	WeekStart              time.Time
-	SleepQuality           string
-	BodyStatus             string
-	Appetite               string
-	StressLevel            string
-	LastWeekFeeling        string
-	CycleStart             *time.Time
-	WorkloadPrediction     string
-	MentalEnergy           string
-	TrainingGuidanceLevel  *string
-	NutritionGuidanceLevel *string
+	UserID             string
+	WeekStart          time.Time
+	SleepQuality       string
+	BodyStatus         string
+	Appetite           string
+	StressLevel        string
+	LastWeekFeeling    string
+	CycleStart         *time.Time
+	WorkloadPrediction string
+	MentalEnergy       string
 }
 
 type CreateCheckinOutput struct {
@@ -90,13 +87,6 @@ func (uc *CreateCheckinUseCase) Execute(ctx context.Context, in CreateCheckinInp
 		}
 		if user == nil {
 			return nil, ErrUserNotFound(in.UserID)
-		}
-		// Apply optional updates from this check-in
-		if in.TrainingGuidanceLevel != nil {
-			user.TrainingGuidanceLevel = strings.TrimSpace(*in.TrainingGuidanceLevel)
-		}
-		if in.NutritionGuidanceLevel != nil {
-			user.NutritionGuidanceLevel = strings.TrimSpace(*in.NutritionGuidanceLevel)
 		}
 
 		ApplyCycleStartOverride(user, *checkin.CycleStart, time.Now())

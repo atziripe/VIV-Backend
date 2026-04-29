@@ -173,6 +173,10 @@ func isAllowedRoute(method, path string) bool {
 		return true
 	case method == "POST" && strings.HasPrefix(path, "/training/"):
 		return true
+	case method == "GET" && strings.HasPrefix(path, "/nutrition/"):
+		return true
+	case method == "POST" && strings.HasPrefix(path, "/nutrition/"):
+		return true
 	}
 	return false
 }
@@ -475,7 +479,6 @@ func normalizeOnboardingBody(body map[string]any) map[string]any {
 		"training_type",
 		"trouble_in_life",
 		"diet_type",
-		"pms_symptoms",
 	}
 
 	for _, key := range listFieldsToJoin {

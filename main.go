@@ -87,6 +87,10 @@ func main() {
 		trainingLib,
 	)
 
+	// ========= Nutrition Pipeline =========
+	mealGen := openai.NewMealContentGenerator(oaClient)
+	generateNutritionUC := usecase.NewGenerateNutritionPlanUsecase(mealGen)
+
 	// ========= Usecases =========
 	onboardingUC := usecase.NewCompleteOnboardingUseCase(userRepo)
 	createCheckinUC := usecase.NewCreateCheckinUseCase(checkinRepo, userRepo, "v1")
@@ -109,15 +113,16 @@ func main() {
 	planRunner := runner.NewLocalPlanGenerationRunner(planJobsRepo, generatePlanUC, 4*time.Minute)
 	startUC := usecase.NewStartPlanGenerationUseCase(planJobsRepo, planRunner)
 	statusUC := usecase.NewGetPlanGenerationStatusUseCase(planJobsRepo)
-
 	completeDayUC := usecase.NewCompleteTrainingDayUseCase(planRepo)
 
 	// Training runner — reuses the same job system as plans
-	trainingRunner := runner.NewLocalTrainingPlanRunner(planJobsRepo, generateTrainingUC, userRepo, checkinRepo, cyclePhaseLookup, planRepo, 2*time.Minute)
+	trainingRunner := runner.NewLocalTrainingPlanRunner(planJobsRepo, generateTrainingUC, generateNutritionUC, userRepo, checkinRepo, cyclePhaseLookup, planRepo, 3*time.Minute)
 	// Training usecases — reuse StartPlanGeneration with the training runner
 	startTrainingUC := usecase.NewStartPlanGenerationUseCase(planJobsRepo, trainingRunner)
 	statusTrainingUC := usecase.NewGetPlanGenerationStatusUseCase(planJobsRepo)
 	saveArrangementUC := usecase.NewSaveTrainingArrangementUseCase(planRepo, checkinRepo, trainingLib)
+
+	nutritionUC := usecase.NewGetNutritionPlanUseCase(userRepo, planRepo, checkinRepo, cyclePhaseLookup)
 
 	// ========= Handlers =========
 	onboardingHandler := httpadapter.NewOnboardingHandler(onboardingUC)
@@ -126,6 +131,7 @@ func main() {
 	meHandler := httpadapter.NewMeHandler(getMeUC)
 	plansHandler := httpadapter.NewPlansHandler(generatePlanUC, getCurrentPlanUC, getByIDUC, adjustUC, getByWeekStartUC, startUC, statusUC)
 	trainingHandler := httpadapter.NewTrainingHandler(startTrainingUC, statusTrainingUC, trainingEngine, resumeTrainingUC, completeDayUC, saveArrangementUC)
+	nutritionHandler := httpadapter.NewNutritionHandler(nutritionUC)
 
 	// ========= Router config =========
 	r := chi.NewRouter()
@@ -179,6 +185,8 @@ func main() {
 	api.Post("/training/validate-arrangement", trainingHandler.ValidateArrangement)
 	api.Post("/training/complete-day", trainingHandler.CompleteDay)
 	api.Post("/training/save-arrangement", trainingHandler.SaveArrangement)
+
+	api.Get("/nutrition/plan", nutritionHandler.GetPlan)
 
 	// Router protegido (aplica auth a TODO lo que montes dentro)
 	protected := chi.NewRouter()
