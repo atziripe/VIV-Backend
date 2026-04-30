@@ -17,27 +17,12 @@ type Checkin struct {
 	Demand       CheckinDemand   // "How demanding was last week?" (NEW)
 	LastWeekFeel CheckinLastWeek // "Last week's plan felt..."
 
-	CycleStart *time.Time         // period start date if it arrived this week
-	PMSSymtoms *CheckinPMSSymtoms // PMS Symptoms faced during that week (just in late luteal)
+	CycleStart  *time.Time          // period start date if it arrived this week
+	PMSSymptoms *CheckinPMSSymptoms // PMS Symptoms faced during that week (just in late luteal)
 
 	Predictability  CheckinPredictability // "What does your week ahead look like?"
 	Readiness       CheckinReadiness      // "Going into next week, you feel..."
 	AdditionalNotes string
-
-	// ============================================================
-	// V1 fields — deprecated, kept for backward compatibility
-	// These were used when the check-in went directly to the LLM.
-	// New code should use V2 fields above.
-	// Remove once V1 data is no longer needed.
-	// ============================================================
-	SleepQuality       string // → replaced by Sleep
-	BodyStatus         string // → replaced by Body
-	Appetite           string // → replaced by AppetiteV2
-	StressLevel        string // → no direct replacement (was LLM-interpreted)
-	LastWeekFeeling    string // → replaced by LastWeekFeel
-	WorkloadPrediction string // → replaced by Predictability + Demand
-	MentalEnergy       string // → replaced by Readiness
-	PromptVersion      string // meta — keep for audit
 }
 
 // ============================================================================
@@ -114,15 +99,15 @@ const (
 )
 
 // PMSSymptoms - "Do you experience any of these PMS synptoms"
-type CheckinPMSSymtoms string
+type CheckinPMSSymptoms string
 
 const (
-	PMSCramps     CheckinPMSSymtoms = "cramps"
-	PMSEnergyDips CheckinPMSSymtoms = "energy_dips"
-	PMSAnxiety    CheckinPMSSymtoms = "anxiety"
-	PMSCravings   CheckinPMSSymtoms = "cravings"
-	PMSBloating   CheckinPMSSymtoms = "bloating"
-	PMSHeadache   CheckinPMSSymtoms = "headache"
+	PMSCramps     CheckinPMSSymptoms = "cramps"
+	PMSEnergyDips CheckinPMSSymptoms = "energy_dips"
+	PMSAnxiety    CheckinPMSSymptoms = "anxiety"
+	PMSCravings   CheckinPMSSymptoms = "cravings"
+	PMSBloating   CheckinPMSSymptoms = "bloating"
+	PMSHeadache   CheckinPMSSymptoms = "headache"
 )
 
 // ============================================================================

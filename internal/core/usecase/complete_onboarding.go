@@ -77,7 +77,7 @@ func (uc *CompleteOnboardingUseCase) Execute(ctx context.Context, in CompleteOnb
 	user.Name = in.Name
 	user.WeightKg = in.WeightKg
 	user.HeightCm = in.HeightCm
-	user.CycleType = in.CycleType
+	user.CycleType = getCycleType(in.CycleType)
 	user.CycleDay = in.CycleDay
 	user.CycleDuration = normCycleDuration
 	user.CyclePhase = phaseForDay(cycleDayInt, cycleDurationInt, periodDurationInt)
@@ -111,4 +111,17 @@ func (uc *CompleteOnboardingUseCase) Execute(ctx context.Context, in CompleteOnb
 	}
 
 	return &CompleteOnboardingOutput{User: user}, nil
+}
+
+func getCycleType(reqCycleType string) string {
+	switch reqCycleType {
+	case "I have a natural menstrual cycle":
+		return "natural"
+	case "I use hormonal contraception, cycle affected":
+		return "hormonal_contraception"
+	case "I am in menopause":
+		return "menopause"
+	default:
+		return "not_sure"
+	}
 }

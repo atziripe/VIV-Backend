@@ -160,6 +160,8 @@ func isAllowedRoute(method, path string) bool {
 		return true
 	case method == "GET" && strings.HasPrefix(path, "/plans/"):
 		return true
+	case method == "POST" && path == "/plans/phase-feedback":
+		return true
 
 	case method == "POST" && path == "/training/resume":
 		return true
@@ -220,6 +222,44 @@ func selectSubBody(path string, body map[string]any) any {
 		}
 
 		return map[string]any{}
+
+	case "/plans/phase-feedback":
+		v, ok := body["phase_feedback"]
+		if !ok || v == nil {
+			return map[string]any{}
+		}
+
+		m, ok := v.(map[string]any)
+		if !ok {
+			return map[string]any{}
+		}
+
+		out := map[string]any{}
+
+		copyTrim := func(key string) {
+			raw, exists := m[key]
+			if !exists || raw == nil {
+				return
+			}
+			if s, ok := raw.(string); ok {
+				t := strings.TrimSpace(s)
+				if t == "" {
+					return
+				}
+				out[key] = t
+				return
+			}
+			out[key] = raw
+		}
+
+		copyTrim("plan_id")
+		copyTrim("phase")
+		copyTrim("hormonal_briefing_resonates")
+
+		if len(out) == 0 {
+			return map[string]any{}
+		}
+		return out
 
 	case "/training/generate":
 		if v, ok := body["training_generate"]; ok {
@@ -356,6 +396,45 @@ func selectSubBody(path string, body map[string]any) any {
 		if raw, exists := m["days"]; exists && raw != nil {
 			out["days"] = raw
 		}
+
+		if len(out) == 0 {
+			return map[string]any{}
+		}
+		return out
+
+	case "/nutrition/meal-selection":
+		v, ok := body["meal_selection"]
+		if !ok || v == nil {
+			return map[string]any{}
+		}
+
+		m, ok := v.(map[string]any)
+		if !ok {
+			return map[string]any{}
+		}
+
+		out := map[string]any{}
+
+		copyTrim := func(key string) {
+			raw, exists := m[key]
+			if !exists || raw == nil {
+				return
+			}
+			if s, ok := raw.(string); ok {
+				t := strings.TrimSpace(s)
+				if t == "" {
+					return
+				}
+				out[key] = t
+				return
+			}
+			out[key] = raw
+		}
+
+		copyTrim("plan_id")
+		copyTrim("weekday")
+		copyTrim("meal_slot")
+		copyTrim("option_index")
 
 		if len(out) == 0 {
 			return map[string]any{}

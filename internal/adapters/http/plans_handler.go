@@ -2,7 +2,6 @@ package http
 
 import (
 	"encoding/json"
-	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -15,36 +14,34 @@ import (
 )
 
 type PlansHandler struct {
-	GenerateUC       *usecase.GeneratePlanUseCase
-	CurrentUC        *usecase.GetCurrentPlanUseCase
-	GetByIDUC        *usecase.GetPlanByIDUseCase
-	AdjustUC         *usecase.AdjustPlanUseCase
+	CurrentUC *usecase.GetCurrentPlanUseCase
+	GetByIDUC *usecase.GetPlanByIDUseCase
+	//AdjustUC         *usecase.AdjustPlanUseCase
 	GetByWeekStartUC *usecase.GetPlanByWeekStartUseCase
-	StartGenUC       *usecase.StartPlanGenerationUseCase
-	JobStatusUC      *usecase.GetPlanGenerationStatusUseCase
+	//StartGenUC       *usecase.StartPlanGenerationUseCase
+	JobStatusUC     *usecase.GetPlanGenerationStatusUseCase
+	PhaseFeedbackUC *usecase.SavePhaseFeedbackUseCase
 }
 
-type adjustPlanRequest struct {
-	LifestyleChangeID string `json:"lifestyle_change_id"`
-}
+//type adjustPlanRequest struct {
+//	LifestyleChangeID string `json:"lifestyle_change_id"`
+//}
 
 func NewPlansHandler(
-	generateUC *usecase.GeneratePlanUseCase,
 	currentUC *usecase.GetCurrentPlanUseCase,
 	getByIDUC *usecase.GetPlanByIDUseCase,
-	adjustUC *usecase.AdjustPlanUseCase,
 	getByWeekStartUC *usecase.GetPlanByWeekStartUseCase,
-	startGenUC *usecase.StartPlanGenerationUseCase,
+	//startGenUC *usecase.StartPlanGenerationUseCase,
 	jobStatusUC *usecase.GetPlanGenerationStatusUseCase,
+	phaseFeedbackUC *usecase.SavePhaseFeedbackUseCase,
 ) *PlansHandler {
 	return &PlansHandler{
-		GenerateUC:       generateUC,
 		CurrentUC:        currentUC,
 		GetByIDUC:        getByIDUC,
-		AdjustUC:         adjustUC,
 		GetByWeekStartUC: getByWeekStartUC,
-		StartGenUC:       startGenUC,
-		JobStatusUC:      jobStatusUC,
+		//StartGenUC:       startGenUC,
+		JobStatusUC:     jobStatusUC,
+		PhaseFeedbackUC: phaseFeedbackUC,
 	}
 }
 
@@ -52,6 +49,11 @@ func NewPlansHandler(
 
 type generatePlanRequest struct {
 	CheckinID *string `json:"checkin_id,omitempty"`
+}
+type phaseFeedbackRequest struct {
+	PlanID                    string `json:"plan_id"`
+	Phase                     string `json:"phase"`
+	HormonalBriefingResonates bool   `json:"hormonal_briefing_resonates"`
 }
 
 // ---------- RESPONSES ----------
@@ -66,29 +68,24 @@ type planResponse struct {
 	EndDate   string `json:"end_date"`
 	CreatedAt string `json:"created_at"`
 
-	WeeklyHeadline    string `json:"weekly_headline,omitempty"`
-	CyclePhaseSummary string `json:"cycle_phase_summary,omitempty"`
-	CycleDayRange     string `json:"cycle_day_range,omitempty"`
+	CycleDayRange      string `json:"cycle_day_range,omitempty"`
+	CurrentPhase       string `json:"current_phase,omitempty"`
+	NextPhase          string `json:"next_phase,omitempty"`
+	DaysUntilNextPhase int    `json:"days_until_next_phase,omitempty"`
 
 	Training  json.RawMessage `json:"training,omitempty"`
 	Nutrition json.RawMessage `json:"nutrition,omitempty"`
 	Recovery  json.RawMessage `json:"recovery,omitempty"`
 
-	TrainingCompleted map[string]bool `json:"training_completed,omitempty"`
-
-	Recommendations []recommendationResponse `json:"recommendations,omitempty"`
+	TrainingCompleted map[string]bool                      `json:"training_completed,omitempty"`
+	MealSelections    map[string]map[string]int            `json:"meal_selections,omitempty"`
+	PhaseFeedback     map[string]domain.PhaseFeedbackEntry `json:"phase_feedback,omitempty"`
 
 	// Meta solo cuando viene (ej. /generate)
 	ModelName     string `json:"model_name,omitempty"`
 	PromptVersion string `json:"prompt_version,omitempty"`
 	TokensInput   int    `json:"tokens_input,omitempty"`
 	TokensOutput  int    `json:"tokens_output,omitempty"`
-}
-
-type recommendationResponse struct {
-	Title  string `json:"title"`
-	Action string `json:"action,omitempty"`
-	Why    string `json:"why,omitempty"`
 }
 
 type generatePlanAsyncResponse struct {
@@ -104,7 +101,7 @@ type planJobStatusResponse struct {
 // ---------- HANDLERS ----------
 
 // POST /plans/generate
-func (h *PlansHandler) Generate(w http.ResponseWriter, r *http.Request) {
+/*func (h *PlansHandler) Generate(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	userID, ok := UserIDFromContext(ctx)
@@ -141,7 +138,7 @@ func (h *PlansHandler) Generate(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusAccepted) // 202
 	_ = json.NewEncoder(w).Encode(generatePlanAsyncResponse{JobID: jobID})
-}
+}*/
 
 // GET /plans/generate/status?job_id=...
 func (h *PlansHandler) GenerateStatus(w http.ResponseWriter, r *http.Request) {
@@ -212,13 +209,19 @@ func (h *PlansHandler) GetCurrent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cycle := &cycleInfo{
+		CurrentPhase:       out.CurrentPhase,
+		NextPhase:          out.NextPhase,
+		DaysUntilNextPhase: out.DaysUntilNextPhase,
+	}
+
 	if out == nil || out.Plan == nil {
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
 
 	// meta usually not available here
-	resp := mapPlanToResponse(out.Plan, nil)
+	resp := mapPlanToResponse(out.Plan, nil, cycle)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -251,12 +254,18 @@ func (h *PlansHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cycle := &cycleInfo{
+		CurrentPhase:       out.CurrentPhase,
+		NextPhase:          out.NextPhase,
+		DaysUntilNextPhase: out.DaysUntilNextPhase,
+	}
+
 	if out == nil || out.Plan == nil {
 		http.Error(w, "plan not found", http.StatusNotFound)
 		return
 	}
 
-	resp := mapPlanToResponse(out.Plan, nil)
+	resp := mapPlanToResponse(out.Plan, nil, cycle)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -264,7 +273,7 @@ func (h *PlansHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 }
 
 // POST /plans/adjust
-func (h *PlansHandler) Adjust(w http.ResponseWriter, r *http.Request) {
+/*func (h *PlansHandler) Adjust(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	userID, ok := UserIDFromContext(ctx)
@@ -292,16 +301,21 @@ func (h *PlansHandler) Adjust(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to adjust plan", http.StatusInternalServerError)
 		return
 	}
+	cycle := &cycleInfo{
+		CurrentPhase:       out.CurrentPhase,
+		NextPhase:          out.NextPhase,
+		DaysUntilNextPhase: out.DaysUntilNextPhase,
+	}
 	if out == nil || out.Plan == nil {
 		http.Error(w, "plan not found", http.StatusNotFound)
 		return
 	}
 
-	resp := mapPlanToResponse(out.Plan, nil)
+	resp := mapPlanToResponse(out.Plan, nil, cycle)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(resp)
-}
+}*/
 
 // GET /plans/week/{week_start}
 func (h *PlansHandler) GetByWeekStart(w http.ResponseWriter, r *http.Request) {
@@ -339,8 +353,13 @@ func (h *PlansHandler) GetByWeekStart(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
+	cycle := &cycleInfo{
+		CurrentPhase:       out.CurrentPhase,
+		NextPhase:          out.NextPhase,
+		DaysUntilNextPhase: out.DaysUntilNextPhase,
+	}
 
-	resp := mapPlanToResponse(out.Plan, nil)
+	resp := mapPlanToResponse(out.Plan, nil, cycle)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(resp)
@@ -348,7 +367,13 @@ func (h *PlansHandler) GetByWeekStart(w http.ResponseWriter, r *http.Request) {
 
 // ---------- MAPPERS ----------
 
-func mapPlanToResponse(p *domain.Plan, meta *domain.PlanGenerationMeta) planResponse {
+type cycleInfo struct {
+	CurrentPhase       string
+	NextPhase          string
+	DaysUntilNextPhase int
+}
+
+func mapPlanToResponse(p *domain.Plan, meta *domain.PlanGenerationMeta, cycle *cycleInfo) planResponse {
 	var checkinID *string
 	if p.CheckinID != "" {
 		c := p.CheckinID
@@ -370,33 +395,29 @@ func mapPlanToResponse(p *domain.Plan, meta *domain.PlanGenerationMeta) planResp
 		created = p.CreatedAt.UTC().Format(time.RFC3339)
 	}
 
-	recs := make([]recommendationResponse, 0, len(p.Recommendations))
-	for _, r := range p.Recommendations {
-		recs = append(recs, recommendationResponse{
-			Title:  r.Title,
-			Action: r.Action,
-			Why:    r.Why,
-		})
-	}
-
 	resp := planResponse{
-		ID:                p.ID,
-		UserID:            p.UserID,
-		Status:            p.Status,
-		CheckinID:         checkinID,
-		StartDate:         start,
-		EndDate:           end,
-		CreatedAt:         created,
-		WeeklyHeadline:    p.WeeklyHeadline,
-		CyclePhaseSummary: p.CyclePhaseSummary,
-		CycleDayRange:     p.CycleDayRange,
+		ID:            p.ID,
+		UserID:        p.UserID,
+		Status:        p.Status,
+		CheckinID:     checkinID,
+		StartDate:     start,
+		EndDate:       end,
+		CreatedAt:     created,
+		CycleDayRange: p.CycleDayRange,
 
-		Training:        json.RawMessage(p.TrainingJSON),
-		Nutrition:       json.RawMessage(p.NutritionJSON),
-		Recovery:        json.RawMessage(p.RecoveryJSON),
-		Recommendations: recs,
+		Training:  json.RawMessage(p.TrainingJSON),
+		Nutrition: json.RawMessage(p.NutritionJSON),
+		Recovery:  json.RawMessage(p.RecoveryJSON),
 
 		TrainingCompleted: p.TrainingCompleted,
+		MealSelections:    p.MealSelections,
+		PhaseFeedback:     p.PhaseFeedback,
+	}
+
+	if cycle != nil {
+		resp.CurrentPhase = cycle.CurrentPhase
+		resp.NextPhase = cycle.NextPhase
+		resp.DaysUntilNextPhase = cycle.DaysUntilNextPhase
 	}
 
 	if meta != nil {
@@ -407,4 +428,41 @@ func mapPlanToResponse(p *domain.Plan, meta *domain.PlanGenerationMeta) planResp
 	}
 
 	return resp
+}
+
+// POST /plans/phase-feedback
+func (h *PlansHandler) SavePhaseFeedback(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	userID, ok := UserIDFromContext(ctx)
+	if !ok || userID == "" {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var req phaseFeedbackRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid json body", http.StatusBadRequest)
+		return
+	}
+
+	if req.PlanID == "" || req.Phase == "" {
+		http.Error(w, "plan_id and phase are required", http.StatusBadRequest)
+		return
+	}
+
+	err := h.PhaseFeedbackUC.Execute(ctx, usecase.SavePhaseFeedbackInput{
+		UserID:                    userID,
+		PlanID:                    req.PlanID,
+		Phase:                     req.Phase,
+		HormonalBriefingResonates: req.HormonalBriefingResonates,
+	})
+	if err != nil {
+		log.Printf("[plans.phase-feedback] error: %+v\n", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]string{"status": "saved"})
 }

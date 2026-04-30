@@ -11,16 +11,19 @@ import (
 )
 
 type CreateCheckinInput struct {
-	UserID             string
-	WeekStart          time.Time
-	SleepQuality       string
-	BodyStatus         string
-	Appetite           string
-	StressLevel        string
-	LastWeekFeeling    string
-	CycleStart         *time.Time
-	WorkloadPrediction string
-	MentalEnergy       string
+	UserID          string
+	WeekStart       time.Time
+	Sleep           string
+	Body            string
+	AppetiteV2      string
+	Demand          string
+	StressLevel     string
+	LastWeekFeel    string
+	CycleStart      *time.Time
+	PMSSymptoms     *string
+	Predictability  string
+	Readiness       string
+	AdditionalNotes string
 }
 
 type CreateCheckinOutput struct {
@@ -58,19 +61,20 @@ func (uc *CreateCheckinUseCase) Execute(ctx context.Context, in CreateCheckinInp
 	}
 
 	checkin := &domain.Checkin{
-		ID:                 uuid.NewString(),
-		UserID:             in.UserID,
-		WeekStart:          in.WeekStart,
-		CreatedAt:          now,
-		SleepQuality:       in.SleepQuality,
-		BodyStatus:         in.BodyStatus,
-		Appetite:           in.Appetite,
-		StressLevel:        in.StressLevel,
-		LastWeekFeeling:    in.LastWeekFeeling,
-		CycleStart:         in.CycleStart,
-		WorkloadPrediction: in.WorkloadPrediction,
-		MentalEnergy:       in.MentalEnergy,
-		PromptVersion:      uc.PromptVersion,
+		ID:              uuid.NewString(),
+		UserID:          in.UserID,
+		WeekStart:       in.WeekStart,
+		CreatedAt:       now,
+		Sleep:           domain.CheckinSleep(in.Sleep),
+		Body:            domain.CheckinBody(in.Body),
+		AppetiteV2:      domain.CheckinAppetite(in.AppetiteV2),
+		Demand:          domain.CheckinDemand(in.Demand),
+		LastWeekFeel:    domain.CheckinLastWeek(in.LastWeekFeel),
+		CycleStart:      in.CycleStart,
+		PMSSymptoms:     (*domain.CheckinPMSSymptoms)(in.PMSSymptoms),
+		Predictability:  domain.CheckinPredictability(in.Predictability),
+		Readiness:       domain.CheckinReadiness(in.Readiness),
+		AdditionalNotes: in.AdditionalNotes,
 	}
 
 	if err := uc.Checkins.Create(ctx, checkin); err != nil {

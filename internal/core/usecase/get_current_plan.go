@@ -12,7 +12,10 @@ type GetCurrentPlanInput struct {
 }
 
 type GetCurrentPlanOutput struct {
-	Plan *domain.Plan
+	Plan               *domain.Plan
+	CurrentPhase       string
+	NextPhase          string
+	DaysUntilNextPhase int
 }
 
 type GetCurrentPlanUseCase struct {
@@ -40,6 +43,10 @@ func (uc *GetCurrentPlanUseCase) Execute(ctx context.Context, in GetCurrentPlanI
 		return nil, ErrUserNotFound(in.UserID)
 	}
 
+	phase := mapCyclePhase(user.CyclePhase)
+	nextPhase := NextPhaseName(phase)
+	daysRemaining := DaysUntilNextPhase(user)
+
 	// 1) Prefer explicit pointer to the active plan.
 	if user.LastActivePlanID != nil {
 		id := strings.TrimSpace(*user.LastActivePlanID)
@@ -49,7 +56,12 @@ func (uc *GetCurrentPlanUseCase) Execute(ctx context.Context, in GetCurrentPlanI
 				return nil, err
 			}
 			if plan != nil {
-				return &GetCurrentPlanOutput{Plan: plan}, nil
+				return &GetCurrentPlanOutput{
+					Plan:               plan,
+					CurrentPhase:       string(phase),
+					NextPhase:          nextPhase,
+					DaysUntilNextPhase: daysRemaining,
+				}, nil
 			}
 			// If the pointer is stale, fall through to latest.
 		}
@@ -68,5 +80,10 @@ func (uc *GetCurrentPlanUseCase) Execute(ctx context.Context, in GetCurrentPlanI
 	user.LastActivePlanID = &latest.ID
 	_ = uc.Users.Save(ctx, user) // best-effort repair; do not fail the request
 
-	return &GetCurrentPlanOutput{Plan: latest}, nil
+	return &GetCurrentPlanOutput{
+		Plan:               latest,
+		CurrentPhase:       string(phase),
+		NextPhase:          nextPhase,
+		DaysUntilNextPhase: daysRemaining,
+	}, nil
 }

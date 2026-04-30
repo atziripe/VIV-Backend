@@ -3,7 +3,6 @@ package runner
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"strings"
 	"time"
@@ -145,9 +144,6 @@ func (r *LocalTrainingPlanRunner) Run(userID, jobID, checkinID string) {
 			CreatedAt: now,
 			StartDate: mondayOfCurrentWeek(now),
 			EndDate:   mondayOfCurrentWeek(now).AddDate(0, 0, 6),
-
-			WeeklyHeadline:    fmt.Sprintf("Training plan — %s phase", trainingOutput.Plan.Phase),
-			CyclePhaseSummary: string(trainingOutput.Plan.Phase),
 
 			TrainingJSON:  trainingJSON,
 			NutritionJSON: nutritionJSON,

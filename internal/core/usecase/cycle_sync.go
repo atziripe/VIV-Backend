@@ -129,3 +129,55 @@ func ApplyCycleStartOverride(user *domain.User, cycleStart time.Time, now time.T
 	user.CyclePhase = phaseForDay(newDay, duration, period)
 	return true
 }
+
+// DaysUntilNextPhase calculates how many days until the user transitions
+// to the next cycle phase, based on current cycle day and duration.
+func DaysUntilNextPhase(user *domain.User) int {
+	day := parseIntDefault(user.CycleDay, 1)
+	duration := parseIntDefault(user.CycleDuration, 28)
+	period := parseIntDefault(user.PeriodDuration, 5)
+
+	ovulationDay := duration - 14
+	currentPhase := phaseForDay(day, duration, period)
+
+	switch currentPhase {
+	case "menstrual":
+		// Ends when period ends
+		return period - day + 1
+	case "early_follicular":
+		// Ends at ovulation - 5
+		return (ovulationDay - 5) - day + 1
+	case "late_follicular":
+		// Ends at ovulation - 1
+		return (ovulationDay - 1) - day + 1
+	case "ovulation":
+		// 3 day window: ovulation-1 to ovulation+1
+		return (ovulationDay + 1) - day + 1
+	case "early_luteal":
+		// Ends at ovulation + 5
+		return (ovulationDay + 5) - day + 1
+	case "late_luteal":
+		// Ends at cycle end (day = duration)
+		return duration - day + 1
+	default:
+		return 1
+	}
+}
+
+// NextPhaseName returns what phase comes after the current one.
+func NextPhaseName(currentPhase domain.CyclePhase) string {
+	switch currentPhase {
+	case domain.PhaseMenstrual:
+		return "follicular"
+	case domain.PhaseFollicular:
+		return "ovulatory"
+	case domain.PhaseOvulatory:
+		return "early_luteal"
+	case domain.PhaseEarlyLuteal:
+		return "late_luteal"
+	case domain.PhaseLateLuteal:
+		return "menstrual"
+	default:
+		return "follicular"
+	}
+}

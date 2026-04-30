@@ -11,9 +11,7 @@ type Plan struct {
 	StartDate time.Time
 	EndDate   time.Time
 
-	WeeklyHeadline    string
-	CyclePhaseSummary string
-	CycleDayRange     string
+	CycleDayRange string
 
 	// Raw payloads (source of truth for UI)
 	TrainingJSON  []byte
@@ -25,11 +23,20 @@ type Plan struct {
 	// Absent key = not completed.
 	TrainingCompleted map[string]bool `json:"training_completed,omitempty"`
 
-	Recommendations []Recommendations
-
 	GeneratedFrom string
 	SourceEventID string
 	PlanVersion   int
+
+	PhaseFeedback map[string]PhaseFeedbackEntry `json:"phase_feedback,omitempty"`
+
+	// MealSelections tracks which meal option the user chose per day per slot.
+	// Keys are weekday names, values are maps of slot name → option index.
+	MealSelections map[string]map[string]int `json:"meal_selections,omitempty"`
+}
+
+type PhaseFeedbackEntry struct {
+	HormonalBriefingResonates *bool  `json:"hormonal_briefing_resonates"`
+	RespondedAt               string `json:"responded_at"`
 }
 
 type PlanGenerationMeta struct {
@@ -37,12 +44,6 @@ type PlanGenerationMeta struct {
 	PromptVersion string
 	TokensInput   int
 	TokensOutput  int
-}
-
-type Recommendations struct {
-	Title  string
-	Action string
-	Why    string
 }
 
 type PlanGenerationResult struct {

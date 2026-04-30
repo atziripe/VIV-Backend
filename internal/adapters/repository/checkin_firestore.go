@@ -25,17 +25,18 @@ func NewFirestoreCheckinRepository(client *firestore.Client) *FirestoreCheckinRe
 
 // Firestore DTO (para no acoplar domain.Checkin a tags específicos)
 type checkinDoc struct {
-	WeekStart          time.Time  `firestore:"week_start"`
-	CreatedAt          time.Time  `firestore:"created_at"`
-	SleepQuality       string     `firestore:"sleep_quality"`
-	BodyStatus         string     `firestore:"body_status"`
-	Appetite           string     `firestore:"appetite"`
-	StressLevel        string     `firestore:"stress_level"`
-	LastWeekFeeling    string     `firestore:"last_week_feeling"`
-	CycleStart         *time.Time `firestore:"cycle_start"`
-	WorkloadPrediction string     `firestore:"workload_prediction"`
-	MentalEnergy       string     `firestore:"mental_energy"`
-	PromptVersion      string     `firestore:"prompt_version"`
+	WeekStart       time.Time  `firestore:"week_start"`
+	CreatedAt       time.Time  `firestore:"created_at"`
+	Sleep           string     `json:"sleep_quality"`
+	Body            string     `json:"body_status"`
+	AppetiteV2      string     `json:"appetite"`
+	Demand          string     `json:"demand"`
+	LastWeekFeel    string     `json:"last_week_feeling"`
+	CycleStart      *time.Time `json:"cycle_start"`
+	PMSSymptoms     *string    `json:"pms_symptoms"`
+	Predictability  string     `json:"predictability"`
+	Readiness       string     `json:"readiness"`
+	AdditionalNotes string     `json:"additional_notes"`
 }
 
 // Saving in
@@ -46,17 +47,18 @@ func (r *FirestoreCheckinRepository) Create(ctx context.Context, c *domain.Check
 	}
 
 	doc := checkinDoc{
-		WeekStart:          c.WeekStart,
-		CreatedAt:          c.CreatedAt,
-		SleepQuality:       c.SleepQuality,
-		BodyStatus:         c.BodyStatus,
-		Appetite:           c.Appetite,
-		StressLevel:        c.StressLevel,
-		LastWeekFeeling:    c.LastWeekFeeling,
-		CycleStart:         c.CycleStart,
-		WorkloadPrediction: c.WorkloadPrediction,
-		MentalEnergy:       c.MentalEnergy,
-		PromptVersion:      c.PromptVersion,
+		WeekStart:       c.WeekStart,
+		CreatedAt:       c.CreatedAt,
+		Sleep:           string(c.Sleep),
+		Body:            string(c.Body),
+		AppetiteV2:      string(c.AppetiteV2),
+		Demand:          string(c.Demand),
+		LastWeekFeel:    string(c.LastWeekFeel),
+		CycleStart:      c.CycleStart,
+		PMSSymptoms:     (*string)(c.PMSSymptoms),
+		Predictability:  string(c.Predictability),
+		Readiness:       string(c.Readiness),
+		AdditionalNotes: c.AdditionalNotes,
 	}
 
 	_, err := r.client.
@@ -90,19 +92,20 @@ func (r *FirestoreCheckinRepository) GetByID(ctx context.Context, id string, use
 	}
 
 	ch := &domain.Checkin{
-		ID:                 doc.Ref.ID,
-		UserID:             userID,
-		WeekStart:          cd.WeekStart,
-		CreatedAt:          cd.CreatedAt,
-		SleepQuality:       cd.SleepQuality,
-		BodyStatus:         cd.BodyStatus,
-		Appetite:           cd.Appetite,
-		StressLevel:        cd.StressLevel,
-		LastWeekFeeling:    cd.LastWeekFeeling,
-		CycleStart:         cd.CycleStart,
-		WorkloadPrediction: cd.WorkloadPrediction,
-		MentalEnergy:       cd.MentalEnergy,
-		PromptVersion:      cd.PromptVersion,
+		ID:              doc.Ref.ID,
+		UserID:          userID,
+		WeekStart:       cd.WeekStart,
+		CreatedAt:       cd.CreatedAt,
+		Sleep:           domain.CheckinSleep(cd.Sleep),
+		Body:            domain.CheckinBody(cd.Body),
+		AppetiteV2:      domain.CheckinAppetite(cd.AppetiteV2),
+		Demand:          domain.CheckinDemand(cd.Demand),
+		LastWeekFeel:    domain.CheckinLastWeek(cd.LastWeekFeel),
+		CycleStart:      cd.CycleStart,
+		PMSSymptoms:     (*domain.CheckinPMSSymptoms)(cd.PMSSymptoms),
+		Predictability:  domain.CheckinPredictability(cd.Predictability),
+		Readiness:       domain.CheckinReadiness(cd.Readiness),
+		AdditionalNotes: cd.AdditionalNotes,
 	}
 
 	return ch, nil
@@ -132,19 +135,20 @@ func (r *FirestoreCheckinRepository) GetLatestByUser(ctx context.Context, userID
 	}
 
 	ch := &domain.Checkin{
-		ID:                 doc.Ref.ID,
-		UserID:             userID,
-		WeekStart:          cd.WeekStart,
-		CreatedAt:          cd.CreatedAt,
-		SleepQuality:       cd.SleepQuality,
-		BodyStatus:         cd.BodyStatus,
-		Appetite:           cd.Appetite,
-		StressLevel:        cd.StressLevel,
-		LastWeekFeeling:    cd.LastWeekFeeling,
-		CycleStart:         cd.CycleStart,
-		WorkloadPrediction: cd.WorkloadPrediction,
-		MentalEnergy:       cd.MentalEnergy,
-		PromptVersion:      cd.PromptVersion,
+		ID:              doc.Ref.ID,
+		UserID:          userID,
+		WeekStart:       cd.WeekStart,
+		CreatedAt:       cd.CreatedAt,
+		Sleep:           domain.CheckinSleep(cd.Sleep),
+		Body:            domain.CheckinBody(cd.Body),
+		AppetiteV2:      domain.CheckinAppetite(cd.AppetiteV2),
+		Demand:          domain.CheckinDemand(cd.Demand),
+		LastWeekFeel:    domain.CheckinLastWeek(cd.LastWeekFeel),
+		CycleStart:      cd.CycleStart,
+		PMSSymptoms:     (*domain.CheckinPMSSymptoms)(cd.PMSSymptoms),
+		Predictability:  domain.CheckinPredictability(cd.Predictability),
+		Readiness:       domain.CheckinReadiness(cd.Readiness),
+		AdditionalNotes: cd.AdditionalNotes,
 	}
 
 	return ch, nil

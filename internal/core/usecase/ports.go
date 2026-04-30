@@ -35,6 +35,8 @@ type PlanRepository interface {
 	GetLatest(ctx context.Context, userID string) (*domain.Plan, error)
 	UpdateTrainingCompleted(ctx context.Context, userID, planID string, completed map[string]bool) error
 	UpdatedTrainingJSON(ctx context.Context, userID, trainingPlanID string, trianingJson []byte) error
+	UpdatePhaseFeedback(ctx context.Context, userID, planID string, feedback map[string]domain.PhaseFeedbackEntry) error
+	UpdateMealSelections(ctx context.Context, userID, planID string, selections map[string]map[string]int) error
 }
 
 type PlanJobsRepository interface {

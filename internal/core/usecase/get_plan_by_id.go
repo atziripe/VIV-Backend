@@ -14,7 +14,10 @@ type GetPlanByIDInput struct {
 }
 
 type GetPlanByIDOutput struct {
-	Plan *domain.Plan
+	Plan               *domain.Plan
+	CurrentPhase       string
+	NextPhase          string
+	DaysUntilNextPhase int
 }
 
 type GetPlanByIDUseCase struct {
@@ -58,5 +61,14 @@ func (uc *GetPlanByIDUseCase) Execute(ctx context.Context, in GetPlanByIDInput) 
 		return nil, ErrPlanNotFound(in.PlanID)
 	}
 
-	return &GetPlanByIDOutput{Plan: plan}, nil
+	phase := mapCyclePhase(user.CyclePhase)
+	nextPhase := NextPhaseName(phase)
+	daysRemaining := DaysUntilNextPhase(user)
+
+	return &GetPlanByIDOutput{
+		Plan:               plan,
+		CurrentPhase:       string(phase),
+		NextPhase:          nextPhase,
+		DaysUntilNextPhase: daysRemaining,
+	}, nil
 }

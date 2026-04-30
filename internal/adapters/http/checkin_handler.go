@@ -13,31 +13,32 @@ import (
 )
 
 type createCheckinRequest struct {
-	SleepQuality           string  `json:"sleep_quality"`
-	BodyStatus             string  `json:"body_status"`
-	Appetite               string  `json:"appetite"`
-	StressLevel            string  `json:"stress_level"`
-	LastWeekFeeling        string  `json:"last_week_feeling"`
-	CycleStart             *string `json:"cycle_start"` // opcional, "2025-11-30"
-	WorkloadPrediction     string  `json:"workload_prediction"`
-	MentalEnergy           string  `json:"mental_energy"`
-	TrainingGuidanceLevel  *string `json:"training_guidance_level,omitempty"`
-	NutritionGuidanceLevel *string `json:"nutrition_guidance_level,omitempty"`
+	Sleep           string  `json:"sleep_quality"`
+	Body            string  `json:"body_status"`
+	AppetiteV2      string  `json:"appetite"`
+	Demand          string  `json:"demand"`
+	LastWeekFeel    string  `json:"last_week_feeling"`
+	CycleStart      *string `json:"cycle_start"`  // opcional, "2025-11-30"
+	PMSSymptoms     *string `json:"pms_symptoms"` // opcional, just in luteal and menstrual phase
+	Predictability  string  `json:"predictability"`
+	Readiness       string  `json:"readiness"`
+	AdditionalNotes string  `json:"additional_notes"`
 }
 
 type createCheckinResponse struct {
-	ID                 string  `json:"id"`
-	WeekStart          string  `json:"week_start"`
-	CreatedAt          string  `json:"created_at"`
-	SleepQuality       string  `json:"sleep_quality"`
-	BodyStatus         string  `json:"body_status"`
-	Appetite           string  `json:"appetite"`
-	StressLevel        string  `json:"stress_level"`
-	LastWeekFeeling    string  `json:"last_week_feeling"`
-	CycleStart         *string `json:"cycle_start,omitempty"`
-	WorkloadPrediction string  `json:"workload_prediction"`
-	MentalEnergy       string  `json:"mental_energy"`
-	PromptVersion      string  `json:"prompt_version"`
+	ID              string  `json:"id"`
+	WeekStart       string  `json:"week_start"`
+	CreatedAt       string  `json:"created_at"`
+	Sleep           string  `json:"sleep_quality"`
+	Body            string  `json:"body_status"`
+	AppetiteV2      string  `json:"appetite"`
+	Demand          string  `json:"demand"`
+	LastWeekFeel    string  `json:"last_week_feeling"`
+	CycleStart      *string `json:"cycle_start"`  // opcional, "2025-11-30"
+	PMSSymptoms     *string `json:"pms_symptoms"` // opcional, just in luteal and menstrual phase
+	Predictability  string  `json:"predictability"`
+	Readiness       string  `json:"readiness"`
+	AdditionalNotes string  `json:"additional_notes"`
 }
 
 type CheckinHandler struct {
@@ -93,16 +94,18 @@ func (h *CheckinHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	in := usecase.CreateCheckinInput{
-		UserID:             userID,
-		WeekStart:          weekStart,
-		SleepQuality:       req.SleepQuality,
-		BodyStatus:         req.BodyStatus,
-		Appetite:           req.Appetite,
-		StressLevel:        req.StressLevel,
-		LastWeekFeeling:    req.LastWeekFeeling,
-		CycleStart:         cycleStart,
-		WorkloadPrediction: req.WorkloadPrediction,
-		MentalEnergy:       req.MentalEnergy,
+		UserID:          userID,
+		WeekStart:       weekStart,
+		Sleep:           req.Sleep,
+		Body:            req.Body,
+		AppetiteV2:      req.AppetiteV2,
+		Demand:          req.Demand,
+		LastWeekFeel:    req.LastWeekFeel,
+		CycleStart:      cycleStart,
+		PMSSymptoms:     req.PMSSymptoms,
+		Predictability:  req.Predictability,
+		Readiness:       req.Readiness,
+		AdditionalNotes: req.AdditionalNotes,
 	}
 
 	out, err := h.CreateUC.Execute(ctx, in)
@@ -131,18 +134,19 @@ func (h *CheckinHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := createCheckinResponse{
-		ID:                 out.Checkin.ID,
-		WeekStart:          weekStartStr,
-		CreatedAt:          createdAtStr,
-		SleepQuality:       out.Checkin.SleepQuality,
-		BodyStatus:         out.Checkin.BodyStatus,
-		Appetite:           out.Checkin.Appetite,
-		StressLevel:        out.Checkin.StressLevel,
-		LastWeekFeeling:    out.Checkin.LastWeekFeeling,
-		CycleStart:         cycleStartStr,
-		WorkloadPrediction: out.Checkin.WorkloadPrediction,
-		MentalEnergy:       out.Checkin.MentalEnergy,
-		PromptVersion:      out.Checkin.PromptVersion,
+		ID:              out.Checkin.ID,
+		WeekStart:       weekStartStr,
+		CreatedAt:       createdAtStr,
+		Sleep:           string(out.Checkin.Sleep),
+		Body:            string(out.Checkin.Body),
+		AppetiteV2:      string(out.Checkin.AppetiteV2),
+		Demand:          string(out.Checkin.Demand),
+		LastWeekFeel:    string(out.Checkin.LastWeekFeel),
+		CycleStart:      cycleStartStr,
+		PMSSymptoms:     (*string)(out.Checkin.PMSSymptoms),
+		Predictability:  string(out.Checkin.Predictability),
+		Readiness:       string(out.Checkin.Readiness),
+		AdditionalNotes: out.Checkin.AdditionalNotes,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -185,18 +189,19 @@ func (h *CheckinHandler) Latest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := createCheckinResponse{
-		ID:                 ch.ID,
-		WeekStart:          weekStartStr,
-		CreatedAt:          createdAtStr,
-		SleepQuality:       ch.SleepQuality,
-		BodyStatus:         ch.BodyStatus,
-		Appetite:           ch.Appetite,
-		StressLevel:        ch.StressLevel,
-		LastWeekFeeling:    ch.LastWeekFeeling,
-		CycleStart:         cycleStartStr,
-		WorkloadPrediction: ch.WorkloadPrediction,
-		MentalEnergy:       ch.MentalEnergy,
-		PromptVersion:      ch.PromptVersion,
+		ID:              ch.ID,
+		WeekStart:       weekStartStr,
+		CreatedAt:       createdAtStr,
+		Sleep:           string(ch.Sleep),
+		Body:            string(ch.Body),
+		AppetiteV2:      string(ch.AppetiteV2),
+		Demand:          string(ch.Demand),
+		LastWeekFeel:    string(ch.LastWeekFeel),
+		CycleStart:      cycleStartStr,
+		PMSSymptoms:     (*string)(ch.PMSSymptoms),
+		Predictability:  string(ch.Predictability),
+		Readiness:       string(ch.Readiness),
+		AdditionalNotes: string(ch.AdditionalNotes),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -246,7 +251,7 @@ func startOfWeekMondayUTC(t time.Time) time.Time {
 
 	// Go: Sunday=0 ... Saturday=6
 	wd := int(d.Weekday())
-	if wd == 0 { // domingo -> lo tratamos como 7 para retroceder a lunes
+	if wd == 0 {
 		wd = 7
 	}
 	// lunes = 1 → restar wd-1 días

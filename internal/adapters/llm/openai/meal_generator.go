@@ -197,3 +197,15 @@ func buildMealUserPrompt(input usecase.MealGenerationInput) string {
 
 	return b.String()
 }
+
+func sanitizeJSON(s string) string {
+	s = strings.TrimSpace(s)
+	if strings.HasPrefix(s, "```") {
+		s = strings.TrimPrefix(s, "```json")
+		s = strings.TrimPrefix(s, "```")
+		s = strings.TrimSpace(s)
+		s = strings.TrimSuffix(s, "```")
+		s = strings.TrimSpace(s)
+	}
+	return s
+}

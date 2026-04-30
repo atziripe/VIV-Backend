@@ -16,7 +16,10 @@ type AdjustPlanInput struct {
 }
 
 type AdjustPlanOutput struct {
-	Plan *domain.Plan
+	Plan               *domain.Plan
+	CurrentPhase       string
+	NextPhase          string
+	DaysUntilNextPhase int
 }
 
 type AdjustPlanUseCase struct {
@@ -143,7 +146,15 @@ func (uc *AdjustPlanUseCase) Execute(ctx context.Context, in AdjustPlanInput) (*
 	// 11) Guardar plan_id dentro del lifestyle change (trazabilidad)
 	_ = uc.lifestyleRepo.SetPlanID(ctx, user.ID, ch.ID, plan.Plan.ID)
 
-	return &AdjustPlanOutput{Plan: plan.Plan}, nil
+	phase := mapCyclePhase(user.CyclePhase)
+	nextPhase := NextPhaseName(phase)
+	daysRemaining := DaysUntilNextPhase(user)
+
+	return &AdjustPlanOutput{Plan: plan.Plan,
+		CurrentPhase:       string(phase),
+		NextPhase:          nextPhase,
+		DaysUntilNextPhase: daysRemaining,
+	}, nil
 }
 func formatLifestyleContext(ch *domain.LifestyleChange) string {
 	if ch == nil {

@@ -70,7 +70,6 @@ func main() {
 	}
 
 	oaClient := openai.NewOpenAIClient(cfg.OpenAIAPIKey, "gpt-4.1-mini")
-	planGen := openai.NewGPTPlanGenerator(oaClient, "v1")
 
 	// ========= Training Pipeline =========
 	trainingLib, err := coretraining.LoadLibrary("internal/content/training")
@@ -119,16 +118,12 @@ func main() {
 	listLifestyleUC := usecase.NewListLifestyleChangesUseCase(lifestyleRepo)
 
 	getMeUC := usecase.NewGetCurrentUserUseCase(userRepo)
-	generatePlanUC := usecase.NewGeneratePlanUseCase(userRepo, checkinRepo, planRepo, planGen)
 	getCurrentPlanUC := usecase.NewGetCurrentPlanUseCase(userRepo, planRepo)
 
 	resumeTrainingUC := usecase.NewResumeTrainingUseCase(userRepo)
 	getByIDUC := usecase.NewGetPlanByIDUseCase(userRepo, planRepo)
-	adjustUC := usecase.NewAdjustPlanUseCase(userRepo, checkinRepo, planRepo, lifestyleRepo, planGen)
 	getByWeekStartUC := usecase.NewGetPlanByWeekStartUseCase(planRepo)
 
-	planRunner := runner.NewLocalPlanGenerationRunner(planJobsRepo, generatePlanUC, 4*time.Minute)
-	startUC := usecase.NewStartPlanGenerationUseCase(planJobsRepo, planRunner)
 	statusUC := usecase.NewGetPlanGenerationStatusUseCase(planJobsRepo)
 	completeDayUC := usecase.NewCompleteTrainingDayUseCase(planRepo)
 
@@ -141,16 +136,19 @@ func main() {
 	saveArrangementUC := usecase.NewSaveTrainingArrangementUseCase(planRepo, checkinRepo, trainingLib)
 
 	nutritionUC := usecase.NewGetNutritionPlanUseCase(userRepo, planRepo, checkinRepo, cyclePhaseLookup)
+	mealSelectionUC := usecase.NewSaveMealSelectionUseCase(planRepo)
 	recoveryUC := usecase.NewGetRecoveryUseCase(userRepo, planRepo, cyclePhaseLookup, bannerLib, movesContentLib)
+
+	phaseFeedbackUC := usecase.NewSavePhaseFeedbackUseCase(planRepo)
 
 	// ========= Handlers =========
 	onboardingHandler := httpadapter.NewOnboardingHandler(onboardingUC)
 	checkinHandler := httpadapter.NewCheckinHandler(createCheckinUC, latestCheckinUC, statusCheckinUC)
 	lifestyleHandler := httpadapter.NewLifestyleHandler(reportLifestyleUC, listLifestyleUC)
 	meHandler := httpadapter.NewMeHandler(getMeUC)
-	plansHandler := httpadapter.NewPlansHandler(generatePlanUC, getCurrentPlanUC, getByIDUC, adjustUC, getByWeekStartUC, startUC, statusUC)
+	plansHandler := httpadapter.NewPlansHandler(getCurrentPlanUC, getByIDUC, getByWeekStartUC, statusUC, phaseFeedbackUC)
 	trainingHandler := httpadapter.NewTrainingHandler(startTrainingUC, statusTrainingUC, trainingEngine, resumeTrainingUC, completeDayUC, saveArrangementUC)
-	nutritionHandler := httpadapter.NewNutritionHandler(nutritionUC)
+	nutritionHandler := httpadapter.NewNutritionHandler(nutritionUC, mealSelectionUC)
 	recoveryHandler := httpadapter.NewRecoveryHandler(recoveryUC)
 
 	// ========= Router config =========
@@ -187,15 +185,11 @@ func main() {
 	api.Get("/lifestyle-changes", lifestyleHandler.List)
 
 	api.Get("/me", meHandler.GetMe)
-	chi.Walk(api, func(method string, route string, handler stdhttp.Handler, middlewares ...func(stdhttp.Handler) stdhttp.Handler) error {
-		log.Printf("[api.route] %s %s", method, route)
-		return nil
-	})
 
-	api.Post("/plans/generate", plansHandler.Generate)
+	//api.Post("/plans/generate", plansHandler.Generate)
 	api.Get("/plans/current", plansHandler.GetCurrent)
 	api.Get("/plans/{id}", plansHandler.GetByID)
-	api.Post("/plans/adjust", plansHandler.Adjust)
+	//api.Post("/plans/adjust", plansHandler.Adjust)
 	api.Get("/plans/week/{week_start}", plansHandler.GetByWeekStart)
 	api.Get("/plans/generate/status", plansHandler.GenerateStatus)
 
@@ -207,7 +201,14 @@ func main() {
 	api.Post("/training/save-arrangement", trainingHandler.SaveArrangement)
 
 	api.Get("/nutrition/plan", nutritionHandler.GetPlan)
+	api.Post("/nutrition/meal-selection", nutritionHandler.SaveMealSelection)
 	api.Get("/recovery/today", recoveryHandler.GetToday)
+	api.Post("/plans/phase-feedback", plansHandler.SavePhaseFeedback)
+
+	chi.Walk(api, func(method string, route string, handler stdhttp.Handler, middlewares ...func(stdhttp.Handler) stdhttp.Handler) error {
+		log.Printf("[api.route] %s %s", method, route)
+		return nil
+	})
 
 	// Router protegido (aplica auth a TODO lo que montes dentro)
 	protected := chi.NewRouter()

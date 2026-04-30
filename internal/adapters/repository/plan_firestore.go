@@ -25,12 +25,6 @@ func NewFirestorePlanRepository(client *firestore.Client) *FirestorePlanReposito
 
 // -------------------- Firestore DTO --------------------
 
-type recommendationDoc struct {
-	Title  string `firestore:"title"`
-	Action string `firestore:"action"`
-	Why    string `firestore:"why"`
-}
-
 type planDoc struct {
 	StartDate time.Time `firestore:"start_date"`
 	EndDate   time.Time `firestore:"end_date"`
@@ -38,18 +32,16 @@ type planDoc struct {
 	CheckinID *string   `firestore:"checkin_id,omitempty"`
 	CreatedAt time.Time `firestore:"created_at"`
 
-	WeeklyHeadline    string `firestore:"weekly_headline"`
-	CyclePhaseSummary string `firestore:"cycle_phase_summary"`
-	CycleDayRange     string `firestore:"cycle_day_range"`
+	CycleDayRange string `firestore:"cycle_day_range"`
 
 	// Raw payloads as strings for UI/storage convenience
 	TrainingJSON  string `firestore:"training_json"`
 	NutritionJSON string `firestore:"nutrition_json"`
 	RecoveryJSON  string `firestore:"recovery_json"`
 
-	TrainingCompleted map[string]bool `firestore:"training_completed,omitempty"`
-
-	Recommendations []recommendationDoc `firestore:"recommendations"`
+	TrainingCompleted map[string]bool                      `firestore:"training_completed,omitempty"`
+	MealSelections    map[string]map[string]int            `firestore:"meal_selections,omitempty"`
+	PhaseFeedback     map[string]domain.PhaseFeedbackEntry `firestore:"phase_feedback,omitempty"`
 
 	GeneratedFrom string `firestore:"generated_from"`
 	SourceEventID string `firestore:"source_event_id"`
@@ -69,15 +61,6 @@ func (r *FirestorePlanRepository) Create(ctx context.Context, p *domain.Plan) er
 		checkinIDPtr = &v
 	}
 
-	recs := make([]recommendationDoc, 0, len(p.Recommendations))
-	for _, rr := range p.Recommendations {
-		recs = append(recs, recommendationDoc{
-			Title:  rr.Title,
-			Action: rr.Action,
-			Why:    rr.Why,
-		})
-	}
-
 	doc := planDoc{
 		StartDate: p.StartDate,
 		EndDate:   p.EndDate,
@@ -85,15 +68,11 @@ func (r *FirestorePlanRepository) Create(ctx context.Context, p *domain.Plan) er
 		CheckinID: checkinIDPtr,
 		CreatedAt: p.CreatedAt,
 
-		WeeklyHeadline:    p.WeeklyHeadline,
-		CyclePhaseSummary: p.CyclePhaseSummary,
-		CycleDayRange:     p.CycleDayRange,
+		CycleDayRange: p.CycleDayRange,
 
 		TrainingJSON:  string(p.TrainingJSON),
 		NutritionJSON: string(p.NutritionJSON),
 		RecoveryJSON:  string(p.RecoveryJSON),
-
-		Recommendations: recs,
 
 		GeneratedFrom: p.GeneratedFrom,
 		SourceEventID: p.SourceEventID,
@@ -136,15 +115,6 @@ func (r *FirestorePlanRepository) GetByID(ctx context.Context, userID, planID st
 		checkinID = *pd.CheckinID
 	}
 
-	recs := make([]domain.Recommendations, 0, len(pd.Recommendations))
-	for _, rr := range pd.Recommendations {
-		recs = append(recs, domain.Recommendations{
-			Title:  rr.Title,
-			Action: rr.Action,
-			Why:    rr.Why,
-		})
-	}
-
 	p := &domain.Plan{
 		ID:        doc.Ref.ID,
 		UserID:    userID,
@@ -154,17 +124,15 @@ func (r *FirestorePlanRepository) GetByID(ctx context.Context, userID, planID st
 		StartDate: pd.StartDate,
 		EndDate:   pd.EndDate,
 
-		WeeklyHeadline:    pd.WeeklyHeadline,
-		CyclePhaseSummary: pd.CyclePhaseSummary,
-		CycleDayRange:     pd.CycleDayRange,
+		CycleDayRange: pd.CycleDayRange,
 
 		TrainingJSON:  []byte(pd.TrainingJSON),
 		NutritionJSON: []byte(pd.NutritionJSON),
 		RecoveryJSON:  []byte(pd.RecoveryJSON),
 
 		TrainingCompleted: pd.TrainingCompleted,
-
-		Recommendations: recs,
+		MealSelections:    pd.MealSelections,
+		PhaseFeedback:     pd.PhaseFeedback,
 
 		GeneratedFrom: pd.GeneratedFrom,
 		SourceEventID: pd.SourceEventID,
@@ -203,15 +171,6 @@ func (r *FirestorePlanRepository) GetLatestByWeekStart(ctx context.Context, user
 		checkinID = *pd.CheckinID
 	}
 
-	recs := make([]domain.Recommendations, 0, len(pd.Recommendations))
-	for _, rr := range pd.Recommendations {
-		recs = append(recs, domain.Recommendations{
-			Title:  rr.Title,
-			Action: rr.Action,
-			Why:    rr.Why,
-		})
-	}
-
 	plan := &domain.Plan{
 		ID:        docs[0].Ref.ID,
 		UserID:    userID,
@@ -221,17 +180,15 @@ func (r *FirestorePlanRepository) GetLatestByWeekStart(ctx context.Context, user
 		StartDate: pd.StartDate,
 		EndDate:   pd.EndDate,
 
-		WeeklyHeadline:    pd.WeeklyHeadline,
-		CyclePhaseSummary: pd.CyclePhaseSummary,
-		CycleDayRange:     pd.CycleDayRange,
+		CycleDayRange: pd.CycleDayRange,
 
 		TrainingJSON:  []byte(pd.TrainingJSON),
 		NutritionJSON: []byte(pd.NutritionJSON),
 		RecoveryJSON:  []byte(pd.RecoveryJSON),
 
 		TrainingCompleted: pd.TrainingCompleted,
-
-		Recommendations: recs,
+		MealSelections:    pd.MealSelections,
+		PhaseFeedback:     pd.PhaseFeedback,
 
 		GeneratedFrom: pd.GeneratedFrom,
 		SourceEventID: pd.SourceEventID,
@@ -267,15 +224,6 @@ func (r *FirestorePlanRepository) GetLatest(ctx context.Context, userID string) 
 		checkinID = *pd.CheckinID
 	}
 
-	recs := make([]domain.Recommendations, 0, len(pd.Recommendations))
-	for _, rr := range pd.Recommendations {
-		recs = append(recs, domain.Recommendations{
-			Title:  rr.Title,
-			Action: rr.Action,
-			Why:    rr.Why,
-		})
-	}
-
 	plan := &domain.Plan{
 		ID:        docs[0].Ref.ID,
 		UserID:    userID,
@@ -285,17 +233,15 @@ func (r *FirestorePlanRepository) GetLatest(ctx context.Context, userID string) 
 		StartDate: pd.StartDate,
 		EndDate:   pd.EndDate,
 
-		WeeklyHeadline:    pd.WeeklyHeadline,
-		CyclePhaseSummary: pd.CyclePhaseSummary,
-		CycleDayRange:     pd.CycleDayRange,
+		CycleDayRange: pd.CycleDayRange,
 
 		TrainingJSON:  []byte(pd.TrainingJSON),
 		NutritionJSON: []byte(pd.NutritionJSON),
 		RecoveryJSON:  []byte(pd.RecoveryJSON),
 
 		TrainingCompleted: pd.TrainingCompleted,
-
-		Recommendations: recs,
+		MealSelections:    pd.MealSelections,
+		PhaseFeedback:     pd.PhaseFeedback,
 
 		GeneratedFrom: pd.GeneratedFrom,
 		SourceEventID: pd.SourceEventID,
@@ -325,6 +271,30 @@ func (r *FirestorePlanRepository) UpdatedTrainingJSON(ctx context.Context, userI
 		Doc(trainingPlanID).
 		Update(ctx, []firestore.Update{
 			{Path: "training_json", Value: string(trainingJson)},
+		})
+	return err
+}
+
+func (r *FirestorePlanRepository) UpdatePhaseFeedback(ctx context.Context, userID, planID string, feedback map[string]domain.PhaseFeedbackEntry) error {
+	_, err := r.client.
+		Collection("users").
+		Doc(userID).
+		Collection("plans").
+		Doc(planID).
+		Update(ctx, []firestore.Update{
+			{Path: "phase_feedback", Value: feedback},
+		})
+	return err
+}
+
+func (r *FirestorePlanRepository) UpdateMealSelections(ctx context.Context, userID, planID string, selections map[string]map[string]int) error {
+	_, err := r.client.
+		Collection("users").
+		Doc(userID).
+		Collection("plans").
+		Doc(planID).
+		Update(ctx, []firestore.Update{
+			{Path: "meal_selections", Value: selections},
 		})
 	return err
 }
