@@ -39,27 +39,27 @@ func phaseForDay(day, duration, periodLen int) string {
 
 	// Menstrual phase (based on real bleeding length)
 	if day <= periodLen {
-		return "Menstrual"
+		return "menstrual"
 	}
 
 	ovulationDay := duration - 14
 
 	// Ovulation window (±1 day)
 	if day >= ovulationDay-1 && day <= ovulationDay+1 {
-		return "Ovulatory"
+		return "ovulatory"
 	}
 
 	// Follicular phases
 	if day < ovulationDay-1 {
-		return "Follicular"
+		return "follicular"
 	}
 
 	// Luteal phases
 	if day <= ovulationDay+5 {
-		return "Early Luteal"
+		return "early_luteal"
 	}
 
-	return "Late Luteal"
+	return "late_luteal"
 }
 
 // Devuelve true si modificó algo en user
