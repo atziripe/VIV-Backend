@@ -474,11 +474,13 @@ func selectSubBody(path string, body map[string]any) any {
 		copyTrim("sleep_quality")
 		copyTrim("body_status")
 		copyTrim("appetite")
-		copyTrim("stress_level")
+		copyTrim("demand")
 		copyTrim("cycle_start")
-		copyTrim("workload_prediction")
-		copyTrim("mental_energy")
-		copyTrim("week_sessions")
+		copyTrim("last_week_feeling")
+		copyTrim("pms_symptoms")
+		copyTrim("predictability")
+		copyTrim("readiness")
+		copyTrim("additional_notes")
 
 		if len(out) == 0 {
 			return map[string]any{}

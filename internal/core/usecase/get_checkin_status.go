@@ -43,12 +43,14 @@ func (uc *GetCheckinStatusUseCase) Execute(ctx context.Context, in GetCheckinSta
 
 	// nunca ha hecho check-in
 	need_checkin := false
+	can_checkin := true
 	if lastCheckin == nil {
 		if time.Since(user.UpdatedAt) > 7*24*time.Hour {
 			need_checkin = true
+			can_checkin = true
 		}
 		return &GetCheckinStatusOutput{
-			CanCheckin:      true,
+			CanCheckin:      can_checkin,
 			NextAvailableAt: nil,
 			NeedCheckin:     need_checkin,
 		}, nil

@@ -27,16 +27,16 @@ func NewFirestoreCheckinRepository(client *firestore.Client) *FirestoreCheckinRe
 type checkinDoc struct {
 	WeekStart       time.Time  `firestore:"week_start"`
 	CreatedAt       time.Time  `firestore:"created_at"`
-	Sleep           string     `json:"sleep_quality"`
-	Body            string     `json:"body_status"`
-	AppetiteV2      string     `json:"appetite"`
-	Demand          string     `json:"demand"`
-	LastWeekFeel    string     `json:"last_week_feeling"`
-	CycleStart      *time.Time `json:"cycle_start"`
-	PMSSymptoms     *string    `json:"pms_symptoms"`
-	Predictability  string     `json:"predictability"`
-	Readiness       string     `json:"readiness"`
-	AdditionalNotes string     `json:"additional_notes"`
+	Sleep           string     `firestore:"sleep_quality"`
+	Body            string     `firestore:"body_status"`
+	AppetiteV2      string     `firestore:"appetite"`
+	Demand          string     `firestore:"demand"`
+	LastWeekFeel    string     `firestore:"last_week_feel"`
+	CycleStart      *time.Time `firestore:"cycle_start"`
+	PMSSymptoms     *string    `firestore:"pms_symptoms"`
+	Predictability  string     `firestore:"predictability"`
+	Readiness       string     `firestore:"readiness"`
+	AdditionalNotes string     `firestore:"additional_notes"`
 }
 
 // Saving in
@@ -71,7 +71,7 @@ func (r *FirestoreCheckinRepository) Create(ctx context.Context, c *domain.Check
 	return err
 }
 
-func (r *FirestoreCheckinRepository) GetByID(ctx context.Context, id string, userID string) (*domain.Checkin, error) {
+func (r *FirestoreCheckinRepository) GetByID(ctx context.Context, userID string, id string) (*domain.Checkin, error) {
 	doc, err := r.client.
 		Collection("users").
 		Doc(userID).

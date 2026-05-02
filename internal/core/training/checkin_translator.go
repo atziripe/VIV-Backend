@@ -59,13 +59,13 @@ func sleepScore(s domain.CheckinSleep) int {
 
 func bodyScore(b domain.CheckinBody) int {
 	switch b {
-	case domain.BodyEnergised:
+	case domain.BodyStrong:
 		return 2
-	case domain.BodyNeutral:
+	case domain.BodyNormal:
 		return 1
-	case domain.BodySensitive:
+	case domain.BodyHeavier:
 		return 0
-	case domain.BodyInflamed:
+	case domain.BodySensitive:
 		return -1
 	default:
 		return 0

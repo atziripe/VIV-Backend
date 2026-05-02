@@ -66,6 +66,15 @@ func (uc *GenerateTrainingPlanUsecase) Execute(
 	// ── Build constraints for the LLM ────────────────────────────
 	constraints := training.BuildConstraints(input.Phase)
 
+	log.Printf("[training.generate] checkin input: %v",
+		input.Checkin)
+
+	log.Printf("[training.generate] checkin dimensions: recovery=%s bandwidth=%s build=%s",
+		dimensions.Recovery, dimensions.Bandwidth, dimensions.Build)
+
+	log.Printf("[training.generate] budget: total=%d sessions, rest_week=%v",
+		budget.TotalSessions, budget.RestWeekOffered)
+
 	// ── Layer 1: LLM generates structure ─────────────────────────
 	genInput := StructureGenerationInput{
 		Phase:       input.Phase,

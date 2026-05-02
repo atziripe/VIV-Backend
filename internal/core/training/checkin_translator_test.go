@@ -15,7 +15,7 @@ func TestTranslate_Recovery_High(t *testing.T) {
 	// Consistent sleep + energised body = 2+2 = 4 → high
 	checkin := domain.Checkin{
 		Sleep:          domain.SleepConsistent,
-		Body:           domain.BodyEnergised,
+		Body:           domain.BodyStrong,
 		Demand:         domain.DemandManageable,
 		Predictability: domain.PredictabilityPredictable,
 		LastWeekFeel:   domain.LastWeekBalanced,
@@ -33,7 +33,7 @@ func TestTranslate_Recovery_Moderate(t *testing.T) {
 	// Inconsistent sleep + neutral body = 1+1 = 2 → moderate
 	checkin := domain.Checkin{
 		Sleep:          domain.SleepInconsistent,
-		Body:           domain.BodyNeutral,
+		Body:           domain.BodyNormal,
 		Demand:         domain.DemandManageable,
 		Predictability: domain.PredictabilityPredictable,
 		LastWeekFeel:   domain.LastWeekBalanced,
@@ -51,7 +51,7 @@ func TestTranslate_Recovery_Low(t *testing.T) {
 	// Poor sleep + inflamed body = -1 + -1 = -2 → low
 	checkin := domain.Checkin{
 		Sleep:          domain.SleepPoor,
-		Body:           domain.BodyInflamed,
+		Body:           domain.BodySensitive,
 		Demand:         domain.DemandManageable,
 		Predictability: domain.PredictabilityPredictable,
 		LastWeekFeel:   domain.LastWeekBalanced,
@@ -73,7 +73,7 @@ func TestTranslate_Bandwidth_High(t *testing.T) {
 	// Light demand + predictable = 2+2 = 4 → high
 	checkin := domain.Checkin{
 		Sleep:          domain.SleepConsistent,
-		Body:           domain.BodyEnergised,
+		Body:           domain.BodyStrong,
 		Demand:         domain.DemandLight,
 		Predictability: domain.PredictabilityPredictable,
 		LastWeekFeel:   domain.LastWeekBalanced,
@@ -91,7 +91,7 @@ func TestTranslate_Bandwidth_Low(t *testing.T) {
 	// Overloaded + chaotic = -1 + -1 = -2 → low
 	checkin := domain.Checkin{
 		Sleep:          domain.SleepConsistent,
-		Body:           domain.BodyEnergised,
+		Body:           domain.BodyStrong,
 		Demand:         domain.DemandOverloaded,
 		Predictability: domain.PredictabilityChaotic,
 		LastWeekFeel:   domain.LastWeekBalanced,
@@ -113,7 +113,7 @@ func TestTranslate_Build_PushForward(t *testing.T) {
 	// Too light + ready to build = 1+1 = 2 → push_forward
 	checkin := domain.Checkin{
 		Sleep:          domain.SleepConsistent,
-		Body:           domain.BodyEnergised,
+		Body:           domain.BodyStrong,
 		Demand:         domain.DemandManageable,
 		Predictability: domain.PredictabilityPredictable,
 		LastWeekFeel:   domain.LastWeekTooLight,
@@ -133,7 +133,7 @@ func TestTranslate_Build_Maintain(t *testing.T) {
 	// Too light + fragile = 1 + -1 = 0 → maintain
 	checkin := domain.Checkin{
 		Sleep:          domain.SleepConsistent,
-		Body:           domain.BodyEnergised,
+		Body:           domain.BodyStrong,
 		Demand:         domain.DemandManageable,
 		Predictability: domain.PredictabilityPredictable,
 		LastWeekFeel:   domain.LastWeekTooLight,
@@ -151,7 +151,7 @@ func TestTranslate_Build_PullBack(t *testing.T) {
 	// Too much + stabilize = -1 + -2 = -3 → pull_back
 	checkin := domain.Checkin{
 		Sleep:          domain.SleepConsistent,
-		Body:           domain.BodyEnergised,
+		Body:           domain.BodyStrong,
 		Demand:         domain.DemandManageable,
 		Predictability: domain.PredictabilityPredictable,
 		LastWeekFeel:   domain.LastWeekTooMuch,
@@ -227,7 +227,7 @@ func TestTranslate_WorstCase_TriggersRestWeek(t *testing.T) {
 	// Worst possible check-in
 	checkin := domain.Checkin{
 		Sleep:          domain.SleepPoor,
-		Body:           domain.BodyInflamed,
+		Body:           domain.BodySensitive,
 		AppetiteV2:     domain.AppetiteAllOver,
 		Demand:         domain.DemandOverloaded,
 		Predictability: domain.PredictabilityChaotic,
@@ -255,7 +255,7 @@ func TestTranslate_BestCase_NoPullBack(t *testing.T) {
 	// Best possible check-in
 	checkin := domain.Checkin{
 		Sleep:          domain.SleepConsistent,
-		Body:           domain.BodyEnergised,
+		Body:           domain.BodyStrong,
 		AppetiteV2:     domain.AppetiteStable,
 		Demand:         domain.DemandLight,
 		Predictability: domain.PredictabilityPredictable,

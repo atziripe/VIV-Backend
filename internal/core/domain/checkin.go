@@ -8,9 +8,6 @@ type Checkin struct {
 	WeekStart time.Time
 	CreatedAt time.Time
 
-	// ============================================================
-	// V2 fields — new check-in questions (used by training planner)
-	// ============================================================
 	Sleep        CheckinSleep    // "How did you sleep last week?"
 	Body         CheckinBody     // "How does your body feel today?"
 	AppetiteV2   CheckinAppetite // "How has your appetite been?" (renamed to avoid collision)
@@ -33,20 +30,20 @@ type Checkin struct {
 type CheckinSleep string
 
 const (
-	SleepConsistent   CheckinSleep = "consistent"
-	SleepInconsistent CheckinSleep = "inconsistent"
-	SleepFragmented   CheckinSleep = "fragmented"
-	SleepPoor         CheckinSleep = "poor"
+	SleepConsistent   CheckinSleep = "Consistent"
+	SleepInconsistent CheckinSleep = "Inconsistent"
+	SleepFragmented   CheckinSleep = "Fragmented/Short"
+	SleepPoor         CheckinSleep = "Poor + unrested"
 )
 
 // CheckinBody representa la respuesta a "How does your body feel today?"
 type CheckinBody string
 
 const (
-	BodyEnergised CheckinBody = "energised"
-	BodyNeutral   CheckinBody = "neutral"
-	BodySensitive CheckinBody = "sensitive"
-	BodyInflamed  CheckinBody = "inflamed"
+	BodyStrong    CheckinBody = "Strong & responsive"
+	BodyNormal    CheckinBody = "Normal"
+	BodyHeavier   CheckinBody = "Heavier than usual"
+	BodySensitive CheckinBody = "Sensitive or reactive"
 )
 
 // CheckinAppetite representa la respuesta a "How has your appetite been?"
@@ -54,60 +51,60 @@ const (
 type CheckinAppetite string
 
 const (
-	AppetiteLower   CheckinAppetite = "lower"
-	AppetiteStable  CheckinAppetite = "stable"
-	AppetiteHigher  CheckinAppetite = "higher"
-	AppetiteAllOver CheckinAppetite = "all_over"
+	AppetiteLower   CheckinAppetite = "Lower than usual"
+	AppetiteStable  CheckinAppetite = "Stable"
+	AppetiteHigher  CheckinAppetite = "Higher"
+	AppetiteAllOver CheckinAppetite = "All over the place"
 )
 
 // CheckinDemand - "How demanding does life feel?"
 type CheckinDemand string
 
 const (
-	DemandLight      CheckinDemand = "light"
-	DemandManageable CheckinDemand = "manageable"
-	DemandHigh       CheckinDemand = "high"
-	DemandOverloaded CheckinDemand = "overloaded"
+	DemandLight      CheckinDemand = "Light, I had margin"
+	DemandManageable CheckinDemand = "Manageable"
+	DemandHigh       CheckinDemand = "High, a lot happening"
+	DemandOverloaded CheckinDemand = "Overloaded"
 )
 
 // CheckinPredictability - "What does your week ahead look like?"
 type CheckinPredictability string
 
 const (
-	PredictabilityPredictable     CheckinPredictability = "predictable"
-	PredictabilitySemiPredictable CheckinPredictability = "semi_predictable"
-	PredictabilityUnpredictable   CheckinPredictability = "unpredictable"
-	PredictabilityChaotic         CheckinPredictability = "chaotic"
+	PredictabilityPredictable     CheckinPredictability = "Predictable — I know my schedule"
+	PredictabilitySemiPredictable CheckinPredictability = "Semi-predictable — some moving parts"
+	PredictabilityUnpredictable   CheckinPredictability = "Unpredictable — every day is different"
+	PredictabilityChaotic         CheckinPredictability = "Chaotic — no control"
 )
 
 // CheckinLastWeek - "Last week's plan felt..."
 type CheckinLastWeek string
 
 const (
-	LastWeekTooMuch  CheckinLastWeek = "too_much"
-	LastWeekBalanced CheckinLastWeek = "well_balanced"
-	LastWeekTooLight CheckinLastWeek = "too_light"
+	LastWeekTooMuch  CheckinLastWeek = "Too much"
+	LastWeekBalanced CheckinLastWeek = "Well balanced"
+	LastWeekTooLight CheckinLastWeek = "Too light"
 )
 
 // CheckinReadiness - "Going into next week, you feel..."
 type CheckinReadiness string
 
 const (
-	ReadinessBuild     CheckinReadiness = "ready_to_build"
-	ReadinessFragile   CheckinReadiness = "okay_but_fragile"
-	ReadinessStabilize CheckinReadiness = "in_need_of_stabilization"
+	ReadinessBuild     CheckinReadiness = "Ready to build"
+	ReadinessFragile   CheckinReadiness = "Okay but fragile"
+	ReadinessStabilize CheckinReadiness = "In need of stabilization"
 )
 
 // PMSSymptoms - "Do you experience any of these PMS synptoms"
 type CheckinPMSSymptoms string
 
 const (
-	PMSCramps     CheckinPMSSymptoms = "cramps"
-	PMSEnergyDips CheckinPMSSymptoms = "energy_dips"
-	PMSAnxiety    CheckinPMSSymptoms = "anxiety"
-	PMSCravings   CheckinPMSSymptoms = "cravings"
-	PMSBloating   CheckinPMSSymptoms = "bloating"
-	PMSHeadache   CheckinPMSSymptoms = "headache"
+	PMSCramps     CheckinPMSSymptoms = "Cramps"
+	PMSEnergyDips CheckinPMSSymptoms = "Energy dips"
+	PMSAnxiety    CheckinPMSSymptoms = "Anxiety"
+	PMSCravings   CheckinPMSSymptoms = "Cravings"
+	PMSBloating   CheckinPMSSymptoms = "Bloating"
+	PMSHeadache   CheckinPMSSymptoms = "Headache"
 )
 
 // ============================================================================

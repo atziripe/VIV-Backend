@@ -77,13 +77,19 @@ func (r *LocalTrainingPlanRunner) Run(userID, jobID, checkinID string) {
 		if checkinID != "" {
 			c, err := r.checkinRepo.GetByID(ctx, userID, checkinID)
 			if err != nil {
-				log.Printf("[training.runner] checkin load failed user=%s checkin=%s err=%v", userID, checkinID, err)
+				log.Printf("[plan.runner] checkin load failed user=%s err=%v", userID, err)
 				_ = r.jobsRepo.MarkFailed(context.Background(), userID, jobID, "failed to load checkin")
 				return
 			}
 			if c != nil {
 				checkin = *c
+				log.Printf("[plan.runner] checkin loaded id=%s sleep=%s body=%s demand=%s readiness=%s",
+					checkin.ID, checkin.Sleep, checkin.Body, checkin.Demand, checkin.Readiness)
+			} else {
+				log.Printf("[plan.runner] checkin not found id=%s", checkinID)
 			}
+		} else {
+			log.Printf("[plan.runner] no checkin_id provided, using defaults")
 		}
 
 		// 3. Get current cycle phase
@@ -192,25 +198,4 @@ func mondayOfCurrentWeek(now time.Time) time.Time {
 	}
 	monday := now.AddDate(0, 0, -int(wd-time.Monday))
 	return time.Date(monday.Year(), monday.Month(), monday.Day(), 0, 0, 0, 0, time.UTC)
-}
-
-// savePlan persists the training plan. For now, stores as TrainingJSON
-// in the existing Plan struct. This bridges old and new systems.
-func (r *LocalTrainingPlanRunner) savePlan(
-	ctx context.Context,
-	userID, checkinID string,
-	trainingJSON []byte,
-	output usecase.GenerateTrainingPlanOutput,
-) (string, error) {
-	// TODO: implement plan persistence
-	// This should create a domain.Plan with TrainingJSON populated
-	// and save it via the plan repository.
-	// For now, return a placeholder — you'll wire this to your existing
-	// plan_firestore.go repository.
-	_ = ctx
-	_ = userID
-	_ = checkinID
-	_ = trainingJSON
-	_ = output
-	return "plan_placeholder_id", nil
 }

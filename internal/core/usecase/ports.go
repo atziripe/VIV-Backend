@@ -13,7 +13,7 @@ type UserRepository interface {
 
 type CheckinRepository interface {
 	Create(ctx context.Context, c *domain.Checkin) error
-	GetByID(ctx context.Context, id string, userID string) (*domain.Checkin, error)
+	GetByID(ctx context.Context, userID string, id string) (*domain.Checkin, error)
 	GetLatestByUser(ctx context.Context, userID string) (*domain.Checkin, error)
 }
 
