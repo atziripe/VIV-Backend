@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"viv/internal/core/domain"
 )
@@ -24,6 +25,11 @@ func (a *CyclePhaseAdapter) CurrentPhase(ctx context.Context, userID string) (do
 	}
 	if user == nil {
 		return "", fmt.Errorf("user not found: %s", userID)
+	}
+
+	// Sync cycle to today before reading phase
+	if SyncUserCycleDaily(user, time.Now()) {
+		_ = a.userRepo.Save(ctx, user) // best-effort persist
 	}
 
 	return mapCyclePhase(user.CyclePhase), nil
