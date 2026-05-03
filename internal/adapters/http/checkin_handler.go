@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"viv/internal/core/usecase"
+
+	"github.com/getsentry/sentry-go"
 )
 
 type createCheckinRequest struct {
@@ -120,6 +122,11 @@ func (h *CheckinHandler) Create(w http.ResponseWriter, r *http.Request) {
 			})
 			return
 		}
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
 		http.Error(w, "failed to create checkin", http.StatusInternalServerError)
 		return
 	}
@@ -169,6 +176,11 @@ func (h *CheckinHandler) Latest(w http.ResponseWriter, r *http.Request) {
 
 	out, err := h.LatestUC.Execute(ctx, in)
 	if err != nil {
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
 		http.Error(w, "failed to get latest checkin", http.StatusInternalServerError)
 		return
 	}
@@ -224,6 +236,11 @@ func (h *CheckinHandler) Status(w http.ResponseWriter, r *http.Request) {
 
 	out, err := h.StatusUC.Execute(ctx, in)
 	if err != nil {
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
 		http.Error(w, "failed to get checkin status", http.StatusInternalServerError)
 		return
 	}

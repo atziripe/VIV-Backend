@@ -9,6 +9,8 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"strings"
+
+	"github.com/getsentry/sentry-go"
 )
 
 type RPCHandler struct {
@@ -97,6 +99,11 @@ func (h *RPCHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	)
 	if err != nil {
 		log.Printf("401 error: %v", err)
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
 		http.Error(w, "failed to build request", http.StatusInternalServerError)
 		return
 	}

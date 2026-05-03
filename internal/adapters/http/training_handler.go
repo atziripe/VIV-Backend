@@ -11,6 +11,8 @@ import (
 	"viv/internal/core/domain"
 	"viv/internal/core/rules"
 	"viv/internal/core/usecase"
+
+	"github.com/getsentry/sentry-go"
 )
 
 type TrainingHandler struct {
@@ -131,6 +133,11 @@ func (h *TrainingHandler) Generate(w http.ResponseWriter, r *http.Request) {
 
 	jobID, err := h.StartGenUC.Execute(ctx, userID, checkinID)
 	if err != nil {
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
 		log.Printf("[training.generate] start job error: %+v\n", err)
 		http.Error(w, "failed to start training generation", http.StatusInternalServerError)
 		return
@@ -159,6 +166,11 @@ func (h *TrainingHandler) GenerateStatus(w http.ResponseWriter, r *http.Request)
 
 	job, err := h.JobStatusUC.Execute(ctx, userID, jobID)
 	if err != nil {
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
 		log.Printf("[training.generate.status] error: %+v\n", err)
 		http.Error(w, "failed to get job status", http.StatusInternalServerError)
 		return
@@ -255,6 +267,11 @@ func (h *TrainingHandler) Resume(w http.ResponseWriter, r *http.Request) {
 
 	out, err := h.ResumeUC.Execute(ctx, in)
 	if err != nil {
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
 		http.Error(w, "failed to resume training", http.StatusInternalServerError)
 		return
 	}
@@ -299,6 +316,11 @@ func (h *TrainingHandler) CompleteDay(w http.ResponseWriter, r *http.Request) {
 		Weekday: req.Weekday,
 	})
 	if err != nil {
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
 		log.Printf("[training.complete] error: %+v\n", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -335,6 +357,11 @@ func (h *TrainingHandler) SaveArrangement(w http.ResponseWriter, r *http.Request
 		DaysJson:       req.DaysJSON,
 	})
 	if err != nil {
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
 		log.Printf("[training.save-arrangement] error: %v\n", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

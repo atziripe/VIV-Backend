@@ -24,9 +24,27 @@ import (
 	rulestraining "viv/internal/core/rules/training"
 	coretraining "viv/internal/core/training"
 	"viv/internal/core/usecase"
+
+	"github.com/getsentry/sentry-go"
+	sentryhttp "github.com/getsentry/sentry-go/http"
 )
 
 func main() {
+
+	// ====== Sentry initialization ======
+	err_sentry := sentry.Init(sentry.ClientOptions{
+		Dsn:         os.Getenv("SENTRY_DSN"),
+		Environment: os.Getenv("APP_ENV"),
+	})
+	if err_sentry != nil {
+		log.Printf("sentry init failed: %v", err_sentry)
+	}
+
+	sentryHandler := sentryhttp.New(sentryhttp.Options{
+		Repanic:         true,
+		WaitForDelivery: true,
+	})
+
 	// ========= Config load =========
 	cfg, err := config.Load()
 	if err != nil {
@@ -230,14 +248,14 @@ func main() {
 
 	srv := &stdhttp.Server{
 		Addr:         ":" + port,
-		Handler:      r,
+		Handler:      sentryHandler.Handle(r),
 		ReadTimeout:  120 * time.Second,
 		WriteTimeout: 120 * time.Second,
 		IdleTimeout:  120 * time.Second,
 	}
 
 	go func() {
-		log.Printf("VIV backend listening on :%s", cfg.HTTPPort)
+		log.Printf("VIV backend listening on :%s", port)
 		if err := srv.ListenAndServe(); err != nil && err != stdhttp.ErrServerClosed {
 			log.Fatalf("http server error: %v", err)
 		}
