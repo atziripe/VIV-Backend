@@ -3,11 +3,13 @@ package runner
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"strings"
 	"time"
 
 	"viv/internal/core/domain"
+	"viv/internal/core/training"
 	"viv/internal/core/usecase"
 )
 
@@ -60,15 +62,33 @@ func (r *LocalTrainingPlanRunner) Run(userID, jobID, checkinID string) {
 		ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 		defer cancel()
 
+		startTotal := time.Now()
+
+		// Initialize the generation log
+		gl := generationLog{
+			Event:     "plan_generation",
+			UserID:    userID,
+			JobID:     jobID,
+			CheckinID: checkinID,
+		}
+
+		// Helper for failure logging
+		fail := func(reason string) {
+			gl.Success = false
+			gl.Error = reason
+			gl.TotalDurationMs = time.Since(startTotal).Milliseconds()
+			logGeneration(gl)
+			_ = r.jobsRepo.MarkFailed(context.Background(), userID, jobID, reason)
+		}
+
 		if err := r.jobsRepo.MarkRunning(ctx, userID, jobID); err != nil {
 			log.Printf("[plan.runner] mark running failed user=%s job=%s err=%v", userID, jobID, err)
 		}
 
-		// 1. Load user
+		// ── Load dependencies ────────────────────────────────────
 		user, err := r.userRepo.GetByID(ctx, userID)
 		if err != nil || user == nil {
-			log.Printf("[plan.runner] user not found user=%s err=%v", userID, err)
-			_ = r.jobsRepo.MarkFailed(context.Background(), userID, jobID, "user not found")
+			fail("user not found")
 			return
 		}
 
@@ -77,62 +97,105 @@ func (r *LocalTrainingPlanRunner) Run(userID, jobID, checkinID string) {
 		if checkinID != "" {
 			c, err := r.checkinRepo.GetByID(ctx, userID, checkinID)
 			if err != nil {
-				log.Printf("[plan.runner] checkin load failed user=%s err=%v", userID, err)
-				_ = r.jobsRepo.MarkFailed(context.Background(), userID, jobID, "failed to load checkin")
+				fail("failed to load checkin: " + err.Error())
 				return
 			}
 			if c != nil {
 				checkin = *c
-				log.Printf("[plan.runner] checkin loaded id=%s sleep=%s body=%s demand=%s readiness=%s",
-					checkin.ID, checkin.Sleep, checkin.Body, checkin.Demand, checkin.Readiness)
-			} else {
-				log.Printf("[plan.runner] checkin not found id=%s", checkinID)
 			}
-		} else {
-			log.Printf("[plan.runner] no checkin_id provided, using defaults")
 		}
 
 		// 3. Get current cycle phase
 		phase, err := r.cycleSync.CurrentPhase(ctx, userID)
 		if err != nil {
-			log.Printf("[training.runner] cycle phase lookup failed user=%s err=%v", userID, err)
-			_ = r.jobsRepo.MarkFailed(context.Background(), userID, jobID, "failed to determine cycle phase")
+			fail("failed to determine cycle phase: " + err.Error())
 			return
 		}
+		gl.Phase = string(phase)
 
 		// 4. Execute training pipeline
+		startTraining := time.Now()
 		trainingOutput, err := r.traningUC.Execute(ctx, usecase.GenerateTrainingPlanInput{
 			User:    *user,
 			Checkin: checkin,
 			Phase:   phase,
 		})
+		trainingDuration := time.Since(startTraining)
 		if err != nil {
-			log.Printf("[training.runner] training generation failed user=%s job=%s err=%v", userID, jobID, err)
-			_ = r.jobsRepo.MarkFailed(context.Background(), userID, jobID, err.Error())
+			gl.Training = &stepLog{
+				DurationMs: int(trainingDuration.Milliseconds()),
+				Failed:     true,
+			}
+			fail("training generation failed: " + err.Error())
 			return
+		}
+
+		// Log training step
+		trainingTokens := trainingOutput.TokensUsed.PromptTokens + trainingOutput.TokensUsed.CompletionTokens
+		gl.Training = &stepLog{
+			DurationMs: int(trainingDuration.Milliseconds()),
+			Tokens:     trainingTokens,
+			Retried:    trainingOutput.RetriedOnce,
+		}
+
+		// Log checkin dimensions
+		dims := training.TranslateCheckin(checkin)
+		gl.CheckinDimensions = &dimensionsLog{
+			Recovery:  string(dims.Recovery),
+			Bandwidth: string(dims.Bandwidth),
+			Build:     string(dims.Build),
+			RestWeek:  trainingOutput.Budget.RestWeekOffered,
+		}
+
+		// Log budget
+		var modNames []string
+		for _, m := range trainingOutput.Budget.Modalities {
+			modNames = append(modNames, fmt.Sprintf("%s×%d", m.Modality, m.Count))
+		}
+		gl.Budget = &budgetLog{
+			TotalSessions: trainingOutput.Budget.TotalSessions,
+			Modalities:    modNames,
+		}
+
+		// Log violations if any
+		for _, v := range trainingOutput.Decision.Violations {
+			gl.Violations = append(gl.Violations, violationLog{
+				RuleID:   v.RuleID,
+				Severity: string(v.Severity),
+			})
 		}
 
 		// Serialize the plan to JSON and store
 		trainingJSON, err := json.Marshal(trainingOutput.Plan)
 		if err != nil {
-			log.Printf("[plan.runner] training marshal failed user=%s job=%s err=%v", userID, jobID, err)
-			_ = r.jobsRepo.MarkFailed(context.Background(), userID, jobID, "failed to serialize training plan")
+			fail("failed to serialize training plan")
 			return
 		}
 
 		// 5. Generate nutrition plan
+		startNutrition := time.Now()
 		nutritionOutput, err := r.nutritionUC.Execute(ctx, usecase.GenerateNutritionPlanInput{
 			User:         *user,
 			Checkin:      checkin,
 			Phase:        phase,
 			TrainingPlan: trainingOutput.Plan,
 		})
+		nutritionDuration := time.Since(startNutrition)
 
 		var nutritionJSON []byte
 		if err != nil {
-			log.Printf("[plan.runner] nutrition generation failed user=%s job=%s err=%v", userID, jobID, err)
-			// Don't fail the whole job — save plan without nutrition
+			gl.Nutrition = &stepLog{
+				DurationMs: int(nutritionDuration.Milliseconds()),
+				Failed:     true,
+			}
+			log.Printf("[plan.runner] nutrition generation failed (non-fatal): %v", err)
 		} else {
+			nutritionTokens := nutritionOutput.TokensUsed.PromptTokens + nutritionOutput.TokensUsed.CompletionTokens
+			gl.Nutrition = &stepLog{
+				DurationMs: int(nutritionDuration.Milliseconds()),
+				Tokens:     nutritionTokens,
+			}
+
 			nutritionJSON, err = json.Marshal(nutritionOutput.Plan)
 			if err != nil {
 				log.Printf("[plan.runner] nutrition marshal failed user=%s err=%v", userID, err)
@@ -141,6 +204,9 @@ func (r *LocalTrainingPlanRunner) Run(userID, jobID, checkinID string) {
 		}
 
 		// 6.Save as Plan with JSON populated
+		saveCtx, saveCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer saveCancel()
+
 		now := time.Now().UTC()
 		weekStart := trainingOutput.Plan.Days[0].Weekday // monday
 		plan := &domain.Plan{
@@ -159,9 +225,8 @@ func (r *LocalTrainingPlanRunner) Run(userID, jobID, checkinID string) {
 		}
 		_ = weekStart // used above conceptually
 
-		if err := r.planRepo.Create(ctx, plan); err != nil {
-			log.Printf("[plan.runner] save plan failed user=%s job=%s err=%v", userID, jobID, err)
-			_ = r.jobsRepo.MarkFailed(context.Background(), userID, jobID, "failed to save plan")
+		if err := r.planRepo.Create(saveCtx, plan); err != nil {
+			fail("failed to save plan")
 			return
 		}
 
@@ -169,21 +234,19 @@ func (r *LocalTrainingPlanRunner) Run(userID, jobID, checkinID string) {
 		user.LastActivePlanID = &plan.ID
 		if err := r.userRepo.Save(ctx, user); err != nil {
 			log.Printf("[plan.runner] update LastActivePlanID failed user=%s plan=%s err=%v", userID, plan.ID, err)
-			// Don't fail the job — plan is already saved
 		}
 
-		// 7. Log observability data
-		totalTokens := trainingOutput.TokensUsed.PromptTokens + trainingOutput.TokensUsed.CompletionTokens
-		if nutritionOutput.TokensUsed.PromptTokens > 0 {
-			totalTokens += nutritionOutput.TokensUsed.PromptTokens + nutritionOutput.TokensUsed.CompletionTokens
+		// ── Finalize ─────────────────────────────────────
+		gl.PlanID = plan.ID
+		gl.Success = true
+		gl.TotalTokens = trainingTokens
+		if gl.Nutrition != nil {
+			gl.TotalTokens += gl.Nutrition.Tokens
 		}
+		gl.TotalDurationMs = time.Since(startTotal).Milliseconds()
 
-		log.Printf("[plan.runner] success user=%s job=%s plan=%s phase=%s training_sessions=%d total_tokens=%d retried=%v",
-			userID, jobID, plan.ID, phase,
-			trainingOutput.Budget.TotalSessions,
-			totalTokens,
-			trainingOutput.RetriedOnce,
-		)
+		logGeneration(gl)
+
 		// 8. Mark job done
 		if err := r.jobsRepo.MarkDone(ctx, userID, jobID, plan.ID); err != nil {
 			log.Printf("[plan.runner] mark done failed user=%s job=%s plan=%s err=%v", userID, jobID, plan.ID, err)
@@ -198,4 +261,59 @@ func mondayOfCurrentWeek(now time.Time) time.Time {
 	}
 	monday := now.AddDate(0, 0, -int(wd-time.Monday))
 	return time.Date(monday.Year(), monday.Month(), monday.Day(), 0, 0, 0, 0, time.UTC)
+}
+
+// ============================================================================
+// OBSERVABILITY
+// ============================================================================
+
+type generationLog struct {
+	Event             string         `json:"event"`
+	UserID            string         `json:"user_id"`
+	JobID             string         `json:"job_id"`
+	PlanID            string         `json:"plan_id,omitempty"`
+	Phase             string         `json:"phase"`
+	CheckinID         string         `json:"checkin_id,omitempty"`
+	CheckinDimensions *dimensionsLog `json:"checkin_dimensions,omitempty"`
+	Budget            *budgetLog     `json:"budget,omitempty"`
+	Violations        []violationLog `json:"violations,omitempty"`
+	Training          *stepLog       `json:"training,omitempty"`
+	Nutrition         *stepLog       `json:"nutrition,omitempty"`
+	TotalTokens       int            `json:"total_tokens"`
+	TotalDurationMs   int64          `json:"total_duration_ms"`
+	Success           bool           `json:"success"`
+	Error             string         `json:"error,omitempty"`
+}
+
+type dimensionsLog struct {
+	Recovery  string `json:"recovery"`
+	Bandwidth string `json:"bandwidth"`
+	Build     string `json:"build"`
+	RestWeek  bool   `json:"rest_week_offered"`
+}
+
+type budgetLog struct {
+	TotalSessions int      `json:"total_sessions"`
+	Modalities    []string `json:"modalities"`
+}
+
+type stepLog struct {
+	DurationMs int  `json:"duration_ms"`
+	Tokens     int  `json:"tokens"`
+	Retried    bool `json:"retried,omitempty"`
+	Failed     bool `json:"failed,omitempty"`
+}
+
+type violationLog struct {
+	RuleID   string `json:"rule_id"`
+	Severity string `json:"severity"`
+}
+
+func logGeneration(gl generationLog) {
+	data, err := json.Marshal(gl)
+	if err != nil {
+		log.Printf("[plan.runner] failed to marshal generation log: %v", err)
+		return
+	}
+	log.Printf("[plan.generation] %s", string(data))
 }
