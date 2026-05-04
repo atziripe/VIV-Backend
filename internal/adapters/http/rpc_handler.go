@@ -188,6 +188,8 @@ func isAllowedRoute(method, path string) bool {
 		return true
 	case method == "GET" && path == "/recovery/today":
 		return true
+	case method == "POST" && path == "/users/me/device-token":
+		return true
 	}
 	return false
 }
@@ -558,6 +560,43 @@ func selectSubBody(path string, body map[string]any) any {
 			return map[string]any{}
 		}
 		return map[string]any{}
+
+	case "/users/me/device-token":
+		v, ok := body["device_token"]
+		if !ok || v == nil {
+			return map[string]any{}
+		}
+
+		m, ok := v.(map[string]any)
+		if !ok {
+			return map[string]any{}
+		}
+
+		out := map[string]any{}
+
+		copyTrim := func(key string) {
+			raw, exists := m[key]
+			if !exists || raw == nil {
+				return
+			}
+			if s, ok := raw.(string); ok {
+				t := strings.TrimSpace(s)
+				if t == "" {
+					return
+				}
+				out[key] = t
+				return
+			}
+			out[key] = raw
+		}
+
+		copyTrim("token")
+		copyTrim("platform")
+
+		if len(out) == 0 {
+			return map[string]any{}
+		}
+		return out
 	default:
 		return map[string]any{}
 	}

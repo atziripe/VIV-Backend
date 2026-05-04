@@ -115,3 +115,7 @@ type TokenUsage struct {
 	CompletionTokens int
 	Model            string
 }
+
+type DeviceTokenRepository interface {
+	Upsert(ctx context.Context, token *domain.DeviceToken) error
+}

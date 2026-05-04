@@ -82,6 +82,7 @@ func main() {
 	lifestyleRepo := repository.NewFirestoreLifestyleChangeRepository(fsClient)
 	planRepo := repository.NewFirestorePlanRepository(fsClient)
 	planJobsRepo := repository.NewFirestorePlanJobsRepository(fsClient)
+	deviceTokenRepo := repository.NewFirestoreDeviceTokenRepository(fsClient)
 
 	if cfg.OpenAIAPIKey == "" {
 		log.Fatal("OPENAI_API_KEY is not set")
@@ -159,6 +160,8 @@ func main() {
 
 	phaseFeedbackUC := usecase.NewSavePhaseFeedbackUseCase(planRepo)
 
+	registerDeviceTokenUC := usecase.NewRegisterDeviceTokenUseCase(deviceTokenRepo)
+
 	// ========= Handlers =========
 	onboardingHandler := httpadapter.NewOnboardingHandler(onboardingUC)
 	checkinHandler := httpadapter.NewCheckinHandler(createCheckinUC, latestCheckinUC, statusCheckinUC)
@@ -168,6 +171,7 @@ func main() {
 	trainingHandler := httpadapter.NewTrainingHandler(startTrainingUC, statusTrainingUC, trainingEngine, resumeTrainingUC, completeDayUC, saveArrangementUC)
 	nutritionHandler := httpadapter.NewNutritionHandler(nutritionUC, mealSelectionUC)
 	recoveryHandler := httpadapter.NewRecoveryHandler(recoveryUC)
+	deviceTokenHandler := httpadapter.NewDeviceTokenHandler(registerDeviceTokenUC)
 
 	// ========= Router config =========
 	r := chi.NewRouter()
@@ -222,6 +226,8 @@ func main() {
 	api.Post("/nutrition/meal-selection", nutritionHandler.SaveMealSelection)
 	api.Get("/recovery/today", recoveryHandler.GetToday)
 	api.Post("/plans/phase-feedback", plansHandler.SavePhaseFeedback)
+
+	api.Post("/users/me/device-token", deviceTokenHandler.Upsert)
 
 	chi.Walk(api, func(method string, route string, handler stdhttp.Handler, middlewares ...func(stdhttp.Handler) stdhttp.Handler) error {
 		log.Printf("[api.route] %s %s", method, route)
