@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"strings"
 	"viv/internal/core/domain"
+	"viv/internal/core/nutrition"
 	"viv/internal/core/training"
 )
 
@@ -17,17 +19,20 @@ type SaveTrainingArrangementInput struct {
 
 type SaveTrainingArrangementUseCase struct {
 	plans    PlanRepository
+	users    UserRepository
 	checkins CheckinRepository
 	library  *training.Library
 }
 
 func NewSaveTrainingArrangementUseCase(
 	plans PlanRepository,
+	users UserRepository,
 	checkins CheckinRepository,
 	library *training.Library,
 ) *SaveTrainingArrangementUseCase {
 	return &SaveTrainingArrangementUseCase{
 		plans:    plans,
+		users:    users,
 		checkins: checkins,
 		library:  library,
 	}
@@ -66,8 +71,14 @@ func (uc *SaveTrainingArrangementUseCase) Execute(ctx context.Context, in SaveTr
 
 	//Parse the new days arrangement
 	var newDays []struct {
-		Weekday string                  `json:"weekday"`
-		Session *domain.TrainingSession `json:"session"`
+		Weekday   string `json:"weekday"`
+		IsRestDay bool   `json:"is_rest_day"`
+		Session   *struct {
+			Modality        string `json:"modality"`
+			MuscleGroup     string `json:"muscle_group"`
+			Intensity       string `json:"intensity"`
+			DurationMinutes int    `json:"duration_minutes"`
+		} `json:"session"`
 	}
 	if err := json.Unmarshal([]byte(in.DaysJson), &newDays); err != nil {
 		return fmt.Errorf("parsing new arrangement: %w", err)
@@ -88,11 +99,18 @@ func (uc *SaveTrainingArrangementUseCase) Execute(ctx context.Context, in SaveTr
 	for _, d := range newDays {
 		idx, ok := weekdayMap[strings.ToLower(d.Weekday)]
 		if !ok {
-			return fmt.Errorf("invlaida weekday: %q", d.Weekday)
+			return fmt.Errorf("invalid weekday: %q", d.Weekday)
 		}
-		arrangement.Days[idx] = domain.TrainingDaySlot{
-			Session: d.Session,
+		slot := domain.TrainingDaySlot{}
+		if !d.IsRestDay && d.Session != nil {
+			slot.Session = &domain.TrainingSession{
+				Modality:        domain.Modality(strings.ToUpper(d.Session.Modality)),
+				MuscleGroup:     domain.MuscleGroup(strings.ToLower(d.Session.MuscleGroup)),
+				Intensity:       domain.Intensity(strings.ToLower(d.Session.Intensity)),
+				DurationMinutes: d.Session.DurationMinutes,
+			}
 		}
+		arrangement.Days[idx] = slot
 	}
 
 	// Re-assemble with content from library + real dimensions
@@ -110,5 +128,28 @@ func (uc *SaveTrainingArrangementUseCase) Execute(ctx context.Context, in SaveTr
 		return fmt.Errorf("serializing updated plan: %w", err)
 	}
 
-	return uc.plans.UpdatedTrainingJSON(ctx, in.UserID, in.TrainingPlanID, updatedJSON)
+	if err := uc.plans.UpdatedTrainingJSON(ctx, in.UserID, in.TrainingPlanID, updatedJSON); err != nil {
+		log.Printf("[save_arrangement] training update failed plan=%s err=%v", in.TrainingPlanID, err)
+		return fmt.Errorf("training update failed plan=%s err=%v", in.TrainingPlanID, err)
+	}
+
+	// Re-assemble nutrition to reflect the updated training/rest day layout.
+	// Meals are preserved — only macros, hydration, and is_training_day are recalculated.
+	if len(plan.NutritionJSON) > 0 {
+		user, err := uc.users.GetByID(ctx, in.UserID)
+		if err != nil || user == nil {
+			log.Printf("[save_arrangement] could not load user for nutrition update user=%s err=%v", in.UserID, err)
+		} else {
+			var existingNutrition domain.NutritionWeekPlan
+			if err := json.Unmarshal(plan.NutritionJSON, &existingNutrition); err == nil {
+				updatedNutrition := nutrition.ReassembleDays(existingNutrition, updatedPlan, user.WeightKg)
+				if nutritionJSON, err := json.Marshal(updatedNutrition); err == nil {
+					if err := uc.plans.UpdateNutritionJSON(ctx, in.UserID, in.TrainingPlanID, nutritionJSON); err != nil {
+						log.Printf("[save_arrangement] nutrition update failed plan=%s err=%v", in.TrainingPlanID, err)
+					}
+				}
+			}
+		}
+	}
+	return nil
 }

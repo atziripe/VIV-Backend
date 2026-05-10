@@ -31,53 +31,66 @@ func (uc *GetCheckinStatusUseCase) Execute(ctx context.Context, in GetCheckinSta
 		return nil, ErrUserNotFound("")
 	}
 
-	lastCheckin, err := uc.Checkins.GetLatestByUser(ctx, in.UserID)
-	if err != nil {
-		return nil, err
-	}
-
 	user, err := uc.Users.GetByID(ctx, in.UserID)
 	if err != nil {
 		return nil, err
 	}
 
-	now := time.Now().UTC()
-	nextAvailable := time.Now().UTC()
-
-	// nunca ha hecho check-in
-	need_checkin := false
-	can_checkin := false
-	if lastCheckin == nil {
-		nextAvailable = nextSunday(user.UpdatedAt)
-		if time.Since(user.UpdatedAt) >= 7*24*time.Hour {
-			need_checkin = true
-			can_checkin = true
-		}
-		return &GetCheckinStatusOutput{
-			CanCheckin:      can_checkin,
-			NextAvailableAt: &nextAvailable,
-			NeedCheckin:     need_checkin,
-		}, nil
+	lastCheckin, err := uc.Checkins.GetLatestByUser(ctx, in.UserID)
+	if err != nil {
+		return nil, err
 	}
 
-	nextAvailable = nextSunday(lastCheckin.CreatedAt)
+	now := time.Now().UTC()
 
-	if now.Before(nextAvailable) {
+	// The last Sunday that has already passed (or today if today is Sunday)
+	lastSunday := lastSundayFrom(now)
+	nextSundayAt := lastSunday.AddDate(0, 0, 7)
+
+	// Case 1: never checked in — use onboarding date as reference
+	if lastCheckin == nil {
+		// If a Sunday has passed since onboarding, they need to check in
+		if lastSunday.After(user.CreatedAt.UTC()) {
+			return &GetCheckinStatusOutput{
+				CanCheckin:      true,
+				NeedCheckin:     true,
+				NextAvailableAt: &nextSundayAt,
+			}, nil
+		}
+		// No Sunday has passed yet since onboarding — just wait
 		return &GetCheckinStatusOutput{
 			CanCheckin:      false,
-			NextAvailableAt: &nextAvailable,
 			NeedCheckin:     false,
+			NextAvailableAt: &nextSundayAt,
 		}, nil
 	}
 
-	if time.Since(lastCheckin.CreatedAt) > 7*24*time.Hour {
-		need_checkin = true
+	// Case 2: already checked in — did they check in after the last Sunday?
+	checkedInAfterLastSunday := lastCheckin.CreatedAt.UTC().After(lastSunday)
+
+	if checkedInAfterLastSunday {
+		// All good, wait for next Sunday
+		return &GetCheckinStatusOutput{
+			CanCheckin:      false,
+			NeedCheckin:     false,
+			NextAvailableAt: &nextSundayAt,
+		}, nil
 	}
+
+	// Last checkin was before the last Sunday — they missed it
 	return &GetCheckinStatusOutput{
 		CanCheckin:      true,
-		NextAvailableAt: &nextAvailable,
-		NeedCheckin:     need_checkin,
+		NeedCheckin:     true,
+		NextAvailableAt: &nextSundayAt,
 	}, nil
+}
+
+// lastSundayFrom returns the most recent Sunday at 00:00:00 UTC,
+// including today if today is Sunday.
+func lastSundayFrom(t time.Time) time.Time {
+	daysSinceSunday := int(t.Weekday()) // Sunday=0, Monday=1, ...
+	last := t.AddDate(0, 0, -daysSinceSunday)
+	return time.Date(last.Year(), last.Month(), last.Day(), 0, 0, 0, 0, time.UTC)
 }
 
 func nextSunday(t time.Time) time.Time {
