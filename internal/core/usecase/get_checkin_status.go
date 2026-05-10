@@ -53,7 +53,7 @@ func (uc *GetCheckinStatusUseCase) Execute(ctx context.Context, in GetCheckinSta
 		if lastSunday.After(user.CreatedAt.UTC()) {
 			return &GetCheckinStatusOutput{
 				CanCheckin:      true,
-				NeedCheckin:     true,
+				NeedCheckin:     false,
 				NextAvailableAt: &nextSundayAt,
 			}, nil
 		}
@@ -80,7 +80,7 @@ func (uc *GetCheckinStatusUseCase) Execute(ctx context.Context, in GetCheckinSta
 	// Last checkin was before the last Sunday — they missed it
 	return &GetCheckinStatusOutput{
 		CanCheckin:      true,
-		NeedCheckin:     true,
+		NeedCheckin:     false,
 		NextAvailableAt: &nextSundayAt,
 	}, nil
 }
