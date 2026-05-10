@@ -275,6 +275,18 @@ func (r *FirestorePlanRepository) UpdatedTrainingJSON(ctx context.Context, userI
 	return err
 }
 
+func (r *FirestorePlanRepository) UpdateNutritionJSON(ctx context.Context, userID, planID string, nutritionJSON []byte) error {
+	_, err := r.client.
+		Collection("users").
+		Doc(userID).
+		Collection("plans").
+		Doc(planID).
+		Update(ctx, []firestore.Update{
+			{Path: "nutrition_json", Value: string(nutritionJSON)},
+		})
+	return err
+}
+
 func (r *FirestorePlanRepository) UpdatePhaseFeedback(ctx context.Context, userID, planID string, feedback map[string]domain.PhaseFeedbackEntry) error {
 	_, err := r.client.
 		Collection("users").
