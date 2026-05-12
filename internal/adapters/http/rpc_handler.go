@@ -178,6 +178,8 @@ func isAllowedRoute(method, path string) bool {
 		return true
 	case method == "POST" && path == "/training/validate-arrangement":
 		return true
+	case method == "POST" && path == "/training/save-arrangement":
+		return true
 	case method == "GET" && strings.HasPrefix(path, "/training/"):
 		return true
 	case method == "POST" && strings.HasPrefix(path, "/training/"):

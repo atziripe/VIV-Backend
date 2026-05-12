@@ -14,7 +14,7 @@ type CompleteOnboardingInput struct {
 	WeightKg       float64
 	HeightCm       float64
 	CycleType      string
-	CycleDay       string
+	LastCycleStart time.Time
 	CycleDuration  string
 	CyclePhase     string
 	PeriodDuration string
@@ -69,7 +69,7 @@ func (uc *CompleteOnboardingUseCase) Execute(ctx context.Context, in CompleteOnb
 		}
 	}
 
-	cycleDayInt, _ := strconv.Atoi(in.CycleDay)
+	cycleDayInt := getCycleDay(in.LastCycleStart)
 	normCycleDuration := normalizeCycleDuration(in.CycleDuration)
 	cycleDurationInt, _ := strconv.Atoi(normCycleDuration)
 	periodDurationInt, _ := strconv.Atoi(in.PeriodDuration)
@@ -78,7 +78,7 @@ func (uc *CompleteOnboardingUseCase) Execute(ctx context.Context, in CompleteOnb
 	user.WeightKg = in.WeightKg
 	user.HeightCm = in.HeightCm
 	user.CycleType = getCycleType(in.CycleType)
-	user.CycleDay = in.CycleDay
+	user.CycleDay = cycleDayInt
 	user.CycleDuration = normCycleDuration
 	user.CyclePhase = phaseForDay(cycleDayInt, cycleDurationInt, periodDurationInt)
 	user.PeriodDuration = in.PeriodDuration
@@ -124,4 +124,23 @@ func getCycleType(reqCycleType string) string {
 	default:
 		return "not_sure"
 	}
+}
+
+func getCycleDay(lastCycleStart time.Time) int {
+	now := time.Now()
+
+	// Normalizamos ambas fechas a medianoche para evitar errores por horas
+	start := time.Date(lastCycleStart.Year(), lastCycleStart.Month(), lastCycleStart.Day(), 0, 0, 0, 0, time.UTC)
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+
+	diff := int(today.Sub(start).Hours() / 24)
+
+	cycleDay := diff + 1
+
+	// Edge case
+	if cycleDay < 1 {
+		cycleDay = 1
+	}
+
+	return cycleDay
 }

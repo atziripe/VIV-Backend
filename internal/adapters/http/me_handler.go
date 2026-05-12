@@ -29,7 +29,7 @@ type meResponse struct {
 	WeightKg       float64 `json:"weight_kg"`
 	HeightCm       float64 `json:"height_cm"`
 	CycleType      string  `json:"cycle_type"`
-	CycleDay       string  `json:"cycle_day"`
+	CycleDay       int     `json:"cycle_day"`
 	CyclePhase     string  `json:"cycle_phase"`
 	CycleLength    string  `json:"cycle_duration"`
 	PeriodDuration string  `json:"period_duration"`

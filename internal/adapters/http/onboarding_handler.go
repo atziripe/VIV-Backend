@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 	"viv/internal/core/usecase"
 )
 
@@ -13,7 +14,7 @@ type onboardingRequest struct {
 	WeightKg         float64 `json:"weight_kg"`
 	HeightCm         float64 `json:"height_cm"`
 	CycleType        string  `json:"cycle_type"`
-	CycleDay         string  `json:"cycle_day"`
+	LastCycleStart   string  `json:"last_cycle_start"`
 	CycleDuration    string  `json:"cycle_duration"`
 	CyclePhase       string  `json:"cycle_phase"`
 	PeriodDuration   string  `json:"period_duration"`
@@ -80,6 +81,17 @@ func (h *OnboardingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Parse LastCycleStart
+	var lastCycleStart time.Time
+	if req.LastCycleStart != "" {
+		t, err := time.Parse("2006-01-02", req.LastCycleStart)
+		if err != nil {
+			http.Error(w, "invalid last_cycle_start: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		lastCycleStart = t
+	}
+
 	// 3. Mapear a input del use case
 	in := usecase.CompleteOnboardingInput{
 		UserID:           userID,
@@ -88,7 +100,7 @@ func (h *OnboardingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		WeightKg:         req.WeightKg,
 		HeightCm:         req.HeightCm,
 		CycleType:        req.CycleType,
-		CycleDay:         req.CycleDay,
+		LastCycleStart:   lastCycleStart,
 		CyclePhase:       req.CyclePhase,
 		CycleDuration:    req.CycleDuration,
 		PeriodDuration:   req.PeriodDuration,

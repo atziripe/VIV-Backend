@@ -11,7 +11,7 @@ type User struct {
 	WeightKg            float64
 	HeightCm            float64
 	CycleType           string
-	CycleDay            string
+	CycleDay            int
 	CycleDuration       string
 	CyclePhase          string
 	CycleUpdatedAt      *time.Time

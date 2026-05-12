@@ -65,7 +65,7 @@ func phaseForDay(day, duration, periodLen int) string {
 // Devuelve true si modificó algo en user
 func SyncUserCycleDaily(user *domain.User, now time.Time) bool {
 	duration := parseIntDefault(user.CycleDuration, 28)
-	day := parseIntDefault(user.CycleDay, 1)
+	day := user.CycleDay
 	period := parseIntDefault(user.PeriodDuration, 5)
 
 	today := localMidnightUTC(now)
@@ -75,7 +75,7 @@ func SyncUserCycleDaily(user *domain.User, now time.Time) bool {
 		user.CycleUpdatedAt = &today
 		user.CyclePhase = phaseForDay(day, duration, period)
 		// (opcional) normaliza CycleDay/Duration a strings válidos
-		user.CycleDay = strconv.Itoa(day)
+		user.CycleDay = day
 		user.CycleDuration = strconv.Itoa(duration)
 		return true
 	}
@@ -86,7 +86,7 @@ func SyncUserCycleDaily(user *domain.User, now time.Time) bool {
 	}
 
 	newDay := ((day - 1 + delta) % duration) + 1
-	user.CycleDay = strconv.Itoa(newDay)
+	user.CycleDay = newDay
 	user.CyclePhase = phaseForDay(newDay, duration, period)
 	user.CycleUpdatedAt = &today
 	return true
@@ -125,7 +125,7 @@ func ApplyCycleStartOverride(user *domain.User, cycleStart time.Time, now time.T
 
 	user.CycleAnchorAt = &start
 	user.CycleUpdatedAt = &today
-	user.CycleDay = strconv.Itoa(newDay)
+	user.CycleDay = newDay
 	user.CyclePhase = phaseForDay(newDay, duration, period)
 	return true
 }
@@ -133,7 +133,7 @@ func ApplyCycleStartOverride(user *domain.User, cycleStart time.Time, now time.T
 // DaysUntilNextPhase calculates how many days until the user transitions
 // to the next cycle phase, based on current cycle day and duration.
 func DaysUntilNextPhase(user *domain.User) int {
-	day := parseIntDefault(user.CycleDay, 1)
+	day := user.CycleDay
 	duration := parseIntDefault(user.CycleDuration, 28)
 	period := parseIntDefault(user.PeriodDuration, 5)
 
