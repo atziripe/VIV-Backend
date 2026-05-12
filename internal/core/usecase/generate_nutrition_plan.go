@@ -130,5 +130,6 @@ func buildMealInput(
 		ProteinPreference:   user.DietProteinResources,
 		DigestiveConditions: training.ParseDigestiveConditions(user.DigestionConditions),
 		AppetiteStatus:      string(checkin.AppetiteV2),
+		EatingStyle:         user.EatingStyle,
 	}
 }

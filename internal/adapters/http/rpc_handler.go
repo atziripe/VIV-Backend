@@ -489,6 +489,7 @@ func selectSubBody(path string, body map[string]any) any {
 		copyTrim("pms_symptoms")
 		copyTrim("predictability")
 		copyTrim("readiness")
+		copyTrim("modality_skip")
 		copyTrim("additional_notes")
 
 		if len(out) == 0 {

@@ -144,7 +144,7 @@ func TestBudget_DistributionRespectsPhaseMatrix_LateLuteal(t *testing.T) {
 	// User wants 4 sessions in late luteal — gets 4 (no cap)
 	// but HIIT should be 0 and Strength should be overridden to moderate
 	prefs := defaultPrefs()
-	budget := training.CalculateBudget(prefs, domain.PhaseLateLuteal, goodDimensions())
+	budget := training.CalculateBudget(prefs, domain.PhaseLateLuteal, goodDimensions(), "")
 
 	if budget.TotalSessions != 4 {
 		t.Errorf("expected 4 (no phase cap), got %d", budget.TotalSessions)
@@ -159,7 +159,7 @@ func TestBudget_DistributionRespectsPhaseMatrix_LateLuteal(t *testing.T) {
 func TestBudget_PhaseCapRespected_Follicular(t *testing.T) {
 	// User wants 4 sessions, follicular allows up to 5 — should get 4
 	prefs := defaultPrefs()
-	budget := training.CalculateBudget(prefs, domain.PhaseFollicular, goodDimensions())
+	budget := training.CalculateBudget(prefs, domain.PhaseFollicular, goodDimensions(), "")
 
 	if budget.TotalSessions != 4 {
 		t.Errorf("follicular with 4 requested should give 4, got %d", budget.TotalSessions)
@@ -172,7 +172,7 @@ func TestBudget_PhaseCapRespected_Follicular(t *testing.T) {
 
 func TestBudget_NoHIIT_InLateLuteal(t *testing.T) {
 	prefs := defaultPrefs()
-	budget := training.CalculateBudget(prefs, domain.PhaseLateLuteal, goodDimensions())
+	budget := training.CalculateBudget(prefs, domain.PhaseLateLuteal, goodDimensions(), "")
 
 	hiit := findModality(budget, domain.ModalityHIIT)
 	if hiit != nil && hiit.Count > 0 {
@@ -182,7 +182,7 @@ func TestBudget_NoHIIT_InLateLuteal(t *testing.T) {
 
 func TestBudget_NoHIIT_InMenstrual(t *testing.T) {
 	prefs := defaultPrefs()
-	budget := training.CalculateBudget(prefs, domain.PhaseMenstrual, goodDimensions())
+	budget := training.CalculateBudget(prefs, domain.PhaseMenstrual, goodDimensions(), "")
 
 	hiit := findModality(budget, domain.ModalityHIIT)
 	if hiit != nil && hiit.Count > 0 {
@@ -203,7 +203,7 @@ func TestBudget_OnlySelectedModalities(t *testing.T) {
 		Goals:           []string{"maintenance"},
 	}
 
-	budget := training.CalculateBudget(prefs, domain.PhaseFollicular, goodDimensions())
+	budget := training.CalculateBudget(prefs, domain.PhaseFollicular, goodDimensions(), "")
 
 	for _, mb := range budget.Modalities {
 		if mb.Modality == domain.ModalityHIIT || mb.Modality == domain.ModalityCardio {
@@ -224,7 +224,7 @@ func TestBudget_ReducedWhenBothLow(t *testing.T) {
 		Build:     domain.ReadinessPullBack,
 	}
 
-	budget := training.CalculateBudget(prefs, domain.PhaseFollicular, dims)
+	budget := training.CalculateBudget(prefs, domain.PhaseFollicular, dims, "")
 
 	// Follicular allows 5, user wants 4, both low → 4-1 = 3
 	if budget.TotalSessions != 3 {
@@ -240,7 +240,7 @@ func TestBudget_NoHIIT_WhenRecoveryLow(t *testing.T) {
 		Build:     domain.ReadinessMaintain,
 	}
 
-	budget := training.CalculateBudget(prefs, domain.PhaseFollicular, dims)
+	budget := training.CalculateBudget(prefs, domain.PhaseFollicular, dims, "")
 
 	hiit := findModality(budget, domain.ModalityHIIT)
 	if hiit != nil && hiit.Count > 0 {
@@ -250,7 +250,7 @@ func TestBudget_NoHIIT_WhenRecoveryLow(t *testing.T) {
 
 func TestBudget_IntensityOverride_LateLuteal(t *testing.T) {
 	prefs := defaultPrefs()
-	budget := training.CalculateBudget(prefs, domain.PhaseLateLuteal, goodDimensions())
+	budget := training.CalculateBudget(prefs, domain.PhaseLateLuteal, goodDimensions(), "")
 
 	strength := findModality(budget, domain.ModalityStrength)
 	if strength == nil {
@@ -269,7 +269,7 @@ func TestBudget_IntensityOverride_RecoveryLow(t *testing.T) {
 		Build:     domain.ReadinessMaintain,
 	}
 
-	budget := training.CalculateBudget(prefs, domain.PhaseFollicular, dims)
+	budget := training.CalculateBudget(prefs, domain.PhaseFollicular, dims, "")
 
 	strength := findModality(budget, domain.ModalityStrength)
 	if strength == nil {
@@ -282,7 +282,7 @@ func TestBudget_IntensityOverride_RecoveryLow(t *testing.T) {
 
 func TestBudget_CardioLow_InMenstrual(t *testing.T) {
 	prefs := defaultPrefs()
-	budget := training.CalculateBudget(prefs, domain.PhaseMenstrual, goodDimensions())
+	budget := training.CalculateBudget(prefs, domain.PhaseMenstrual, goodDimensions(), "")
 
 	cardio := findModality(budget, domain.ModalityCardio)
 	if cardio != nil && cardio.IntensityOverride == nil {
@@ -302,7 +302,7 @@ func TestBudget_RestWeekOffered(t *testing.T) {
 		Build:     domain.ReadinessPullBack,
 	}
 
-	budget := training.CalculateBudget(prefs, domain.PhaseFollicular, dims)
+	budget := training.CalculateBudget(prefs, domain.PhaseFollicular, dims, "")
 
 	if !budget.RestWeekOffered {
 		t.Error("rest week should be offered when all dimensions are low")
@@ -311,7 +311,7 @@ func TestBudget_RestWeekOffered(t *testing.T) {
 
 func TestBudget_RestWeekNotOffered(t *testing.T) {
 	prefs := defaultPrefs()
-	budget := training.CalculateBudget(prefs, domain.PhaseFollicular, goodDimensions())
+	budget := training.CalculateBudget(prefs, domain.PhaseFollicular, goodDimensions(), "")
 
 	if budget.RestWeekOffered {
 		t.Error("rest week should not be offered when dimensions are good")
@@ -336,7 +336,7 @@ func TestBudget_MinimumOnSession(t *testing.T) {
 		Build:     domain.ReadinessPullBack,
 	}
 
-	budget := training.CalculateBudget(prefs, domain.PhaseLateLuteal, dims)
+	budget := training.CalculateBudget(prefs, domain.PhaseLateLuteal, dims, "")
 
 	if budget.TotalSessions < 1 {
 		t.Errorf("should never go below 1 session, got %d", budget.TotalSessions)
@@ -351,7 +351,7 @@ func TestBudget_PilatesOnly_User_GetsStrengthInjected(t *testing.T) {
 		Goals:           []string{"stress regulation"},
 	}
 
-	budget := training.CalculateBudget(prefs, domain.PhaseFollicular, goodDimensions())
+	budget := training.CalculateBudget(prefs, domain.PhaseFollicular, goodDimensions(), "")
 
 	// Should have 2 modalities: VIV-injected Strength + user's Pilates
 	if len(budget.Modalities) != 2 {
@@ -393,7 +393,7 @@ func TestBudget_AllocatedMatchesTotal(t *testing.T) {
 			DurationMinutes: 45,
 			Modalities:      c.mods,
 		}
-		budget := training.CalculateBudget(prefs, c.phase, goodDimensions())
+		budget := training.CalculateBudget(prefs, c.phase, goodDimensions(), "")
 
 		allocated := totalAllocated(budget)
 		if allocated > budget.TotalSessions {
@@ -417,7 +417,7 @@ func TestBudget_NoPhaseCapOnTotal_LateLuteal(t *testing.T) {
 		Goals: []string{"performance and progression"},
 	}
 
-	budget := training.CalculateBudget(prefs, domain.PhaseLateLuteal, goodDimensions())
+	budget := training.CalculateBudget(prefs, domain.PhaseLateLuteal, goodDimensions(), "")
 
 	if budget.TotalSessions != 5 {
 		t.Errorf("expected 5 sessions (no phase cap), got %d", budget.TotalSessions)
@@ -434,7 +434,7 @@ func TestBudget_NoPhaseCapOnTotal_Menstrual(t *testing.T) {
 		Goals: []string{"strength and resilience"},
 	}
 
-	budget := training.CalculateBudget(prefs, domain.PhaseMenstrual, goodDimensions())
+	budget := training.CalculateBudget(prefs, domain.PhaseMenstrual, goodDimensions(), "")
 
 	if budget.TotalSessions != 4 {
 		t.Errorf("expected 4 sessions (no phase cap), got %d", budget.TotalSessions)
@@ -454,7 +454,7 @@ func TestBudget_InjectsStrength_WhenNotSelected(t *testing.T) {
 		Goals:           []string{"stress regulation"},
 	}
 
-	budget := training.CalculateBudget(prefs, domain.PhaseFollicular, goodDimensions())
+	budget := training.CalculateBudget(prefs, domain.PhaseFollicular, goodDimensions(), "")
 
 	strength := findModality(budget, domain.ModalityStrength)
 	if strength == nil {
@@ -479,7 +479,7 @@ func TestBudget_InjectsStrength_OnlyOne_InMenstrual(t *testing.T) {
 		Goals:           []string{"energy and consistency"},
 	}
 
-	budget := training.CalculateBudget(prefs, domain.PhaseMenstrual, goodDimensions())
+	budget := training.CalculateBudget(prefs, domain.PhaseMenstrual, goodDimensions(), "")
 
 	strength := findModality(budget, domain.ModalityStrength)
 	if strength == nil {
@@ -499,7 +499,7 @@ func TestBudget_NoStrengthInjection_WhenOnlyOneSessionTotal(t *testing.T) {
 		Goals:           []string{"stress regulation"},
 	}
 
-	budget := training.CalculateBudget(prefs, domain.PhaseFollicular, goodDimensions())
+	budget := training.CalculateBudget(prefs, domain.PhaseFollicular, goodDimensions(), "")
 
 	strength := findModality(budget, domain.ModalityStrength)
 	if strength != nil && strength.Count > 0 {
@@ -516,7 +516,7 @@ func TestBudget_StrengthInjection_LeavesRoomForUserChoice(t *testing.T) {
 		Goals:           []string{"stress regulation"},
 	}
 
-	budget := training.CalculateBudget(prefs, domain.PhaseFollicular, goodDimensions())
+	budget := training.CalculateBudget(prefs, domain.PhaseFollicular, goodDimensions(), "")
 
 	nonStrength := 0
 	for _, mb := range budget.Modalities {
@@ -534,7 +534,7 @@ func TestBudget_NoDoubleStrength_WhenUserSelectedIt(t *testing.T) {
 	// User already selected Strength — should NOT get extra injected Strength
 	prefs := defaultPrefs() // includes Strength
 
-	budget := training.CalculateBudget(prefs, domain.PhaseFollicular, goodDimensions())
+	budget := training.CalculateBudget(prefs, domain.PhaseFollicular, goodDimensions(), "")
 
 	strengthCount := 0
 	vivRecommendedFound := false
@@ -549,5 +549,91 @@ func TestBudget_NoDoubleStrength_WhenUserSelectedIt(t *testing.T) {
 
 	if vivRecommendedFound {
 		t.Error("should not mark Strength as VivRecommended when user selected it")
+	}
+}
+
+// ============================================================================
+// BUDGET CALCULATOR — MODALITY SKIP
+// ============================================================================
+
+func TestBudget_SkipPilates(t *testing.T) {
+	prefs := training.ParsedTrainingPreferences{
+		SessionsPerWeek: 3,
+		DurationMinutes: 40,
+		Modalities:      []domain.Modality{domain.ModalityStrength, domain.ModalityPilates},
+		Goals:           []string{"strength and resilience"},
+	}
+
+	budget := training.CalculateBudget(prefs, domain.PhaseFollicular, goodDimensions(), "Pilates")
+
+	pilates := findModality(budget, domain.ModalityPilates)
+	if pilates != nil {
+		t.Error("Pilates should be excluded when skipped")
+	}
+
+	strength := findModality(budget, domain.ModalityStrength)
+	if strength == nil {
+		t.Fatal("Strength should still be in budget")
+	}
+}
+
+func TestBudget_SkipHIIT(t *testing.T) {
+	prefs := training.ParsedTrainingPreferences{
+		SessionsPerWeek: 4,
+		DurationMinutes: 40,
+		Modalities:      []domain.Modality{domain.ModalityStrength, domain.ModalityHIIT, domain.ModalityPilates},
+		Goals:           []string{"body recomposition"},
+	}
+
+	budget := training.CalculateBudget(prefs, domain.PhaseFollicular, goodDimensions(), "HIIT")
+
+	hiit := findModality(budget, domain.ModalityHIIT)
+	if hiit != nil {
+		t.Error("HIIT should be excluded when skipped")
+	}
+}
+
+func TestBudget_SkipMultiple(t *testing.T) {
+	prefs := training.ParsedTrainingPreferences{
+		SessionsPerWeek: 4,
+		DurationMinutes: 40,
+		Modalities:      []domain.Modality{domain.ModalityStrength, domain.ModalityHIIT, domain.ModalityPilates},
+		Goals:           []string{"strength and resilience"},
+	}
+
+	budget := training.CalculateBudget(prefs, domain.PhaseFollicular, goodDimensions(), "HIIT,Pilates")
+
+	if findModality(budget, domain.ModalityHIIT) != nil {
+		t.Error("HIIT should be excluded")
+	}
+	if findModality(budget, domain.ModalityPilates) != nil {
+		t.Error("Pilates should be excluded")
+	}
+	if findModality(budget, domain.ModalityStrength) == nil {
+		t.Fatal("Strength should remain")
+	}
+}
+
+func TestBudget_LighterSessions(t *testing.T) {
+	prefs := defaultPrefs()
+
+	budget := training.CalculateBudget(prefs, domain.PhaseFollicular, goodDimensions(), "lighter")
+
+	// All modalities should have an intensity override
+	for _, mb := range budget.Modalities {
+		if mb.IntensityOverride == nil {
+			t.Errorf("modality %s should have intensity override when 'lighter' is selected", mb.Modality)
+		}
+	}
+}
+
+func TestBudget_SameAsUsual_NoChange(t *testing.T) {
+	prefs := defaultPrefs()
+
+	budgetNormal := training.CalculateBudget(prefs, domain.PhaseFollicular, goodDimensions(), "")
+	budgetSameAsUsual := training.CalculateBudget(prefs, domain.PhaseFollicular, goodDimensions(), "same as usual")
+
+	if len(budgetNormal.Modalities) != len(budgetSameAsUsual.Modalities) {
+		t.Error("'same as usual' should produce identical budget to empty skip")
 	}
 }

@@ -29,6 +29,7 @@ type User struct {
 	MealsPerDay          string
 	MealsTimingStability string
 	DigestionConditions  string
+	EatingStyle          string
 
 	SleepWindow        string
 	SleepContinuity    string

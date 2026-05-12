@@ -23,6 +23,7 @@ type CreateCheckinInput struct {
 	PMSSymptoms     *string
 	Predictability  string
 	Readiness       string
+	ModalitySkip    string
 	AdditionalNotes string
 }
 
@@ -74,6 +75,7 @@ func (uc *CreateCheckinUseCase) Execute(ctx context.Context, in CreateCheckinInp
 		PMSSymptoms:     (*domain.CheckinPMSSymptoms)(in.PMSSymptoms),
 		Predictability:  domain.CheckinPredictability(in.Predictability),
 		Readiness:       domain.CheckinReadiness(in.Readiness),
+		ModalitySkip:    in.ModalitySkip,
 		AdditionalNotes: in.AdditionalNotes,
 	}
 

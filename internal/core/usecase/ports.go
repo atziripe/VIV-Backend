@@ -74,6 +74,7 @@ type StructureGenerationInput struct {
 	Budget        domain.WeekBudget
 	Constraints   []string //human readable spacing rules for the prompt
 	RetryFeedback string   // violation messages from a failed attempt ("" on first try)
+	ModalitySkip  string   // propagated from checkin.ModalitySkip
 }
 
 // MealContentGenerator generates meal options for a week.
@@ -94,6 +95,7 @@ type MealGenerationInput struct {
 	ProteinPreference   string   // "Plant based", "Mixed", "Mostly animal based"
 	DigestiveConditions []string // "Bloating", "IBS", etc.
 	AppetiteStatus      string   // from weekly checkin
+	EatingStyle         string
 }
 
 // MealDayInput describes one day for meal generation.
