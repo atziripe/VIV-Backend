@@ -22,14 +22,14 @@ type RegisterDeviceTokenInput struct {
 	UserID   string
 	Token    string
 	Platform string // ios/android
-
+	Timezone string
 }
 
 type RegisterDeviceTokenOutput struct {
 	DeviceToken *domain.DeviceToken
 }
 
-func (uc *RegisterDeviceTokenUseCase) Execute(ctx context.Context, userID, token, platform string) (*RegisterDeviceTokenOutput, error) {
+func (uc *RegisterDeviceTokenUseCase) Execute(ctx context.Context, userID, token, platform string, timezone string) (*RegisterDeviceTokenOutput, error) {
 	userID = strings.TrimSpace(userID)
 	if userID == "" {
 		return nil, errors.New("user_id_required")
@@ -47,6 +47,7 @@ func (uc *RegisterDeviceTokenUseCase) Execute(ctx context.Context, userID, token
 		UserID:    userID,
 		Token:     token,
 		Platform:  platform,
+		Timezone:  timezone,
 		Active:    true,
 		CreatedAt: now,
 		UpdatedAt: now,

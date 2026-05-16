@@ -38,6 +38,7 @@ type PlanRepository interface {
 	UpdateNutritionJSON(ctx context.Context, userID, planID string, nutritionJSON []byte) error
 	UpdatePhaseFeedback(ctx context.Context, userID, planID string, feedback map[string]domain.PhaseFeedbackEntry) error
 	UpdateMealSelections(ctx context.Context, userID, planID string, selections map[string]map[string]int) error
+	IsTrainingDay(ctx context.Context, userID, weekday string) (bool, error)
 }
 
 type PlanJobsRepository interface {
@@ -119,4 +120,11 @@ type TokenUsage struct {
 
 type DeviceTokenRepository interface {
 	Upsert(ctx context.Context, token *domain.DeviceToken) error
+	GetAllActive(ctx context.Context) ([]*domain.DeviceToken, error)
+	Deactivate(ctx context.Context, userID string) error // agregar
+	GetAllActiveByTimezone(ctx context.Context) (map[string][]*domain.DeviceToken, error)
+}
+
+type NotificationRepository interface {
+	SendPush(ctx context.Context, token, title, body string) error
 }

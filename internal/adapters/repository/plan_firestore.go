@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 	"time"
 
@@ -309,4 +310,30 @@ func (r *FirestorePlanRepository) UpdateMealSelections(ctx context.Context, user
 			{Path: "meal_selections", Value: selections},
 		})
 	return err
+}
+
+func (r *FirestorePlanRepository) IsTrainingDay(ctx context.Context, userID, weekday string) (bool, error) {
+	plan, err := r.GetLatest(ctx, userID)
+	if err != nil || plan == nil {
+		return false, err
+	}
+
+	var trainingPlan struct {
+		Days []struct {
+			Weekday   string `json:"weekday"`
+			IsRestDay bool   `json:"is_rest_day"`
+		} `json:"days"`
+	}
+
+	if err := json.Unmarshal(plan.TrainingJSON, &trainingPlan); err != nil {
+		return false, err
+	}
+
+	for _, day := range trainingPlan.Days {
+		if day.Weekday == weekday && !day.IsRestDay {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }

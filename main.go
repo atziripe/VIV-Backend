@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
 	stdhttp "net/http"
 	"os"
 	"os/signal"
@@ -27,6 +28,8 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	sentryhttp "github.com/getsentry/sentry-go/http"
+
+	cron "github.com/robfig/cron/v3"
 )
 
 func main() {
@@ -83,6 +86,7 @@ func main() {
 	planRepo := repository.NewFirestorePlanRepository(fsClient)
 	planJobsRepo := repository.NewFirestorePlanJobsRepository(fsClient)
 	deviceTokenRepo := repository.NewFirestoreDeviceTokenRepository(fsClient)
+	fcmRepo := repository.NewFCMRepository(app)
 
 	if cfg.OpenAIAPIKey == "" {
 		log.Fatal("OPENAI_API_KEY is not set")
@@ -161,6 +165,8 @@ func main() {
 	phaseFeedbackUC := usecase.NewSavePhaseFeedbackUseCase(planRepo)
 
 	registerDeviceTokenUC := usecase.NewRegisterDeviceTokenUseCase(deviceTokenRepo)
+	sundayCheckinUC := usecase.NewSendSundayCheckinUseCase(deviceTokenRepo, fcmRepo)
+	trainingReminderUC := usecase.NewSendTrainingReminderUseCase(deviceTokenRepo, fcmRepo, planRepo)
 
 	// ========= Handlers =========
 	onboardingHandler := httpadapter.NewOnboardingHandler(onboardingUC)
@@ -228,6 +234,14 @@ func main() {
 	api.Post("/plans/phase-feedback", plansHandler.SavePhaseFeedback)
 
 	api.Post("/users/me/device-token", deviceTokenHandler.Upsert)
+	// POST /debug/sunday-checkin  — QUITAR EN PRODUCCIÓN
+	r.Post("/debug/sunday-checkin", func(w http.ResponseWriter, r *http.Request) {
+		if err := sundayCheckinUC.Execute(r.Context()); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	})
 
 	chi.Walk(api, func(method string, route string, handler stdhttp.Handler, middlewares ...func(stdhttp.Handler) stdhttp.Handler) error {
 		log.Printf("[api.route] %s %s", method, route)
@@ -245,6 +259,38 @@ func main() {
 	protected.Mount("/", api)
 
 	r.Mount("/", protected)
+
+	// ==================== Schedulers ==============================
+	c := cron.New(cron.WithLocation(time.UTC))
+	c.AddFunc("0 15 * * 0", func() {
+		log.Println("[scheduler] running sunday checkin")
+		if err := sundayCheckinUC.Execute(context.Background()); err != nil {
+			log.Printf("[scheduler] error: %v", err)
+		}
+	})
+	c.Start()
+	defer c.Stop()
+
+	// Training reminder
+	c.AddFunc("0 * * * *", func() {
+		ctx := context.Background()
+		tokensByTimezone, err := trainingReminderUC.DeviceToken.GetAllActiveByTimezone(ctx)
+		if err != nil {
+			log.Printf("[scheduler] error getting tokens: %v", err)
+			return
+		}
+
+		for timezone, tokens := range tokensByTimezone {
+			loc, err := time.LoadLocation(timezone)
+			if err != nil {
+				continue
+			}
+			localHour := time.Now().In(loc).Hour()
+			if localHour == 9 {
+				trainingReminderUC.ExecuteForTimezone(ctx, timezone, tokens)
+			}
+		}
+	})
 
 	// ========= 8. Levantar servidor HTTP =========
 	port := os.Getenv("PORT")

@@ -594,6 +594,7 @@ func selectSubBody(path string, body map[string]any) any {
 
 		copyTrim("token")
 		copyTrim("platform")
+		copyTrim("timezone")
 
 		if len(out) == 0 {
 			return map[string]any{}

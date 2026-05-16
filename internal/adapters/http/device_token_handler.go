@@ -14,12 +14,14 @@ import (
 type createDeviceTokenRequest struct {
 	Token    string `json:"token"`
 	Platform string `json:"platform"` // ios/android
+	Timezone string `json:"timezone"`
 }
 
 type createDeviceTokenResponse struct {
 	UserID    string    `json:"user_id"`
 	Token     string    `json:"token"`
 	Platform  string    `json:"platform"` // ios/android
+	Timezone  string    `json:"timezone"`
 	Active    bool      `json:"active"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -49,13 +51,7 @@ func (h *DeviceTokenHandler) Upsert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	in := usecase.RegisterDeviceTokenInput{
-		UserID:   userID,
-		Token:    req.Token,
-		Platform: req.Platform,
-	}
-
-	out, err := h.DeviceTokenUC.Execute(ctx, userID, in.Token, in.Platform)
+	out, err := h.DeviceTokenUC.Execute(ctx, userID, req.Token, req.Platform, req.Timezone)
 	if err != nil {
 		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
 			hub.Scope().SetTag("endpoint", r.URL.Path)
@@ -70,6 +66,7 @@ func (h *DeviceTokenHandler) Upsert(w http.ResponseWriter, r *http.Request) {
 		UserID:    out.DeviceToken.UserID,
 		Token:     out.DeviceToken.Token,
 		Platform:  out.DeviceToken.Platform,
+		Timezone:  out.DeviceToken.Timezone,
 		Active:    out.DeviceToken.Active,
 		CreatedAt: out.DeviceToken.CreatedAt,
 		UpdatedAt: out.DeviceToken.UpdatedAt,
