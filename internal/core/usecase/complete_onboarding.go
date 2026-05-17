@@ -30,6 +30,7 @@ type CompleteOnboardingInput struct {
 	MealsPerDay          string
 	MealsTimingStability string
 	DigestionConditions  string
+	EatingStyle          string
 
 	SleepWindow        string
 	RecoveryAfterSleep string
@@ -93,6 +94,7 @@ func (uc *CompleteOnboardingUseCase) Execute(ctx context.Context, in CompleteOnb
 	user.MealsPerDay = in.MealsPerDay
 	user.MealsTimingStability = in.MealsTimingStability
 	user.DigestionConditions = in.DigestionConditions
+	user.EatingStyle = in.EatingStyle
 
 	user.SleepWindow = in.SleepWindow
 	user.RecoveryAfterSleep = in.RecoveryAfterSleep

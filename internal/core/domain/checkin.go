@@ -17,8 +17,13 @@ type Checkin struct {
 	CycleStart  *time.Time          // period start date if it arrived this week
 	PMSSymptoms *CheckinPMSSymptoms // PMS Symptoms faced during that week (just in late luteal)
 
-	Predictability  CheckinPredictability // "What does your week ahead look like?"
-	Readiness       CheckinReadiness      // "Going into next week, you feel..."
+	Predictability CheckinPredictability // "What does your week ahead look like?"
+	Readiness      CheckinReadiness      // "Going into next week, you feel..."
+	// ModalitySkip holds the modalities the user wants to skip this week.
+	// Populated from the "Anything different this week?" check-in question.
+	// Empty slice means no preference change ("Same as usual").
+	// "lighter" is a special value meaning the user wants reduced intensity.
+	ModalitySkip    string `json:"modality_skip,omitempty"`
 	AdditionalNotes string
 }
 

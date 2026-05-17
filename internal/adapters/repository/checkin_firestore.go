@@ -36,6 +36,7 @@ type checkinDoc struct {
 	PMSSymptoms     *string    `firestore:"pms_symptoms"`
 	Predictability  string     `firestore:"predictability"`
 	Readiness       string     `firestore:"readiness"`
+	ModalitySkip    string     `firestore:"modality_skip"`
 	AdditionalNotes string     `firestore:"additional_notes"`
 }
 
@@ -58,6 +59,7 @@ func (r *FirestoreCheckinRepository) Create(ctx context.Context, c *domain.Check
 		PMSSymptoms:     (*string)(c.PMSSymptoms),
 		Predictability:  string(c.Predictability),
 		Readiness:       string(c.Readiness),
+		ModalitySkip:    string(c.ModalitySkip),
 		AdditionalNotes: c.AdditionalNotes,
 	}
 
@@ -105,6 +107,7 @@ func (r *FirestoreCheckinRepository) GetByID(ctx context.Context, userID string,
 		PMSSymptoms:     (*domain.CheckinPMSSymptoms)(cd.PMSSymptoms),
 		Predictability:  domain.CheckinPredictability(cd.Predictability),
 		Readiness:       domain.CheckinReadiness(cd.Readiness),
+		ModalitySkip:    cd.ModalitySkip,
 		AdditionalNotes: cd.AdditionalNotes,
 	}
 
@@ -148,6 +151,7 @@ func (r *FirestoreCheckinRepository) GetLatestByUser(ctx context.Context, userID
 		PMSSymptoms:     (*domain.CheckinPMSSymptoms)(cd.PMSSymptoms),
 		Predictability:  domain.CheckinPredictability(cd.Predictability),
 		Readiness:       domain.CheckinReadiness(cd.Readiness),
+		ModalitySkip:    cd.ModalitySkip,
 		AdditionalNotes: cd.AdditionalNotes,
 	}
 

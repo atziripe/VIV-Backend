@@ -183,6 +183,29 @@ func buildMealUserPrompt(input usecase.MealGenerationInput) string {
 		b.WriteString(fmt.Sprintf("- Current appetite: %s\n", input.AppetiteStatus))
 	}
 
+	if input.EatingStyle != "" {
+		b.WriteString("\nEating style and preferences:\n")
+		for _, style := range strings.Split(input.EatingStyle, ",") {
+			style = strings.TrimSpace(style)
+			if style == "" {
+				continue
+			}
+			switch strings.ToLower(style) {
+			case "simple & quick":
+				b.WriteString("- Keep meals simple: max 5 ingredients, under 15 min prep time.\n")
+			case "home-cooked":
+				b.WriteString("- User cooks at home — suggest fresh ingredient-based meals.\n")
+			case "eat out often":
+				b.WriteString("- Include options that can be ordered at a restaurant or cafe.\n")
+			case "meal prep":
+				b.WriteString("- Suggest meals that batch well and keep for 3-4 days.\n")
+			default:
+				// Cuisine preference (Mexican, Mediterranean, Asian, etc.)
+				b.WriteString(fmt.Sprintf("- User eats %s cuisine regularly — favor familiar ingredients and dishes from this tradition.\n", style))
+			}
+		}
+	}
+
 	b.WriteString("\nMacro targets:\n")
 	b.WriteString(fmt.Sprintf("- Training day: %d kcal, %.0fg protein, %.0fg carbs, %.0fg fat\n",
 		input.Targets.TrainingDay.Calories, input.Targets.TrainingDay.ProteinG,

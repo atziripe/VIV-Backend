@@ -67,7 +67,6 @@ func (h *LifestyleHandler) Report(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Parsear applies_to si viene
 	var appliesTo *time.Time
 	if req.AppliesTo != nil && *req.AppliesTo != "" {
 		t, err := time.Parse("2006-01-02", *req.AppliesTo)

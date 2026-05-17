@@ -29,6 +29,7 @@ type onboardingRequest struct {
 	MealsPerDay          string `json:"meals_per_day"`
 	MealsTimingStability string `json:"meals_timing_stability"`
 	DigestionConditions  string `json:"digestion_conditions"`
+	EatingStyle          string `json:"eating_style"`
 
 	SleepWindow        string `json:"sleep_window"`
 	RecoveryAfterSleep string `json:"recovery_after_sleep"`
@@ -115,6 +116,7 @@ func (h *OnboardingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		MealsPerDay:          req.MealsPerDay,
 		MealsTimingStability: req.MealsTimingStability,
 		DigestionConditions:  req.DigestionConditions,
+		EatingStyle:          req.EatingStyle,
 
 		SleepWindow:        req.SleepWindow,
 		RecoveryAfterSleep: req.RecoveryAfterSleep,

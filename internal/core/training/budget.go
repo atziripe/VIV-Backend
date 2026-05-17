@@ -1,6 +1,7 @@
 package training
 
 import (
+	"strings"
 	"viv/internal/core/domain"
 )
 
@@ -52,6 +53,7 @@ func CalculateBudget(
 	prefs ParsedTrainingPreferences,
 	phase domain.CyclePhase,
 	dimensions domain.CheckinDimensions,
+	modalitySkip string,
 ) domain.WeekBudget {
 	limits := phaseLimits[phase]
 
@@ -60,6 +62,18 @@ func CalculateBudget(
 
 	// Step 2: Reduce based on check-in dimensions
 	totalSessions = applyDimensionReductions(totalSessions, dimensions)
+
+	// Step 2.5: Apply weekly modality skip from check-in
+	reducedIntensity := false
+	skippedModalities := parseModalitySkip(modalitySkip)
+	for _, skip := range skippedModalities {
+		if skip == "lighter" {
+			reducedIntensity = true
+		} else {
+			// Remove this modality from user prefs for this week only
+			prefs.Modalities = removeModality(prefs.Modalities, domain.Modality(strings.ToUpper(skip)))
+		}
+	}
 
 	// Step 3: Intersect user's selected modalities with phase-allowed modalities
 	available := filterAvailableModalities(prefs.Modalities, limits)
@@ -70,6 +84,11 @@ func CalculateBudget(
 	// Step 5: Distribute sessions across available modalities
 	modalities := distributeModalities(available, totalSessions, limits, phase, dimensions, userSelectedStrength)
 
+	// Step 5.5: Apply reduced intensity if "lighter" was selected
+	if reducedIntensity {
+		modalities = applyReducedIntensity(modalities)
+	}
+
 	// Step 6: Determine rest week flag
 	restWeekOffered := dimensions.RestWeekRecommended()
 
@@ -79,6 +98,48 @@ func CalculateBudget(
 		DurationMinutes: prefs.DurationMinutes,
 		RestWeekOffered: restWeekOffered,
 	}
+}
+
+// parseModalitySkip splits the comma-separated modality skip string.
+func parseModalitySkip(skip string) []string {
+	if strings.TrimSpace(skip) == "" {
+		return nil
+	}
+	var result []string
+	for _, s := range strings.Split(skip, ",") {
+		s = strings.TrimSpace(s)
+		if s != "" {
+			result = append(result, strings.ToLower(s))
+		}
+	}
+	return result
+}
+
+// removeModality returns a new slice without the target modality.
+func removeModality(mods []domain.Modality, target domain.Modality) []domain.Modality {
+	var result []domain.Modality
+	for _, m := range mods {
+		if m != target {
+			result = append(result, m)
+		}
+	}
+	return result
+}
+
+// applyReducedIntensity downgrades intensity one level across all modality budgets.
+func applyReducedIntensity(modalities []domain.ModalityBudget) []domain.ModalityBudget {
+	moderate := domain.IntensityModerate
+	low := domain.IntensityLow
+	for i, mb := range modalities {
+		if mb.IntensityOverride == nil {
+			modalities[i].IntensityOverride = &moderate
+		} else if *mb.IntensityOverride == domain.IntensityHigh {
+			modalities[i].IntensityOverride = &moderate
+		} else if *mb.IntensityOverride == domain.IntensityModerate {
+			modalities[i].IntensityOverride = &low
+		}
+	}
+	return modalities
 }
 
 // applyDimensionReductions lowers the session count when the user's

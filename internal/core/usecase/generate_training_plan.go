@@ -61,13 +61,10 @@ func (uc *GenerateTrainingPlanUsecase) Execute(
 	// ── Layer 0: Budget calculation ──────────────────────────────
 	prefs := training.ParseTrainingPreferences(input.User)
 	dimensions := training.TranslateCheckin(input.Checkin)
-	budget := training.CalculateBudget(prefs, input.Phase, dimensions)
+	budget := training.CalculateBudget(prefs, input.Phase, dimensions, input.Checkin.ModalitySkip)
 
 	// ── Build constraints for the LLM ────────────────────────────
 	constraints := training.BuildConstraints(input.Phase)
-
-	log.Printf("[training.generate] checkin input: %v",
-		input.Checkin)
 
 	log.Printf("[training.generate] checkin dimensions: recovery=%s bandwidth=%s build=%s",
 		dimensions.Recovery, dimensions.Bandwidth, dimensions.Build)
@@ -77,9 +74,10 @@ func (uc *GenerateTrainingPlanUsecase) Execute(
 
 	// ── Layer 1: LLM generates structure ─────────────────────────
 	genInput := StructureGenerationInput{
-		Phase:       input.Phase,
-		Budget:      budget,
-		Constraints: constraints,
+		Phase:        input.Phase,
+		Budget:       budget,
+		Constraints:  constraints,
+		ModalitySkip: input.Checkin.ModalitySkip,
 	}
 
 	arrangement, tokens, err := uc.generator.GenerateWeekStructure(ctx, genInput)

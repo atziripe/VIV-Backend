@@ -118,6 +118,18 @@ func buildStructureUserPrompt(input usecase.StructureGenerationInput) string {
 	b.WriteString(fmt.Sprintf("\nSession duration: %d minutes each\n", input.Budget.DurationMinutes))
 	b.WriteString(fmt.Sprintf("Total sessions: %d\n", input.Budget.TotalSessions))
 
+	if input.ModalitySkip != "" {
+		b.WriteString("\nUser preference for this week (from check-in):\n")
+		for _, skip := range strings.Split(input.ModalitySkip, ",") {
+			skip = strings.TrimSpace(skip)
+			if strings.ToLower(skip) == "lighter" {
+				b.WriteString("- User requested lighter sessions this week. Respect the intensity overrides above.\n")
+			} else if skip != "" {
+				b.WriteString(fmt.Sprintf("- User is skipping %s this week. Do NOT include it even if it fits the phase.\n", skip))
+			}
+		}
+	}
+
 	if len(input.Constraints) > 0 {
 		b.WriteString("\nSpacing constraints (MUST respect):\n")
 		for _, c := range input.Constraints {

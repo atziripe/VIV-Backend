@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"viv/internal/core/usecase"
@@ -24,6 +25,7 @@ type createCheckinRequest struct {
 	PMSSymptoms     *string `json:"pms_symptoms"` // opcional, just in luteal and menstrual phase
 	Predictability  string  `json:"predictability"`
 	Readiness       string  `json:"readiness"`
+	ModalitySkip    string  `json:"modality_skip,omitempty"`
 	AdditionalNotes string  `json:"additional_notes"`
 }
 
@@ -40,6 +42,7 @@ type createCheckinResponse struct {
 	PMSSymptoms     *string `json:"pms_symptoms"` // opcional, just in luteal and menstrual phase
 	Predictability  string  `json:"predictability"`
 	Readiness       string  `json:"readiness"`
+	ModalitySkip    string  `json:"modality_skip"`
 	AdditionalNotes string  `json:"additional_notes"`
 }
 
@@ -59,7 +62,7 @@ func NewCheckinHandler(createUC *usecase.CreateCheckinUseCase, latestUC *usecase
 	return &CheckinHandler{CreateUC: createUC, LatestUC: latestUC, StatusUC: statusUC}
 }
 
-// Método para registrar en el router: r.Post("/checkins", checkinHandler.Create)
+// POST /checkins
 func (h *CheckinHandler) Create(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -83,7 +86,6 @@ func (h *CheckinHandler) Create(w http.ResponseWriter, r *http.Request) {
 	now := time.Now().UTC()
 	weekStart := startOfWeekMondayUTC(now)
 
-	// Parsear cycle_start si viene
 	var cycleStart *time.Time
 	if req.CycleStart != nil && *req.CycleStart != "" {
 		t, err := time.Parse("2006-01-02", *req.CycleStart)
@@ -107,6 +109,7 @@ func (h *CheckinHandler) Create(w http.ResponseWriter, r *http.Request) {
 		PMSSymptoms:     req.PMSSymptoms,
 		Predictability:  req.Predictability,
 		Readiness:       req.Readiness,
+		ModalitySkip:    normalizeModalitySkip(req.ModalitySkip),
 		AdditionalNotes: req.AdditionalNotes,
 	}
 
@@ -131,7 +134,6 @@ func (h *CheckinHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// formatear fechas a string para la respuesta
 	weekStartStr := out.Checkin.WeekStart.Format("2006-01-02")
 	createdAtStr := out.Checkin.CreatedAt.Format(time.RFC3339)
 	var cycleStartStr *string
@@ -153,6 +155,7 @@ func (h *CheckinHandler) Create(w http.ResponseWriter, r *http.Request) {
 		PMSSymptoms:     (*string)(out.Checkin.PMSSymptoms),
 		Predictability:  string(out.Checkin.Predictability),
 		Readiness:       string(out.Checkin.Readiness),
+		ModalitySkip:    string(out.Checkin.ModalitySkip),
 		AdditionalNotes: out.Checkin.AdditionalNotes,
 	}
 
@@ -213,6 +216,7 @@ func (h *CheckinHandler) Latest(w http.ResponseWriter, r *http.Request) {
 		PMSSymptoms:     (*string)(ch.PMSSymptoms),
 		Predictability:  string(ch.Predictability),
 		Readiness:       string(ch.Readiness),
+		ModalitySkip:    string(ch.ModalitySkip),
 		AdditionalNotes: string(ch.AdditionalNotes),
 	}
 
@@ -262,8 +266,35 @@ func (h *CheckinHandler) Status(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(resp)
 }
 
+// --------- HELPERS ------------
+
+// normalizeModalitySkip converts chip labels from the UI to the internal format.
+// Input:  "Lighter sessions,Skip HIIT,Skip Pilates"
+// Output: "lighter,HIIT,Pilates"
+func normalizeModalitySkip(raw string) string {
+	if strings.TrimSpace(raw) == "" {
+		return ""
+	}
+	var result []string
+	for _, part := range strings.Split(raw, ",") {
+		part = strings.TrimSpace(part)
+		lower := strings.ToLower(part)
+
+		switch {
+		case lower == "same as usual" || lower == "":
+			// no-op — ignore
+		case lower == "lighter sessions":
+			result = append(result, "lighter")
+		case strings.HasPrefix(lower, "skip "):
+			modality := strings.TrimPrefix(part, "Skip ")
+			modality = strings.TrimPrefix(modality, "skip ")
+			result = append(result, strings.TrimSpace(modality))
+		}
+	}
+	return strings.Join(result, ",")
+}
+
 func startOfWeekMondayUTC(t time.Time) time.Time {
-	// normaliza a medianoche
 	d := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
 
 	// Go: Sunday=0 ... Saturday=6
@@ -271,6 +302,5 @@ func startOfWeekMondayUTC(t time.Time) time.Time {
 	if wd == 0 {
 		wd = 7
 	}
-	// lunes = 1 → restar wd-1 días
 	return d.AddDate(0, 0, -(wd - 1))
 }
