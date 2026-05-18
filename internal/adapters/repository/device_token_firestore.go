@@ -106,6 +106,13 @@ func (r *FCMRepository) SendPush(ctx context.Context, token, title, body string)
 			Title: title,
 			Body:  body,
 		},
+		APNS: &messaging.APNSConfig{
+			Payload: &messaging.APNSPayload{
+				Aps: &messaging.Aps{
+					Sound: "default", // sound and vibration
+				},
+			},
+		},
 		Token: token,
 	})
 	return err

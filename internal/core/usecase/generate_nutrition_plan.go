@@ -61,17 +61,22 @@ func (uc *GenerateNutritionPlanUsecase) Execute(
 		input.Checkin,
 	)
 
-	// ── Layer 1: Meal content via LLM ────────────────────────────
+	// ── Layer 1: Meal content via LLM (with 1 retry) ────────────────────────────
 	var tokens TokenUsage
 
 	mealDays, mealTokens, err := uc.mealGenerator.GenerateWeekMeals(ctx, mealInput)
 	if err != nil {
 		// Don't fail entirely — return nutrition plan without meal content
-		log.Printf("[nutrition.generate] meal generation failed: %v", err)
-		return GenerateNutritionPlanOutput{
-			Plan:       nutritionPlan,
-			TokensUsed: tokens,
-		}, nil
+		log.Printf("[nutrition.generate] first attempt failed: %v, retrying", err)
+
+		mealDays, mealTokens, err = uc.mealGenerator.GenerateWeekMeals(ctx, mealInput)
+		if err != nil {
+			log.Printf("[nutrition.generate] retry also failed: %v", err)
+			return GenerateNutritionPlanOutput{
+				Plan:       nutritionPlan,
+				TokensUsed: tokens,
+			}, nil
+		}
 	}
 	tokens = mealTokens
 

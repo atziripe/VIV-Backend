@@ -223,6 +223,8 @@ func buildMealUserPrompt(input usecase.MealGenerationInput) string {
 
 func sanitizeJSON(s string) string {
 	s = strings.TrimSpace(s)
+
+	// Remove markdown code fences
 	if strings.HasPrefix(s, "```") {
 		s = strings.TrimPrefix(s, "```json")
 		s = strings.TrimPrefix(s, "```")
@@ -230,5 +232,17 @@ func sanitizeJSON(s string) string {
 		s = strings.TrimSuffix(s, "```")
 		s = strings.TrimSpace(s)
 	}
+
+	// Remove trailing commas before } or ] (common LLM mistake)
+	// e.g., {"key": "value",} → {"key": "value"}
+	for _, pair := range []struct{ bad, good string }{
+		{",}", "}"},
+		{",]", "]"},
+		{", }", "}"},
+		{", ]", "]"},
+	} {
+		s = strings.ReplaceAll(s, pair.bad, pair.good)
+	}
+
 	return s
 }
