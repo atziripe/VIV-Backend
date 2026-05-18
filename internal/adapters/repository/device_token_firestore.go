@@ -113,6 +113,13 @@ func (r *FCMRepository) SendPush(ctx context.Context, token, title, body string)
 				},
 			},
 		},
+		Android: &messaging.AndroidConfig{
+			Notification: &messaging.AndroidNotification{
+				Sound:       "default",
+				Priority:    messaging.PriorityHigh,
+				ClickAction: "FLUTTER_NOTIFICATION_CLICK",
+			},
+		},
 		Token: token,
 	})
 	return err
