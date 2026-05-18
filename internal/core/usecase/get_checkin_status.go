@@ -59,8 +59,7 @@ func (uc *GetCheckinStatusUseCase) Execute(ctx context.Context, in GetCheckinSta
 		}
 		// No Sunday has passed yet since onboarding — just wait
 		return &GetCheckinStatusOutput{
-			//CanCheckin:      false,
-			CanCheckin:      true,
+			CanCheckin:      false,
 			NeedCheckin:     false,
 			NextAvailableAt: &nextSundayAt,
 		}, nil
@@ -72,8 +71,7 @@ func (uc *GetCheckinStatusUseCase) Execute(ctx context.Context, in GetCheckinSta
 	if checkedInAfterLastSunday {
 		// All good, wait for next Sunday
 		return &GetCheckinStatusOutput{
-			CanCheckin: true,
-			//CanCheckin:      false,
+			CanCheckin:      false,
 			NeedCheckin:     false,
 			NextAvailableAt: &nextSundayAt,
 		}, nil
