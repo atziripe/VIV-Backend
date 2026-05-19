@@ -268,8 +268,6 @@ func main() {
 			log.Printf("[scheduler] error: %v", err)
 		}
 	})
-	c.Start()
-	defer c.Stop()
 
 	// Training reminder
 	c.AddFunc("0 * * * *", func() {
@@ -295,6 +293,9 @@ func main() {
 			}
 		}
 	})
+
+	c.Start()
+	defer c.Stop()
 
 	// ========= 8. Levantar servidor HTTP =========
 	port := os.Getenv("PORT")
