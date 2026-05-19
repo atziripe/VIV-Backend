@@ -39,14 +39,30 @@ func (r *NeonPlanRepository) Create(ctx context.Context, p *domain.Plan) error {
 
 	var checkinUUID *string
 	if strings.TrimSpace(p.CheckinID) != "" {
-		row := r.pool.QueryRow(ctx,
-			`SELECT id FROM checkins WHERE firestore_id = $1`, p.CheckinID,
-		)
 		var cid string
-		if err := row.Scan(&cid); err == nil {
+		if err := r.pool.QueryRow(ctx,
+			`SELECT id FROM checkins WHERE firestore_id = $1`, p.CheckinID,
+		).Scan(&cid); err == nil {
 			checkinUUID = &cid
 		}
 	}
+
+	// Snapshot the current cycle from user_cycles — not in domain.Plan but
+	// critical for ML queries ("what phase was she in when this plan was generated?")
+	var (
+		cycleDay      *int
+		cycleDuration *string
+		cyclePhase    *string
+		cycleType     *string
+		cycleAnchorAt *time.Time
+	)
+	r.pool.QueryRow(ctx, `
+		SELECT c.cycle_day, c.cycle_duration, c.cycle_phase, c.cycle_type, c.cycle_anchor_at
+		FROM user_cycles c
+		JOIN users u ON u.id = c.user_id
+		WHERE u.firebase_uid = $1
+	`, p.UserID).Scan(&cycleDay, &cycleDuration, &cyclePhase, &cycleType, &cycleAnchorAt)
+	// intentionally ignore error — cycle fields are nullable, plan still saves
 
 	var newID string
 	err = r.pool.QueryRow(ctx, `
@@ -55,13 +71,15 @@ func (r *NeonPlanRepository) Create(ctx context.Context, p *domain.Plan) error {
 			training_json, nutrition_json, recovery_json,
 			cycle_day_range, plan_version, status,
 			generated_from, source_event_id,
+			cycle_day, cycle_duration, cycle_phase, cycle_type, cycle_anchor_at,
 			created_at
 		) VALUES (
 			$1, $2, $3,
 			$4, $5, $6,
 			$7, $8, $9,
 			$10, $11,
-			$12
+			$12, $13, $14, $15, $16,
+			$17
 		)
 		ON CONFLICT (firestore_id) DO NOTHING
 		RETURNING id
@@ -70,6 +88,7 @@ func (r *NeonPlanRepository) Create(ctx context.Context, p *domain.Plan) error {
 		jsonbOrNull(p.TrainingJSON), jsonbOrNull(p.NutritionJSON), jsonbOrNull(p.RecoveryJSON),
 		p.CycleDayRange, p.PlanVersion, p.Status,
 		p.GeneratedFrom, p.SourceEventID,
+		cycleDay, cycleDuration, cyclePhase, cycleType, cycleAnchorAt,
 		p.CreatedAt,
 	).Scan(&newID)
 
@@ -251,12 +270,12 @@ func (r *NeonPlanRepository) IsTrainingDay(ctx context.Context, userID, weekday 
 
 func scanPlan(row pgx.Row) (*domain.Plan, error) {
 	var (
-		p                   domain.Plan
-		firestoreID         *string
-		checkinFirestoreID  *string
-		trainingJSON        []byte
-		nutritionJSON       []byte
-		recoveryJSON        []byte
+		p                  domain.Plan
+		firestoreID        *string
+		checkinFirestoreID *string
+		trainingJSON       []byte
+		nutritionJSON      []byte
+		recoveryJSON       []byte
 	)
 
 	err := row.Scan(
