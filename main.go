@@ -29,6 +29,8 @@ import (
 	"github.com/getsentry/sentry-go"
 	sentryhttp "github.com/getsentry/sentry-go/http"
 
+	_ "time/tzdata"
+
 	cron "github.com/robfig/cron/v3"
 )
 
@@ -270,7 +272,7 @@ func main() {
 	})
 
 	// Training reminder
-	c.AddFunc("30 * * * *", func() {
+	c.AddFunc("40 * * * *", func() {
 		log.Printf("[scheduler] training reminder tick - checking timezones")
 		ctx := context.Background()
 		tokensByTimezone, err := trainingReminderUC.DeviceToken.GetAllActiveByTimezone(ctx)
