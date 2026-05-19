@@ -44,6 +44,7 @@ func (uc *SendTrainingReminderUseCase) ExecuteForTimezone(ctx context.Context, t
 
 	now := time.Now().In(loc)
 	weekday := strings.ToLower(now.Weekday().String())
+	log.Printf("[training_reminder] timezone: %s, weekday: %s, hour: %d, tokens: %d", timezone, weekday, now.Hour(), len(tokens))
 
 	msg := trainingMessages[rand.Intn(len(trainingMessages))]
 

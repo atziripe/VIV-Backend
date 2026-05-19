@@ -270,7 +270,7 @@ func main() {
 	})
 
 	// Training reminder
-	c.AddFunc("0 * * * *", func() {
+	c.AddFunc("30 * * * *", func() {
 		log.Printf("[scheduler] training reminder tick - checking timezones")
 		ctx := context.Background()
 		tokensByTimezone, err := trainingReminderUC.DeviceToken.GetAllActiveByTimezone(ctx)
@@ -284,6 +284,7 @@ func main() {
 		for timezone, tokens := range tokensByTimezone {
 			loc, err := time.LoadLocation(timezone)
 			if err != nil {
+				log.Printf("[scheduler] invalid timezone %s: %v", timezone, err)
 				continue
 			}
 			localHour := time.Now().In(loc).Hour()
