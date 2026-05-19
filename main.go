@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"log/slog"
 	"net/http"
 	stdhttp "net/http"
 	"os"
@@ -82,12 +83,44 @@ func main() {
 	defer fsClient.Close()
 
 	// ========= Repositories =========
-	userRepo := repository.NewFirestoreUserRepository(fsClient)
-	checkinRepo := repository.NewFirestoreCheckinRepository(fsClient)
-	lifestyleRepo := repository.NewFirestoreLifestyleChangeRepository(fsClient)
-	planRepo := repository.NewFirestorePlanRepository(fsClient)
-	planJobsRepo := repository.NewFirestorePlanJobsRepository(fsClient)
-	deviceTokenRepo := repository.NewFirestoreDeviceTokenRepository(fsClient)
+	// Firestore (primary — source of truth during migration)
+	fsUserRepo := repository.NewFirestoreUserRepository(fsClient)
+	fsCheckinRepo := repository.NewFirestoreCheckinRepository(fsClient)
+	fsLifestyleRepo := repository.NewFirestoreLifestyleChangeRepository(fsClient)
+	fsPlanRepo := repository.NewFirestorePlanRepository(fsClient)
+	fsPlanJobsRepo := repository.NewFirestorePlanJobsRepository(fsClient)
+	fsDeviceTokenRepo := repository.NewFirestoreDeviceTokenRepository(fsClient)
+
+	// Neon (secondary — dual-write target)
+	// If DATABASE_URL is missing or Neon is unreachable, the app falls back to
+	// Firestore-only mode and logs a warning. No crash, no downtime.
+	var (
+		userRepo        usecase.UserRepository        = fsUserRepo
+		checkinRepo     usecase.CheckinRepository     = fsCheckinRepo
+		planRepo        usecase.PlanRepository        = fsPlanRepo
+		planJobsRepo    usecase.PlanJobsRepository    = fsPlanJobsRepo
+		deviceTokenRepo usecase.DeviceTokenRepository = fsDeviceTokenRepo
+	)
+
+	if dbURL := os.Getenv("DATABASE_URL"); dbURL != "" {
+		neonPool, err := repository.NewNeonPool(ctx, dbURL)
+		if err != nil {
+			slog.Error("neon: failed to connect, running Firestore-only", "err", err)
+		} else {
+			slog.Info("neon: connected — dual-write enabled")
+			userRepo = repository.NewDualUserRepository(fsUserRepo, repository.NewNeonUserRepository(neonPool))
+			checkinRepo = repository.NewDualCheckinRepository(fsCheckinRepo, repository.NewNeonCheckinRepository(neonPool))
+			planRepo = repository.NewDualPlanRepository(fsPlanRepo, repository.NewNeonPlanRepository(neonPool))
+			planJobsRepo = repository.NewDualPlanJobsRepository(fsPlanJobsRepo, repository.NewNeonPlanJobsRepository(neonPool))
+			deviceTokenRepo = repository.NewDualDeviceTokenRepository(fsDeviceTokenRepo, repository.NewNeonDeviceTokenRepository(neonPool))
+		}
+	} else {
+		slog.Warn("DATABASE_URL not set — running Firestore-only (no dual-write)")
+	}
+
+	// lifestyleRepo has no Neon implementation yet — stays Firestore-only
+	lifestyleRepo := fsLifestyleRepo
+
 	fcmRepo := repository.NewFCMRepository(app)
 
 	if cfg.OpenAIAPIKey == "" {
@@ -120,7 +153,6 @@ func main() {
 	bannerLib, err := recovery.LoadBannerLibrary("internal/content/recovery")
 	if err != nil {
 		log.Printf("warning: banner library not loaded: %v", err)
-		// Don't fatal — banners work with fallback copy
 	} else {
 		log.Printf("recovery banner library loaded: %d entries", bannerLib.EntryCount())
 	}
@@ -152,10 +184,8 @@ func main() {
 	statusUC := usecase.NewGetPlanGenerationStatusUseCase(planJobsRepo)
 	completeDayUC := usecase.NewCompleteTrainingDayUseCase(planRepo)
 
-	// Plan runner — reuses the same job system as plans
 	trainingRunner := runner.NewLocalTrainingPlanRunner(planJobsRepo, generateTrainingUC, generateNutritionUC, userRepo, checkinRepo, cyclePhaseLookup, planRepo, 3*time.Minute)
 
-	// Training usecases — reuse StartPlanGeneration with the training runner
 	startTrainingUC := usecase.NewStartPlanGenerationUseCase(planJobsRepo, trainingRunner)
 	statusTrainingUC := usecase.NewGetPlanGenerationStatusUseCase(planJobsRepo)
 	saveArrangementUC := usecase.NewSaveTrainingArrangementUseCase(planRepo, userRepo, checkinRepo, trainingLib)
@@ -184,27 +214,19 @@ func main() {
 	// ========= Router config =========
 	r := chi.NewRouter()
 
-	// middlewares core
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(90 * time.Second))
 
-	// Public health check
 	r.Get("/health", func(w stdhttp.ResponseWriter, r *stdhttp.Request) {
 		w.WriteHeader(stdhttp.StatusOK)
 		_, _ = w.Write([]byte(`{"status":"ok"}`))
 	})
 
-	/*
-	   1) api = router con tus endpoints reales (SIN auth middleware)
-	   2) protected = router que aplica FirebaseAuthMiddleware
-	   3) /rpc vive en protected y reenvía a api
-	*/
 	api := chi.NewRouter()
 
-	// Rutas reales (sin auth aquí; el auth lo aplica el router "protected")
 	api.Post("/onboarding", onboardingHandler.ServeHTTP)
 
 	api.Post("/checkins", checkinHandler.Create)
@@ -250,7 +272,6 @@ func main() {
 		return nil
 	})
 
-	// Router protegido (aplica auth a TODO lo que montes dentro)
 	protected := chi.NewRouter()
 	protected.Use(httpadapter.FirebaseAuthMiddleware(authClient))
 	protected.Use(httpadapter.EnsureUserMiddleware(userRepo))
@@ -300,7 +321,7 @@ func main() {
 	c.Start()
 	defer c.Stop()
 
-	// ========= 8. Levantar servidor HTTP =========
+	// ========= Levantar servidor HTTP =========
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = cfg.HTTPPort
@@ -321,7 +342,6 @@ func main() {
 		}
 	}()
 
-	// ========= 9. Esperar signal y hacer graceful shutdown =========
 	<-ctx.Done()
 	log.Println("shutting down gracefully...")
 
@@ -335,7 +355,6 @@ func main() {
 	}
 }
 
-// initFirebaseApp extrae la lógica de inicialización
 func initFirebaseApp(ctx context.Context, cfg *config.Config) (*fb.App, error) {
 	opts := []option.ClientOption{}
 

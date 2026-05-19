@@ -1,0 +1,4 @@
+DROP VIEW IF EXISTS user_profiles_anon;
+DROP TABLE IF EXISTS user_profiles;
+DROP TABLE IF EXISTS users;
+DROP EXTENSION IF EXISTS "pgcrypto";
