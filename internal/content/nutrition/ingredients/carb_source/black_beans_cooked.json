@@ -1,0 +1,26 @@
+{
+  "id": "black_beans_cooked",
+  "version": 1,
+  "content_status": "draft_llm_generated",
+  "role": "carb_source",
+  "name": "Black beans, cooked",
+  "macros_per_100g": {
+    "calories": 132,
+    "protein_g": 8.9,
+    "carbs_g": 24,
+    "fat_g": 0.5
+  },
+  "contains": [],
+  "digestion_flags": [
+    "bloating",
+    "ibs_like_sensitivity"
+  ],
+  "unit_hint": {
+    "label": "cup",
+    "grams": 172
+  },
+  "min_grams": 80,
+  "max_grams": 300,
+  "author": null,
+  "created_at": "2026-07-13"
+}

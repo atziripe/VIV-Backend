@@ -1,0 +1,19 @@
+{
+  "id": "melon",
+  "version": 1,
+  "content_status": "draft_llm_generated",
+  "role": "fruit",
+  "name": "Melon",
+  "macros_per_100g": {
+    "calories": 34,
+    "protein_g": 0.8,
+    "carbs_g": 8.2,
+    "fat_g": 0.2
+  },
+  "contains": [],
+  "digestion_flags": [],
+  "min_grams": null,
+  "max_grams": null,
+  "author": null,
+  "created_at": "2026-07-13"
+}

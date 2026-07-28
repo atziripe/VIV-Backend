@@ -1,0 +1,27 @@
+{
+  "id": "oats_rolled",
+  "version": 1,
+  "content_status": "draft_llm_generated",
+  "role": "carb_source",
+  "name": "Rolled oats",
+  "macros_per_100g": {
+    "calories": 389,
+    "protein_g": 17,
+    "carbs_g": 66,
+    "fat_g": 7
+  },
+  "contains": [
+    "gluten"
+  ],
+  "digestion_flags": [
+    "ibs_like_sensitivity"
+  ],
+  "unit_hint": {
+    "label": "dry cup",
+    "grams": 80
+  },
+  "min_grams": 30,
+  "max_grams": 120,
+  "author": null,
+  "created_at": "2026-07-13"
+}

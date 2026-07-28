@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://viv-backend/internal/content/nutrition/ingredient.schema.json",
+  "title": "VIV Nutrition Ingredient",
+  "description": "Componente base de la librería de ingredientes. Reemplaza recipe.schema.json: un ingrediente es objetivo (mismo pollo sirve para cualquier cocina), la identidad de sabor/cocina vive en meal_template.schema.json, no aquí.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id", "version", "content_status", "role", "name",
+    "macros_per_100g", "min_grams", "max_grams", "created_at"
+  ],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+    "version": { "type": "integer", "minimum": 1 },
+    "content_status": {
+      "type": "string",
+      "enum": ["draft_llm_generated", "draft_human_written", "reviewed", "approved"]
+    },
+
+    "role": {
+      "type": "string",
+      "enum": ["protein_source", "carb_source", "fat_source", "vegetable", "fruit"],
+      "description": "Determina qué slot de un meal_template puede llenar. protein_source/carb_source/fat_source son las 3 incógnitas que resuelve el solver; vegetable/fruit se agregan en cantidad fija (no se resuelven, su aporte macro es marginal)."
+    },
+    "name": { "type": "string", "minLength": 1 },
+
+    "macros_per_100g": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["calories", "protein_g", "carbs_g", "fat_g"],
+      "description": "Macros por 100g — la unidad que el solver usa para construir el sistema de ecuaciones. NO son macros de una porción.",
+      "properties": {
+        "calories": { "type": "number", "exclusiveMinimum": 0 },
+        "protein_g": { "type": "number", "minimum": 0 },
+        "carbs_g": { "type": "number", "minimum": 0 },
+        "fat_g": { "type": "number", "minimum": 0 }
+      }
+    },
+
+    "contains": {
+      "type": "array",
+      "uniqueItems": true,
+      "description": "Filtro duro — igual vocabulario que antes.",
+      "items": {
+        "type": "string",
+        "enum": ["meat", "fish", "egg", "dairy", "gluten", "caffeine", "nuts", "shellfish"]
+      }
+    },
+    "digestion_flags": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": ["bloating", "reflux", "sensitive_stomach", "constipation", "ibs_like_sensitivity"]
+      }
+    },
+
+    "unit_hint": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Para redondear el resultado del solver a una porción humana legible, ej. huevos en unidades de 1, no '110g'.",
+      "required": ["label", "grams"],
+      "properties": {
+        "label": { "type": "string", "description": "ej. 'large egg', 'tbsp', 'cooked cup'" },
+        "grams": { "type": "number", "exclusiveMinimum": 0, "description": "gramos por unidad" }
+      }
+    },
+
+    "min_grams": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Piso realista de porción. El solver clampa a este rango — nunca sugiere '8g de pollo'."
+    },
+    "max_grams": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "Techo realista de porción. El solver clampa a este rango — nunca sugiere '600g de arroz'."
+    },
+
+    "author": { "type": ["string", "null"] },
+    "created_at": { "type": "string", "format": "date" }
+  }
+}

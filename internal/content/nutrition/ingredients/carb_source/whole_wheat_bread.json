@@ -1,0 +1,27 @@
+{
+  "id": "whole_wheat_bread",
+  "version": 1,
+  "content_status": "draft_llm_generated",
+  "role": "carb_source",
+  "name": "Whole wheat bread",
+  "macros_per_100g": {
+    "calories": 247,
+    "protein_g": 13,
+    "carbs_g": 41,
+    "fat_g": 3.4
+  },
+  "contains": [
+    "gluten"
+  ],
+  "digestion_flags": [
+    "ibs_like_sensitivity"
+  ],
+  "unit_hint": {
+    "label": "slice",
+    "grams": 32
+  },
+  "min_grams": 30,
+  "max_grams": 150,
+  "author": null,
+  "created_at": "2026-07-13"
+}

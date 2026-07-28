@@ -1,0 +1,19 @@
+{
+  "id": "grapes",
+  "version": 1,
+  "content_status": "draft_llm_generated",
+  "role": "fruit",
+  "name": "Grapes",
+  "macros_per_100g": {
+    "calories": 69,
+    "protein_g": 0.7,
+    "carbs_g": 18,
+    "fat_g": 0.2
+  },
+  "contains": [],
+  "digestion_flags": [],
+  "min_grams": null,
+  "max_grams": null,
+  "author": null,
+  "created_at": "2026-07-13"
+}

@@ -1,0 +1,29 @@
+{
+  "id": "breakfast_simple_bowl",
+  "version": 1,
+  "content_status": "draft_llm_generated",
+  "meal_type": "breakfast",
+  "name": "Simple breakfast bowl",
+  "slots": [
+    {
+      "role": "protein_source"
+    },
+    {
+      "role": "carb_source"
+    },
+    {
+      "role": "fat_source"
+    },
+    {
+      "role": "fruit",
+      "fixed_grams": 100
+    }
+  ],
+  "cuisine": "american",
+  "eating_style_tags": [
+    "simple_quick",
+    "meal_prep_friendly"
+  ],
+  "author": null,
+  "created_at": "2026-07-13"
+}

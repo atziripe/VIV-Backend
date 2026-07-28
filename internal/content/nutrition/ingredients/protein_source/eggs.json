@@ -1,0 +1,25 @@
+{
+  "id": "eggs",
+  "version": 1,
+  "content_status": "draft_llm_generated",
+  "role": "protein_source",
+  "name": "Eggs",
+  "macros_per_100g": {
+    "calories": 155,
+    "protein_g": 13,
+    "carbs_g": 1.1,
+    "fat_g": 11
+  },
+  "contains": [
+    "egg"
+  ],
+  "digestion_flags": [],
+  "unit_hint": {
+    "label": "large egg",
+    "grams": 50
+  },
+  "min_grams": 50,
+  "max_grams": 200,
+  "author": null,
+  "created_at": "2026-07-13"
+}

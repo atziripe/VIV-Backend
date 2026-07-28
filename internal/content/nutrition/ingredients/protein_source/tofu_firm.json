@@ -1,0 +1,23 @@
+{
+  "id": "tofu_firm",
+  "version": 1,
+  "content_status": "draft_llm_generated",
+  "role": "protein_source",
+  "name": "Firm tofu",
+  "macros_per_100g": {
+    "calories": 144,
+    "protein_g": 15.5,
+    "carbs_g": 2.3,
+    "fat_g": 8.7
+  },
+  "contains": [],
+  "digestion_flags": [],
+  "unit_hint": {
+    "label": "block",
+    "grams": 396
+  },
+  "min_grams": 80,
+  "max_grams": 300,
+  "author": null,
+  "created_at": "2026-07-13"
+}

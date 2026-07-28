@@ -18,9 +18,11 @@ import (
 
 	httpadapter "viv/internal/adapters/http"
 	"viv/internal/adapters/llm/openai"
+	"viv/internal/adapters/mealgen"
 	"viv/internal/adapters/repository"
 	"viv/internal/adapters/runner"
 	"viv/internal/config"
+	corenutrition "viv/internal/core/nutrition"
 	"viv/internal/core/recovery"
 	"viv/internal/core/rules"
 	rulestraining "viv/internal/core/rules/training"
@@ -146,7 +148,24 @@ func main() {
 	)
 
 	// ========= Nutrition Pipeline =========
-	mealGen := openai.NewMealContentGenerator(oaClient)
+	// Deterministic ingredient/template/solver library, replacing the live
+	// LLM call (openai.NewMealContentGenerator) — see design discussion:
+	// a curated ingredient library + a per-user macro solve is faster,
+	// cheaper, and doesn't need a schema-conformance retry loop the way
+	// free-form LLM generation does.
+	nutritionIngredients, err := corenutrition.LoadIngredientLibrary("internal/content/nutrition")
+	if err != nil {
+		log.Fatalf("failed to load nutrition ingredient library: %v", err)
+	}
+	log.Printf("nutrition ingredient library loaded: %d ingredients", nutritionIngredients.Count())
+
+	nutritionTemplates, err := corenutrition.LoadMealTemplateLibrary("internal/content/nutrition")
+	if err != nil {
+		log.Fatalf("failed to load nutrition template library: %v", err)
+	}
+	log.Printf("nutrition template library loaded: %d templates", nutritionTemplates.Count())
+
+	mealGen := mealgen.New(nutritionIngredients, nutritionTemplates)
 	generateNutritionUC := usecase.NewGenerateNutritionPlanUsecase(mealGen)
 
 	// ========= Recovery Pipeline =========

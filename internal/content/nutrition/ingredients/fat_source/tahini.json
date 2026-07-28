@@ -1,0 +1,23 @@
+{
+  "id": "tahini",
+  "version": 1,
+  "content_status": "draft_llm_generated",
+  "role": "fat_source",
+  "name": "Tahini",
+  "macros_per_100g": {
+    "calories": 595,
+    "protein_g": 17,
+    "carbs_g": 21,
+    "fat_g": 54
+  },
+  "contains": [],
+  "digestion_flags": [],
+  "unit_hint": {
+    "label": "tbsp",
+    "grams": 15
+  },
+  "min_grams": 8,
+  "max_grams": 40,
+  "author": null,
+  "created_at": "2026-07-13"
+}

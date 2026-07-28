@@ -1,0 +1,26 @@
+{
+  "id": "chickpeas_cooked",
+  "version": 1,
+  "content_status": "draft_llm_generated",
+  "role": "carb_source",
+  "name": "Chickpeas, cooked",
+  "macros_per_100g": {
+    "calories": 164,
+    "protein_g": 8.9,
+    "carbs_g": 27,
+    "fat_g": 2.6
+  },
+  "contains": [],
+  "digestion_flags": [
+    "bloating",
+    "ibs_like_sensitivity"
+  ],
+  "unit_hint": {
+    "label": "cup",
+    "grams": 164
+  },
+  "min_grams": 80,
+  "max_grams": 300,
+  "author": null,
+  "created_at": "2026-07-13"
+}

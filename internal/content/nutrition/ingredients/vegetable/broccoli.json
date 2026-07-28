@@ -1,0 +1,21 @@
+{
+  "id": "broccoli",
+  "version": 1,
+  "content_status": "draft_llm_generated",
+  "role": "vegetable",
+  "name": "Broccoli",
+  "macros_per_100g": {
+    "calories": 34,
+    "protein_g": 2.8,
+    "carbs_g": 7,
+    "fat_g": 0.4
+  },
+  "contains": [],
+  "digestion_flags": [
+    "bloating"
+  ],
+  "min_grams": null,
+  "max_grams": null,
+  "author": null,
+  "created_at": "2026-07-13"
+}

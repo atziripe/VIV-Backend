@@ -1,0 +1,23 @@
+{
+  "id": "potato",
+  "version": 1,
+  "content_status": "draft_llm_generated",
+  "role": "carb_source",
+  "name": "Potato, roasted",
+  "macros_per_100g": {
+    "calories": 93,
+    "protein_g": 2.1,
+    "carbs_g": 21,
+    "fat_g": 0.1
+  },
+  "contains": [],
+  "digestion_flags": [],
+  "unit_hint": {
+    "label": "medium potato",
+    "grams": 150
+  },
+  "min_grams": 100,
+  "max_grams": 350,
+  "author": null,
+  "created_at": "2026-07-13"
+}

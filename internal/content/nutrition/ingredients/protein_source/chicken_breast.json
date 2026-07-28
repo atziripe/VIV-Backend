@@ -1,0 +1,25 @@
+{
+  "id": "chicken_breast",
+  "version": 1,
+  "content_status": "draft_llm_generated",
+  "role": "protein_source",
+  "name": "Chicken breast",
+  "macros_per_100g": {
+    "calories": 165,
+    "protein_g": 31,
+    "carbs_g": 0,
+    "fat_g": 3.6
+  },
+  "contains": [
+    "meat"
+  ],
+  "digestion_flags": [],
+  "unit_hint": {
+    "label": "raw chicken breast",
+    "grams": 150
+  },
+  "min_grams": 60,
+  "max_grams": 220,
+  "author": null,
+  "created_at": "2026-07-13"
+}

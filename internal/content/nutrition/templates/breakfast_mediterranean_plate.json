@@ -1,0 +1,28 @@
+{
+  "id": "breakfast_mediterranean_plate",
+  "version": 1,
+  "content_status": "draft_llm_generated",
+  "meal_type": "breakfast",
+  "name": "Mediterranean breakfast plate",
+  "slots": [
+    {
+      "role": "protein_source"
+    },
+    {
+      "role": "carb_source"
+    },
+    {
+      "role": "fat_source"
+    },
+    {
+      "role": "vegetable",
+      "fixed_grams": 60
+    }
+  ],
+  "cuisine": "mediterranean",
+  "eating_style_tags": [
+    "home_cooked"
+  ],
+  "author": null,
+  "created_at": "2026-07-13"
+}

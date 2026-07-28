@@ -1,0 +1,79 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://viv-backend/internal/content/nutrition/meal_template.schema.json",
+  "title": "VIV Meal Template",
+  "description": "Reemplaza la 'receta' como unidad de autoría. Un template define ESTRUCTURA (qué roles llenar) e IDENTIDAD (cocina, estilo), no cantidades — las cantidades las calcula el solver contra el macro target real de la usuaria.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "version", "content_status", "meal_type", "name", "slots", "created_at"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+    "version": { "type": "integer", "minimum": 1 },
+    "content_status": {
+      "type": "string",
+      "enum": ["draft_llm_generated", "draft_human_written", "reviewed", "approved"]
+    },
+
+    "meal_type": {
+      "type": "string",
+      "enum": ["breakfast", "lunch", "dinner", "pre_training"]
+    },
+    "name": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+
+    "slots": {
+      "type": "array",
+      "description": "Qué roles de ingrediente llenar. Exactamente un slot por cada uno de protein_source/carb_source/fat_source (las 3 incógnitas del solver) — vegetable/fruit son opcionales y de cantidad fija.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role"],
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": ["protein_source", "carb_source", "fat_source", "vegetable", "fruit"]
+          },
+          "fixed_grams": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "description": "Solo para vegetable/fruit — cantidad fija, no se resuelve. protein/carb/fat_source NUNCA llevan esto, el solver los calcula."
+          },
+          "preferred_ingredient_ids": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Opcional — restringe el pool de ingredientes candidatos para este slot a una lista curada (ej. 'para este template, la fuente de grasa debe ser oliva o aguacate, no mantequilla')."
+          }
+        }
+      }
+    },
+
+    "cuisine": {
+      "type": "string",
+      "enum": ["mediterranean", "asian", "latin", "american", "middle_eastern"],
+      "description": "A diferencia del ingrediente, aquí sí vive la identidad de cocina — la sazón/preparación es lo que hace 'mexicano' a un plato, no el pollo en sí."
+    },
+    "eating_style_tags": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": ["simple_quick", "home_cooked", "eat_out_friendly", "meal_prep_friendly"]
+      }
+    },
+    "phase_notes": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "menstrual": { "type": "string", "minLength": 1 },
+        "follicular": { "type": "string", "minLength": 1 },
+        "ovulatory": { "type": "string", "minLength": 1 },
+        "early_luteal": { "type": "string", "minLength": 1 },
+        "late_luteal": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "author": { "type": ["string", "null"] },
+    "created_at": { "type": "string", "format": "date" }
+  }
+}

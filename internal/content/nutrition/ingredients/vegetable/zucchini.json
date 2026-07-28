@@ -1,0 +1,19 @@
+{
+  "id": "zucchini",
+  "version": 1,
+  "content_status": "draft_llm_generated",
+  "role": "vegetable",
+  "name": "Zucchini",
+  "macros_per_100g": {
+    "calories": 17,
+    "protein_g": 1.2,
+    "carbs_g": 3.1,
+    "fat_g": 0.3
+  },
+  "contains": [],
+  "digestion_flags": [],
+  "min_grams": null,
+  "max_grams": null,
+  "author": null,
+  "created_at": "2026-07-13"
+}

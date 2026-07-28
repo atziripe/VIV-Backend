@@ -1,0 +1,23 @@
+{
+  "id": "rice_cakes",
+  "version": 1,
+  "content_status": "draft_llm_generated",
+  "role": "carb_source",
+  "name": "Rice cakes",
+  "macros_per_100g": {
+    "calories": 387,
+    "protein_g": 8,
+    "carbs_g": 82,
+    "fat_g": 2.8
+  },
+  "contains": [],
+  "digestion_flags": [],
+  "unit_hint": {
+    "label": "cake",
+    "grams": 9
+  },
+  "min_grams": 10,
+  "max_grams": 60,
+  "author": null,
+  "created_at": "2026-07-13"
+}

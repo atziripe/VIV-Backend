@@ -1,0 +1,19 @@
+{
+  "id": "cucumber",
+  "version": 1,
+  "content_status": "draft_llm_generated",
+  "role": "vegetable",
+  "name": "Cucumber",
+  "macros_per_100g": {
+    "calories": 15,
+    "protein_g": 0.7,
+    "carbs_g": 3.6,
+    "fat_g": 0.1
+  },
+  "contains": [],
+  "digestion_flags": [],
+  "min_grams": null,
+  "max_grams": null,
+  "author": null,
+  "created_at": "2026-07-13"
+}
