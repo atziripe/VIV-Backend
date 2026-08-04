@@ -13,17 +13,27 @@ import (
 	"viv/internal/core/usecase"
 )
 
+// CopyEnricher enriches meal-option copy in the background, after the plan
+// is already saved and the job marked done — see
+// mealgen.AsyncCopyEnricher. Optional: leave nil to skip this step entirely
+// (e.g. no OpenAI key configured, tests) without touching the rest of the
+// pipeline.
+type CopyEnricher interface {
+	EnrichAsync(userID, planID string, plan domain.NutritionWeekPlan)
+}
+
 // LocalTrainingPlanRunner runs training plan generation asynchronously.
 // Same pattern as LocalPlanGenerationRunner but uses the new training pipeline.
 type LocalTrainingPlanRunner struct {
-	jobsRepo    usecase.PlanJobsRepository
-	traningUC   *usecase.GenerateTrainingPlanUsecase
-	nutritionUC *usecase.GenerateNutritionPlanUsecase
-	userRepo    usecase.UserRepository
-	checkinRepo usecase.CheckinRepository
-	cycleSync   usecase.CyclePhaseLookup
-	planRepo    usecase.PlanRepository
-	timeout     time.Duration
+	jobsRepo     usecase.PlanJobsRepository
+	traningUC    *usecase.GenerateTrainingPlanUsecase
+	nutritionUC  *usecase.GenerateNutritionPlanUsecase
+	userRepo     usecase.UserRepository
+	checkinRepo  usecase.CheckinRepository
+	cycleSync    usecase.CyclePhaseLookup
+	planRepo     usecase.PlanRepository
+	copyEnricher CopyEnricher
+	timeout      time.Duration
 }
 
 func NewLocalTrainingPlanRunner(
@@ -34,20 +44,22 @@ func NewLocalTrainingPlanRunner(
 	checkinRepo usecase.CheckinRepository,
 	cycleSync usecase.CyclePhaseLookup,
 	planRepo usecase.PlanRepository,
+	copyEnricher CopyEnricher,
 	timeout time.Duration,
 ) *LocalTrainingPlanRunner {
 	if timeout <= 0 {
 		timeout = 3 * time.Minute
 	}
 	return &LocalTrainingPlanRunner{
-		jobsRepo:    jobsRepo,
-		traningUC:   traningUC,
-		nutritionUC: nutritionUC,
-		userRepo:    userRepo,
-		checkinRepo: checkinRepo,
-		cycleSync:   cycleSync,
-		planRepo:    planRepo,
-		timeout:     timeout,
+		jobsRepo:     jobsRepo,
+		traningUC:    traningUC,
+		nutritionUC:  nutritionUC,
+		userRepo:     userRepo,
+		checkinRepo:  checkinRepo,
+		cycleSync:    cycleSync,
+		planRepo:     planRepo,
+		copyEnricher: copyEnricher,
+		timeout:      timeout,
 	}
 }
 
@@ -181,6 +193,7 @@ func (r *LocalTrainingPlanRunner) Run(userID, jobID, checkinID string) {
 			TrainingPlan: trainingOutput.Plan,
 		})
 		nutritionDuration := time.Since(startNutrition)
+		nutritionSucceeded := err == nil // captured before err gets reassigned below (marshal, save, ...)
 
 		var nutritionJSON []byte
 		if err != nil {
@@ -234,6 +247,13 @@ func (r *LocalTrainingPlanRunner) Run(userID, jobID, checkinID string) {
 		user.LastActivePlanID = &plan.ID
 		if err := r.userRepo.Save(ctx, user); err != nil {
 			log.Printf("[plan.runner] update LastActivePlanID failed user=%s plan=%s err=%v", userID, plan.ID, err)
+		}
+
+		// Kick off copy enrichment in the background — the plan above is
+		// already correct and saved, this only improves Name/Summary text
+		// later and must never delay job completion below.
+		if r.copyEnricher != nil && nutritionSucceeded {
+			r.copyEnricher.EnrichAsync(userID, plan.ID, nutritionOutput.Plan)
 		}
 
 		// ── Finalize ─────────────────────────────────────

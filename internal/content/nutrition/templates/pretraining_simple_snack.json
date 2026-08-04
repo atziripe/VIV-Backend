@@ -6,10 +6,23 @@
   "name": "Simple pre-training snack",
   "slots": [
     {
-      "role": "protein_source"
+      "role": "protein_source",
+      "preferred_ingredient_ids": [
+        "chicken_breast",
+        "turkey_breast",
+        "eggs",
+        "greek_yogurt"
+      ]
     },
     {
-      "role": "carb_source"
+      "role": "carb_source",
+      "preferred_ingredient_ids": [
+        "potato",
+        "sweet_potato",
+        "whole_wheat_bread",
+        "brown_rice_cooked",
+        "oats_rolled"
+      ]
     }
   ],
   "cuisine": "american",

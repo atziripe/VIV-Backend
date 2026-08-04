@@ -73,9 +73,9 @@ func (h *RPCHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		internalURL += "?" + qs
 	}
 
-	if raw, err := json.Marshal(req.Body); err == nil {
-		log.Printf("[rpc] raw incoming body method=%s path=%s body=%s", method, path, string(raw))
-	}
+	//if raw, err := json.Marshal(req.Body); err == nil {
+	//	log.Printf("[rpc] raw incoming body method=%s path=%s body=%s", method, path, string(raw))
+	//}
 
 	var bodyBytes []byte
 	if method != http.MethodGet && method != http.MethodHead {

@@ -6,17 +6,41 @@
   "name": "Asian-style breakfast bowl",
   "slots": [
     {
-      "role": "protein_source"
+      "role": "protein_source",
+      "preferred_ingredient_ids": [
+        "tofu_firm",
+        "edamame_shelled",
+        "shrimp",
+        "salmon",
+        "eggs"
+      ]
     },
     {
-      "role": "carb_source"
+      "role": "carb_source",
+      "preferred_ingredient_ids": [
+        "white_rice_cooked",
+        "brown_rice_cooked",
+        "rice_cakes"
+      ]
     },
     {
-      "role": "fat_source"
+      "role": "fat_source",
+      "preferred_ingredient_ids": [
+        "sesame_oil",
+        "avocado",
+        "coconut_milk"
+      ]
     },
     {
       "role": "vegetable",
-      "fixed_grams": 60
+      "fixed_grams": 60,
+      "preferred_ingredient_ids": [
+        "broccoli",
+        "bell_pepper",
+        "spinach",
+        "zucchini",
+        "cucumber"
+      ]
     }
   ],
   "cuisine": "asian",

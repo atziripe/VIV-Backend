@@ -6,17 +6,41 @@
   "name": "Middle Eastern dinner plate",
   "slots": [
     {
-      "role": "protein_source"
+      "role": "protein_source",
+      "preferred_ingredient_ids": [
+        "lentils_cooked",
+        "chicken_breast",
+        "eggs",
+        "greek_yogurt",
+        "tofu_firm"
+      ]
     },
     {
-      "role": "carb_source"
+      "role": "carb_source",
+      "preferred_ingredient_ids": [
+        "chickpeas_cooked",
+        "brown_rice_cooked",
+        "whole_wheat_bread",
+        "quinoa_cooked"
+      ]
     },
     {
-      "role": "fat_source"
+      "role": "fat_source",
+      "preferred_ingredient_ids": [
+        "tahini",
+        "olive_oil",
+        "almond_butter"
+      ]
     },
     {
       "role": "vegetable",
-      "fixed_grams": 120
+      "fixed_grams": 120,
+      "preferred_ingredient_ids": [
+        "cucumber",
+        "cherry_tomatoes",
+        "mixed_salad_greens",
+        "kale"
+      ]
     }
   ],
   "cuisine": "middle_eastern",

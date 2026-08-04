@@ -100,11 +100,12 @@ func (g *Generator) composeSlot(
 	}
 	templates = rankTemplates(templates, preferredCuisine, preferredStyle)
 
-	proteinCands := applyProteinPreference(
+	baseProteinCands := applyProteinPreference(
 		g.ingredients.CandidatesForRole(domain.RoleProteinSource, avoidContains, avoidDigestion),
 		proteinProfile,
 	)
-	carbCands := g.ingredients.CandidatesForRole(domain.RoleCarbSource, avoidContains, avoidDigestion)
+	baseCarbCands := g.ingredients.CandidatesForRole(domain.RoleCarbSource, avoidContains, avoidDigestion)
+	baseFatCands := g.ingredients.CandidatesForRole(domain.RoleFatSource, avoidContains, avoidDigestion)
 
 	var options []domain.MealOption
 	for _, tpl := range templates {
@@ -112,14 +113,31 @@ func (g *Generator) composeSlot(
 			break
 		}
 
+		// Narrow each role's pool to this template's cuisine-curated list
+		// (when authored) before solving — this is what actually makes
+		// "Latin"/"Asian"/etc. templates produce different ingredients
+		// instead of all converging on the same objectively-best
+		// combination for the target macros. filterByPreferred soft-falls
+		// back to the unfiltered pool when the template has no preference
+		// for that role, or when the preference would eliminate every
+		// candidate (e.g. a restriction removed all of them).
+		proteinCands := baseProteinCands
+		carbCands := baseCarbCands
 		var fixed []nutrition.FixedIngredient
 		wantsFat := false
 		for _, slot := range tpl.Slots {
 			switch slot.Role {
+			case domain.RoleProteinSource:
+				proteinCands = filterByPreferred(baseProteinCands, slot.PreferredIngredientIDs)
+			case domain.RoleCarbSource:
+				carbCands = filterByPreferred(baseCarbCands, slot.PreferredIngredientIDs)
 			case domain.RoleFatSource:
 				wantsFat = true
 			case domain.RoleVegetable, domain.RoleFruit:
-				cands := g.ingredients.CandidatesForRole(slot.Role, avoidContains, avoidDigestion)
+				cands := filterByPreferred(
+					g.ingredients.CandidatesForRole(slot.Role, avoidContains, avoidDigestion),
+					slot.PreferredIngredientIDs,
+				)
 				if len(cands) > 0 {
 					fixed = append(fixed, nutrition.FixedIngredient{Ingredient: cands[0], Grams: slot.FixedGrams})
 				}
@@ -129,7 +147,12 @@ func (g *Generator) composeSlot(
 		var result nutrition.SolveResult
 		var err error
 		if wantsFat {
-			fatCands := g.ingredients.CandidatesForRole(domain.RoleFatSource, avoidContains, avoidDigestion)
+			fatCands := baseFatCands
+			for _, slot := range tpl.Slots {
+				if slot.Role == domain.RoleFatSource {
+					fatCands = filterByPreferred(baseFatCands, slot.PreferredIngredientIDs)
+				}
+			}
 			result, err = nutrition.SelectBestPlate(target, proteinCands, carbCands, fatCands, fixed)
 		} else {
 			result, err = nutrition.SelectBestPlateTwoComponent(target, proteinCands, carbCands, fixed, fatCeilingPrePost)
@@ -173,6 +196,33 @@ func mapSlotTypeToTemplateMealType(slotType string) string {
 		return "pre_training"
 	}
 	return slotType
+}
+
+// filterByPreferred narrows candidates to a template-curated ingredient
+// list (in the order preferredIDs lists them, so the first preferred
+// ingredient wins ties/fixed-slot picks) when the template specifies one.
+// Soft fallback to the unfiltered candidates when no preference is set, or
+// when the preference matches nothing available (e.g. every preferred
+// ingredient got excluded by a restriction) — a cuisine preference miss
+// shouldn't block generation the way a hard restriction violation would.
+func filterByPreferred(candidates []domain.Ingredient, preferredIDs []string) []domain.Ingredient {
+	if len(preferredIDs) == 0 {
+		return candidates
+	}
+	byID := make(map[string]domain.Ingredient, len(candidates))
+	for _, c := range candidates {
+		byID[c.ID] = c
+	}
+	var filtered []domain.Ingredient
+	for _, id := range preferredIDs {
+		if c, ok := byID[id]; ok {
+			filtered = append(filtered, c)
+		}
+	}
+	if len(filtered) == 0 {
+		return candidates
+	}
+	return filtered
 }
 
 // isAnimalSourced derives an animal/plant classification from the existing

@@ -6,17 +6,38 @@
   "name": "Latin lunch bowl",
   "slots": [
     {
-      "role": "protein_source"
+      "role": "protein_source",
+      "preferred_ingredient_ids": [
+        "chicken_breast",
+        "shrimp",
+        "tofu_firm",
+        "eggs"
+      ]
     },
     {
-      "role": "carb_source"
+      "role": "carb_source",
+      "preferred_ingredient_ids": [
+        "black_beans_cooked",
+        "corn_tortilla",
+        "sweet_potato",
+        "white_rice_cooked"
+      ]
     },
     {
-      "role": "fat_source"
+      "role": "fat_source",
+      "preferred_ingredient_ids": [
+        "avocado",
+        "olive_oil"
+      ]
     },
     {
       "role": "vegetable",
-      "fixed_grams": 100
+      "fixed_grams": 100,
+      "preferred_ingredient_ids": [
+        "bell_pepper",
+        "zucchini",
+        "cherry_tomatoes"
+      ]
     }
   ],
   "cuisine": "latin",

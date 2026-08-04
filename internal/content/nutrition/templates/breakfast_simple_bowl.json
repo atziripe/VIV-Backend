@@ -6,17 +6,41 @@
   "name": "Simple breakfast bowl",
   "slots": [
     {
-      "role": "protein_source"
+      "role": "protein_source",
+      "preferred_ingredient_ids": [
+        "chicken_breast",
+        "turkey_breast",
+        "eggs",
+        "greek_yogurt"
+      ]
     },
     {
-      "role": "carb_source"
+      "role": "carb_source",
+      "preferred_ingredient_ids": [
+        "potato",
+        "sweet_potato",
+        "whole_wheat_bread",
+        "brown_rice_cooked",
+        "oats_rolled"
+      ]
     },
     {
-      "role": "fat_source"
+      "role": "fat_source",
+      "preferred_ingredient_ids": [
+        "peanut_butter",
+        "cheese_cheddar",
+        "almond_butter",
+        "butter"
+      ]
     },
     {
       "role": "fruit",
-      "fixed_grams": 100
+      "fixed_grams": 100,
+      "preferred_ingredient_ids": [
+        "apple",
+        "banana",
+        "mixed_berries"
+      ]
     }
   ],
   "cuisine": "american",

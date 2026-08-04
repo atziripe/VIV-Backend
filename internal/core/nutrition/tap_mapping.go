@@ -71,9 +71,15 @@ const (
 // MapProteinPreference classifies the raw onboarding answer. Matches by
 // substring rather than exact string so a small copy change upstream
 // ("Mostly plant-based" vs "Plant-based") doesn't silently stop matching.
+// "mixed" is checked first and wins outright — the UI's mixed option reads
+// "Mixed plant + animal", which contains "plant" and was silently getting
+// classified as strictly plant-based, filtering every animal-sourced
+// protein out for anyone who picked "mixed".
 func MapProteinPreference(pref string) ProteinProfile {
 	p := strings.ToLower(pref)
 	switch {
+	case strings.Contains(p, "mixed"):
+		return ProfileMixed
 	case strings.Contains(p, "plant"):
 		return ProfilePlantBased
 	case strings.Contains(p, "animal"):

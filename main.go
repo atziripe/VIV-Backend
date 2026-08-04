@@ -168,8 +168,13 @@ func main() {
 	mealGen := mealgen.New(nutritionIngredients, nutritionTemplates)
 	generateNutritionUC := usecase.NewGenerateNutritionPlanUsecase(mealGen)
 
-	// Copy polish (async LLM enrichment of Name/Summary after the plan is
-	// saved) is on hold for now — not wired into LocalTrainingPlanRunner.
+	// Copy polish: writes appetizing Name/Summary for already-solved plates
+	// via LLM, in the background, AFTER the plan is saved and the job marked
+	// done — never on the request path. Cache is process-local for now; the
+	// bounded ingredient/template space means hit rate climbs fast anyway.
+	copyGen := openai.NewCopyGenerator(oaClient)
+	copyCache := mealgen.NewInMemoryCopyCache()
+	copyEnricher := mealgen.NewAsyncCopyEnricher(copyGen, copyCache, planRepo)
 
 	// ========= Recovery Pipeline =========
 	bannerLib, err := recovery.LoadBannerLibrary("internal/content/recovery")
@@ -206,7 +211,7 @@ func main() {
 	statusUC := usecase.NewGetPlanGenerationStatusUseCase(planJobsRepo)
 	completeDayUC := usecase.NewCompleteTrainingDayUseCase(planRepo)
 
-	trainingRunner := runner.NewLocalTrainingPlanRunner(planJobsRepo, generateTrainingUC, generateNutritionUC, userRepo, checkinRepo, cyclePhaseLookup, planRepo, 3*time.Minute)
+	trainingRunner := runner.NewLocalTrainingPlanRunner(planJobsRepo, generateTrainingUC, generateNutritionUC, userRepo, checkinRepo, cyclePhaseLookup, planRepo, copyEnricher, 3*time.Minute)
 
 	startTrainingUC := usecase.NewStartPlanGenerationUseCase(planJobsRepo, trainingRunner)
 	statusTrainingUC := usecase.NewGetPlanGenerationStatusUseCase(planJobsRepo)

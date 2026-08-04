@@ -6,10 +6,23 @@
   "name": "Middle Eastern pre-training snack",
   "slots": [
     {
-      "role": "protein_source"
+      "role": "protein_source",
+      "preferred_ingredient_ids": [
+        "lentils_cooked",
+        "chicken_breast",
+        "eggs",
+        "greek_yogurt",
+        "tofu_firm"
+      ]
     },
     {
-      "role": "carb_source"
+      "role": "carb_source",
+      "preferred_ingredient_ids": [
+        "chickpeas_cooked",
+        "brown_rice_cooked",
+        "whole_wheat_bread",
+        "quinoa_cooked"
+      ]
     }
   ],
   "cuisine": "middle_eastern",
