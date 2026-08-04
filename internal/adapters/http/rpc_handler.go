@@ -73,6 +73,10 @@ func (h *RPCHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		internalURL += "?" + qs
 	}
 
+	if raw, err := json.Marshal(req.Body); err == nil {
+		log.Printf("[rpc] raw incoming body method=%s path=%s body=%s", method, path, string(raw))
+	}
+
 	var bodyBytes []byte
 	if method != http.MethodGet && method != http.MethodHead {
 		sub := selectSubBody(path, req.Body)
@@ -143,6 +147,8 @@ func isAllowedRoute(method, path string) bool {
 	switch {
 	case method == "GET" && path == "/me":
 		return true
+	case method == "PATCH" && path == "/me":
+		return true
 
 	case method == "POST" && path == "/onboarding":
 		return true
@@ -204,6 +210,72 @@ func selectSubBody(path string, body map[string]any) any {
 			return v
 		}
 		return map[string]any{}
+
+	case "/me":
+		// body: { "me": { "weight_kg": ..., "last_cycle_start": "...", ... } }
+		v, ok := body["me"]
+		if !ok || v == nil {
+			return map[string]any{}
+		}
+
+		m, ok := v.(map[string]any)
+		if !ok {
+			return map[string]any{}
+		}
+
+		out := map[string]any{}
+
+		copyTrim := func(key string) {
+			raw, exists := m[key]
+			if !exists || raw == nil {
+				return
+			}
+			if s, ok := raw.(string); ok {
+				t := strings.TrimSpace(s)
+				if t == "" {
+					return
+				}
+				out[key] = t
+				return
+			}
+			out[key] = raw
+		}
+
+		copyTrim("name")
+		copyTrim("weight_kg")
+		copyTrim("height_cm")
+
+		copyTrim("training_often")
+		copyTrim("training_duration")
+		copyTrim("training_type")
+		copyTrim("training_time")
+		copyTrim("training_goals")
+
+		copyTrim("diet_restrictions")
+		copyTrim("diet_protein_resources")
+		copyTrim("meals_per_day")
+		copyTrim("meals_timing_stability")
+		copyTrim("digestion_conditions")
+		copyTrim("eating_style")
+
+		copyTrim("sleep_window")
+		copyTrim("sleep_continuity")
+		copyTrim("recovery_after_sleep")
+		copyTrim("daily_activity_level")
+		copyTrim("lingering_marker")
+		copyTrim("stress_reactivity")
+		copyTrim("stress_level")
+		copyTrim("priority")
+
+		copyTrim("cycle_type")
+		copyTrim("cycle_duration")
+		copyTrim("period_duration")
+		copyTrim("apply_plan_changes_now")
+
+		if len(out) == 0 {
+			return map[string]any{}
+		}
+		return out
 
 	case "/plans/generate":
 		// body: { "plan_generate": { "checkin_id": "..." } }

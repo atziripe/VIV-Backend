@@ -168,6 +168,9 @@ func main() {
 	mealGen := mealgen.New(nutritionIngredients, nutritionTemplates)
 	generateNutritionUC := usecase.NewGenerateNutritionPlanUsecase(mealGen)
 
+	// Copy polish (async LLM enrichment of Name/Summary after the plan is
+	// saved) is on hold for now — not wired into LocalTrainingPlanRunner.
+
 	// ========= Recovery Pipeline =========
 	bannerLib, err := recovery.LoadBannerLibrary("internal/content/recovery")
 	if err != nil {
@@ -209,6 +212,11 @@ func main() {
 	statusTrainingUC := usecase.NewGetPlanGenerationStatusUseCase(planJobsRepo)
 	saveArrangementUC := usecase.NewSaveTrainingArrangementUseCase(planRepo, userRepo, checkinRepo, trainingLib)
 
+	// PATCH /me needs generateNutritionUC (sync macro/meal recompute on
+	// weight/height changes) and startTrainingUC (async full regen on cycle
+	// changes) — built after both exist.
+	updateProfileUC := usecase.NewUpdateProfileUseCase(userRepo, planRepo, checkinRepo, cyclePhaseLookup, generateNutritionUC, startTrainingUC)
+
 	nutritionUC := usecase.NewGetNutritionPlanUseCase(userRepo, planRepo, checkinRepo, cyclePhaseLookup)
 	mealSelectionUC := usecase.NewSaveMealSelectionUseCase(planRepo)
 	recoveryUC := usecase.NewGetRecoveryUseCase(userRepo, planRepo, cyclePhaseLookup, bannerLib, movesContentLib)
@@ -223,7 +231,7 @@ func main() {
 	onboardingHandler := httpadapter.NewOnboardingHandler(onboardingUC)
 	checkinHandler := httpadapter.NewCheckinHandler(createCheckinUC, latestCheckinUC, statusCheckinUC)
 	lifestyleHandler := httpadapter.NewLifestyleHandler(reportLifestyleUC, listLifestyleUC)
-	meHandler := httpadapter.NewMeHandler(getMeUC)
+	meHandler := httpadapter.NewMeHandler(getMeUC, updateProfileUC)
 	plansHandler := httpadapter.NewPlansHandler(getCurrentPlanUC, getByIDUC, getByWeekStartUC, statusUC, phaseFeedbackUC)
 	trainingHandler := httpadapter.NewTrainingHandler(startTrainingUC, statusTrainingUC, trainingEngine, resumeTrainingUC, completeDayUC, saveArrangementUC)
 	nutritionHandler := httpadapter.NewNutritionHandler(nutritionUC, mealSelectionUC)
@@ -256,6 +264,7 @@ func main() {
 	api.Get("/lifestyle-changes", lifestyleHandler.List)
 
 	api.Get("/me", meHandler.GetMe)
+	api.Patch("/me", meHandler.UpdateProfile)
 
 	//api.Post("/plans/generate", plansHandler.Generate)
 	api.Get("/plans/current", plansHandler.GetCurrent)

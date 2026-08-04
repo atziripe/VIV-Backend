@@ -110,7 +110,7 @@ func normalizeCycleDuration(input string) string {
 // ApplyCycleStartOverride: recalibra el ciclo cuando la usuaria reporta un CycleStart real.
 func ApplyCycleStartOverride(user *domain.User, cycleStart time.Time, now time.Time) bool {
 	duration := parseIntDefault(user.CycleDuration, 28)
-	period := parseIntDefault(user.CycleDuration, 5)
+	period := parseIntDefault(user.PeriodDuration, 5)
 
 	today := localMidnightUTC(now)
 	start := localMidnightUTC(cycleStart)
