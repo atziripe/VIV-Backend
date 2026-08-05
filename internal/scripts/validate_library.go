@@ -8,7 +8,7 @@ package main
 //   go run validate_library.go <path-to-sessions-dir>
 //
 // Ejemplo:
-//   go run validate_library.go ./internal/content/sessions
+//   go run validate_library.go ./internal/content/training
 //
 // Qué hace:
 //   1. Lee todos los archivos *.json del directorio (recursivo).

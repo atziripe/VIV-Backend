@@ -218,9 +218,11 @@ func main() {
 	saveArrangementUC := usecase.NewSaveTrainingArrangementUseCase(planRepo, userRepo, checkinRepo, trainingLib)
 
 	// PATCH /me needs generateNutritionUC (sync macro/meal recompute on
-	// weight/height changes) and startTrainingUC (async full regen on cycle
-	// changes) — built after both exist.
-	updateProfileUC := usecase.NewUpdateProfileUseCase(userRepo, planRepo, checkinRepo, cyclePhaseLookup, generateNutritionUC, startTrainingUC)
+	// weight/height changes), startTrainingUC (async full regen on cycle
+	// changes), and copyEnricher (so a weight/height-triggered nutrition
+	// recompute gets its meal copy polished too, same as a fresh plan) —
+	// built after all three exist.
+	updateProfileUC := usecase.NewUpdateProfileUseCase(userRepo, planRepo, checkinRepo, cyclePhaseLookup, generateNutritionUC, startTrainingUC, copyEnricher)
 
 	nutritionUC := usecase.NewGetNutritionPlanUseCase(userRepo, planRepo, checkinRepo, cyclePhaseLookup)
 	mealSelectionUC := usecase.NewSaveMealSelectionUseCase(planRepo)

@@ -49,6 +49,15 @@ type PlanJobsRepository interface {
 	GetByID(ctx context.Context, userID, jobID string) (*domain.PlanJob, error)
 }
 
+// CopyEnricher polishes meal-option copy in the background, after a
+// nutrition plan is already saved — see mealgen.AsyncCopyEnricher.
+// Mirrors runner.CopyEnricher; kept as a separate local port (rather than
+// importing the adapter package) so usecase never depends on adapters.
+// Optional on any usecase that embeds it: leave nil to skip enrichment.
+type CopyEnricher interface {
+	EnrichAsync(userID, planID string, plan domain.NutritionWeekPlan)
+}
+
 type PlanGenerator interface {
 	GeneratePlan(
 		ctx context.Context,

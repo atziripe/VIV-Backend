@@ -144,13 +144,10 @@ func DaysUntilNextPhase(user *domain.User) int {
 	case "menstrual":
 		// Ends when period ends
 		return period - day + 1
-	case "early_follicular":
-		// Ends at ovulation - 5
-		return (ovulationDay - 5) - day + 1
-	case "late_follicular":
-		// Ends at ovulation - 1
-		return (ovulationDay - 1) - day + 1
-	case "ovulation":
+	case "follicular":
+		// Ends the day before the ovulation window starts (ovulationDay-1)
+		return (ovulationDay - 2) - day + 1
+	case "ovulatory":
 		// 3 day window: ovulation-1 to ovulation+1
 		return (ovulationDay + 1) - day + 1
 	case "early_luteal":

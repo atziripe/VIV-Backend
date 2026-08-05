@@ -140,6 +140,7 @@ type UpdateProfileUseCase struct {
 	Cycle        CyclePhaseLookup
 	NutritionGen *GenerateNutritionPlanUsecase
 	PlanStarter  *StartPlanGenerationUseCase
+	CopyEnricher CopyEnricher
 }
 
 func NewUpdateProfileUseCase(
@@ -149,6 +150,7 @@ func NewUpdateProfileUseCase(
 	cycle CyclePhaseLookup,
 	nutritionGen *GenerateNutritionPlanUsecase,
 	planStarter *StartPlanGenerationUseCase,
+	copyEnricher CopyEnricher,
 ) *UpdateProfileUseCase {
 	return &UpdateProfileUseCase{
 		Users:        users,
@@ -157,6 +159,7 @@ func NewUpdateProfileUseCase(
 		Cycle:        cycle,
 		NutritionGen: nutritionGen,
 		PlanStarter:  planStarter,
+		CopyEnricher: copyEnricher,
 	}
 }
 
@@ -384,6 +387,13 @@ func (uc *UpdateProfileUseCase) recomputeNutritionSync(ctx context.Context, user
 	if err := uc.Plans.UpdateNutritionJSON(ctx, user.ID, plan.ID, nutritionJSON); err != nil {
 		log.Printf("[update-profile] macro recompute: persist failed user=%s err=%v", user.ID, err)
 		return false, nil
+	}
+
+	// Same as training_runner.go: the plan above is already correct and
+	// saved, this only polishes Name/Summary text later and must never
+	// delay this PATCH's response.
+	if uc.CopyEnricher != nil {
+		uc.CopyEnricher.EnrichAsync(user.ID, plan.ID, out.Plan)
 	}
 
 	log.Printf("[update-profile] macro recompute: done user=%s plan=%s", user.ID, plan.ID)
