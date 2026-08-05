@@ -190,13 +190,24 @@ func NewDualPlanJobsRepository(primary, secondary usecase.PlanJobsRepository) *D
 	return &DualPlanJobsRepository{primary: primary, secondary: secondary}
 }
 
+// planJobLinker is implemented by NeonPlanJobsRepository so its row can be
+// tagged with the Firestore-generated job ID at creation time. Every Mark*/
+// GetByID call after CreateQueued only ever carries that Firestore ID, so
+// without this link Neon has no way to find the row it just created.
+type planJobLinker interface {
+	CreateQueuedLinked(ctx context.Context, userID, checkinID, firestoreJobID string) error
+}
+
 func (r *DualPlanJobsRepository) CreateQueued(ctx context.Context, userID, checkinID string) (string, error) {
 	jobID, err := r.primary.CreateQueued(ctx, userID, checkinID)
 	if err != nil {
 		return "", err
 	}
-	// Neon gets its own UUID — we don't need Neon jobID to match Firestore's
-	if _, err := r.secondary.CreateQueued(ctx, userID, checkinID); err != nil {
+	if linker, ok := r.secondary.(planJobLinker); ok {
+		if err := linker.CreateQueuedLinked(ctx, userID, checkinID, jobID); err != nil {
+			slog.Error("dual-write: neon plan_job create failed", "firestore_job_id", jobID, "err", err)
+		}
+	} else if _, err := r.secondary.CreateQueued(ctx, userID, checkinID); err != nil {
 		slog.Error("dual-write: neon plan_job create failed", "firestore_job_id", jobID, "err", err)
 	}
 	return jobID, nil
