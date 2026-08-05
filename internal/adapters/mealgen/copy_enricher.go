@@ -50,13 +50,18 @@ func EnrichPlanCopy(
 	}
 
 	if len(misses) == 0 {
+		// Every option resolved from cache (or there was nothing to do) —
+		// the plan is fully polished.
+		plan.CopyEnriched = true
 		return plan, changed, nil
 	}
 
 	results, genErr := gen.GenerateCopy(ctx, misses)
 	if genErr != nil {
 		// Cache hits already applied above are still a real improvement —
-		// return them rather than discarding partial progress.
+		// return them rather than discarding partial progress. CopyEnriched
+		// stays false: some options are still unresolved, so the client
+		// should keep polling.
 		return plan, changed, genErr
 	}
 
@@ -76,5 +81,6 @@ func EnrichPlanCopy(
 		changed = true
 	}
 
+	plan.CopyEnriched = true
 	return plan, changed, nil
 }

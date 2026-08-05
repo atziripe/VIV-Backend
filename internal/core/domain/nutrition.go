@@ -70,6 +70,16 @@ type NutritionWeekPlan struct {
 	Targets MacroTargets        `json:"targets"`
 	Days    [7]NutritionDayPlan `json:"days"`
 	Water   float64             `json:"water_base_liters"` // base without activity/phase
+
+	// CopyEnriched is true once every meal option's Name/Summary has been
+	// polished by the async copy-polish pipeline (see mealgen.EnrichPlanCopy)
+	// — false means options may still show placeholder/raw text
+	// (template name + comma-joined ingredients). Defaults to false on a
+	// freshly generated or freshly re-solved plan (e.g. after a weight/
+	// height edit triggers a nutrition recompute) since that produces new
+	// raw copy that hasn't been enriched yet. The client can poll for this
+	// flipping true instead of diffing text to know when to refresh.
+	CopyEnriched bool `json:"copy_enriched"`
 }
 
 // NutritionDayPlan holds nutrition info for a single day of the week.

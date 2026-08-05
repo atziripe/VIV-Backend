@@ -70,6 +70,9 @@ func TestEnrichPlanCopy_CacheMissCallsGeneratorAndPopulatesCache(t *testing.T) {
 	if len(got.Ingredients) != 2 || got.Macros.Calories != 500 {
 		t.Errorf("ingredients/macros were modified by copy enrichment: %+v", got)
 	}
+	if !enriched.CopyEnriched {
+		t.Error("expected CopyEnriched=true once every option resolved successfully")
+	}
 }
 
 func TestEnrichPlanCopy_CacheHitSkipsGenerator(t *testing.T) {
@@ -130,6 +133,9 @@ func TestEnrichPlanCopy_GeneratorErrorPreservesCacheHits(t *testing.T) {
 	if enriched.Days[0].Meals[0].Options[0].Name != "Cached Name" {
 		t.Errorf("cache-hit option should keep its cached copy even though the batch call failed, got %q",
 			enriched.Days[0].Meals[0].Options[0].Name)
+	}
+	if enriched.CopyEnriched {
+		t.Error("expected CopyEnriched=false when the batch call failed — an option is still unresolved")
 	}
 }
 
