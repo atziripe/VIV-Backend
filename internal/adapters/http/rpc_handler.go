@@ -198,6 +198,8 @@ func isAllowedRoute(method, path string) bool {
 		return true
 	case method == "POST" && path == "/users/me/device-token":
 		return true
+	case method == "POST" && path == "/cycle/period-start":
+		return true
 	}
 	return false
 }
@@ -671,6 +673,29 @@ func selectSubBody(path string, body map[string]any) any {
 
 		if len(out) == 0 {
 			return map[string]any{}
+		}
+		return out
+
+	case "/cycle/period-start":
+		// body: { "period_start": { "date": "2026-08-19" } } — date is
+		// optional, omitting it (or the whole key) logs today.
+		v, ok := body["period_start"]
+		if !ok || v == nil {
+			return map[string]any{}
+		}
+
+		m, ok := v.(map[string]any)
+		if !ok {
+			return map[string]any{}
+		}
+
+		out := map[string]any{}
+		if raw, exists := m["date"]; exists && raw != nil {
+			if s, ok := raw.(string); ok {
+				if t := strings.TrimSpace(s); t != "" {
+					out["date"] = t
+				}
+			}
 		}
 		return out
 	default:

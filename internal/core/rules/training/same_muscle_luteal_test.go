@@ -27,8 +27,10 @@ func TestSameMuscle72h_Violation_OneDayGap(t *testing.T) {
 	if v.RuleID != "same_muscle_72h_late_luteal" {
 		t.Errorf("expected rule ID %q, got %q", "same_muscle_72h_late_luteal", v.RuleID)
 	}
-	if v.Severity != rules.SeverityHardBlock {
-		t.Errorf("expected hard block, got %q", v.Severity)
+	// Deliberately a soft warning, not a hard block — the team decided this
+	// rule should never fail generation outright, only flag the plan.
+	if v.Severity != rules.SeveritySoftWarning {
+		t.Errorf("expected soft warning, got %q", v.Severity)
 	}
 }
 

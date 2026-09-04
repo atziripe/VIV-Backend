@@ -201,6 +201,11 @@ func main() {
 	reportLifestyleUC := usecase.NewReportLifestyleChangeUseCase(lifestyleRepo, userRepo)
 	listLifestyleUC := usecase.NewListLifestyleChangesUseCase(lifestyleRepo)
 
+	// Always-available period logging — reuses the same cycle recalibration
+	// as onboarding/check-in's cycle_start, but without the weekly check-in
+	// gate (Mom Test P0: logging must work the day it happens, not only Sunday).
+	logPeriodStartUC := usecase.NewLogPeriodStartUseCase(userRepo)
+
 	getMeUC := usecase.NewGetCurrentUserUseCase(userRepo)
 	getCurrentPlanUC := usecase.NewGetCurrentPlanUseCase(userRepo, planRepo)
 
@@ -244,6 +249,7 @@ func main() {
 	nutritionHandler := httpadapter.NewNutritionHandler(nutritionUC, mealSelectionUC)
 	recoveryHandler := httpadapter.NewRecoveryHandler(recoveryUC)
 	deviceTokenHandler := httpadapter.NewDeviceTokenHandler(registerDeviceTokenUC)
+	periodHandler := httpadapter.NewPeriodHandler(logPeriodStartUC)
 
 	// ========= Router config =========
 	r := chi.NewRouter()
@@ -293,6 +299,7 @@ func main() {
 	api.Post("/plans/phase-feedback", plansHandler.SavePhaseFeedback)
 
 	api.Post("/users/me/device-token", deviceTokenHandler.Upsert)
+	api.Post("/cycle/period-start", periodHandler.LogStart)
 	// POST /debug/sunday-checkin  — QUITAR EN PRODUCCIÓN
 	r.Post("/debug/sunday-checkin", func(w http.ResponseWriter, r *http.Request) {
 		if err := sundayCheckinUC.Execute(r.Context()); err != nil {
