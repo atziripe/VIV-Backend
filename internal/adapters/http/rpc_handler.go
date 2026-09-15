@@ -153,6 +153,8 @@ func isAllowedRoute(method, path string) bool {
 	case method == "POST" && path == "/onboarding":
 		return true
 
+	case method == "POST" && path == "/checkin":
+		return true
 	case method == "POST" && path == "/checkins":
 		return true
 	case method == "GET" && path == "/checkins/latest":
@@ -520,6 +522,47 @@ func selectSubBody(path string, body map[string]any) any {
 		copyTrim("weekday")
 		copyTrim("meal_slot")
 		copyTrim("option_index")
+
+		if len(out) == 0 {
+			return map[string]any{}
+		}
+		return out
+
+	case "/checkin":
+		// body: { "checkin": { "date": "2026-09-14", "sleep": "...", "body": "...", "demand": "...", "need": "..." } }
+		v, ok := body["checkin"]
+		if !ok || v == nil {
+			return map[string]any{}
+		}
+
+		m, ok := v.(map[string]any)
+		if !ok {
+			return map[string]any{}
+		}
+
+		out := map[string]any{}
+
+		copyTrim := func(key string) {
+			raw, exists := m[key]
+			if !exists || raw == nil {
+				return
+			}
+			if s, ok := raw.(string); ok {
+				t := strings.TrimSpace(s)
+				if t == "" {
+					return
+				}
+				out[key] = t
+				return
+			}
+			out[key] = raw
+		}
+
+		copyTrim("date")
+		copyTrim("sleep")
+		copyTrim("body")
+		copyTrim("demand")
+		copyTrim("need")
 
 		if len(out) == 0 {
 			return map[string]any{}

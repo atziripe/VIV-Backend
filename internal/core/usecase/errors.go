@@ -44,6 +44,31 @@ func ErrPlanNotFound(id string) error {
 	return PlanNotFoundError{PlanID: id}
 }
 
+// -------- onboarding catalog/goal validation --------
+type InvalidActivityError struct {
+	ActivityID string
+}
+
+func (e InvalidActivityError) Error() string {
+	return "unrecognized activity id: " + e.ActivityID
+}
+
+func ErrInvalidActivity(id string) error {
+	return InvalidActivityError{ActivityID: id}
+}
+
+type InvalidGoalError struct {
+	GoalID string
+}
+
+func (e InvalidGoalError) Error() string {
+	return "unrecognized goal id: " + e.GoalID
+}
+
+func ErrInvalidGoal(id string) error {
+	return InvalidGoalError{GoalID: id}
+}
+
 // -------- check ins --------
 type CheckinLockedError struct {
 	NextAvailableAt time.Time

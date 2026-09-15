@@ -1,6 +1,11 @@
 package domain
 
-import "time"
+import (
+	"time"
+
+	"viv/internal/core/activity"
+	"viv/internal/core/goal"
+)
 
 type User struct {
 	ID                  string
@@ -23,6 +28,13 @@ type User struct {
 	TrainingType     string
 	TrainingTime     string
 	TrainingGoals    string
+
+	// UserCatalog and GoalID are the typed activity-catalog/goal
+	// selections captured at onboarding (VIV-101 taxonomy, VIV-102 goal
+	// profiles) — distinct from the free-text TrainingType/TrainingGoals
+	// above, which predate this typed pipeline.
+	UserCatalog []activity.ID
+	GoalID      goal.ID
 
 	DietRestrictions     string
 	DietProteinResources string

@@ -1,0 +1,13 @@
+{
+  "muscle_group": "lower",
+  "warmup": {
+    "duration_minutes": 6,
+    "description": "Raise leg blood flow and open the hips before loading them.",
+    "movements": ["Leg swings (front/side)", "Walking lunges", "Bodyweight squats", "Ankle circles"]
+  },
+  "cooldown": {
+    "duration_minutes": 5,
+    "description": "Bring the legs back down after the working sets.",
+    "movements": ["Standing quad stretch", "Seated hamstring stretch", "Figure-four glute stretch"]
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "id": "yoga_full_body_m_l_standard_v1",
+  "version": 1,
+  "content_status": "draft_dummy",
+  "activity_type": "yoga",
+  "intensity": "M",
+  "impact": "L",
+  "muscle_group": "full_body",
+  "duration_tier": "standard",
+  "complexity_tier": "standard",
+  "load_tier": "standard",
+  "duration_minutes": 35,
+  "content": {
+    "warmup": {
+      "duration_minutes": 5,
+      "description": "Breath-linked warmup building toward more dynamic movement.",
+      "movements": [
+        "Seated breathing",
+        "Cat-cow",
+        "Low lunge with reach"
+      ]
+    },
+    "main_exercises": [
+      {
+        "name": "Power/vinyasa flow (sun salutations B, warrior sequence, side plank)",
+        "sets": 3,
+        "reps": "1 flow",
+        "rest_seconds": 20,
+        "load_guidance": "Bodyweight, steady dynamic pace",
+        "form_cue": "Match one breath to one movement, keep the core engaged throughout"
+      },
+      {
+        "name": "Standing balance sequence with a held plank",
+        "sets": 2,
+        "reps": "30-45 sec per side",
+        "rest_seconds": 15,
+        "load_guidance": "Bodyweight",
+        "form_cue": "Draw the navel in to stabilize before adding the balance challenge"
+      }
+    ],
+    "cooldown": {
+      "duration_minutes": 5,
+      "description": "Seated stretch and stillness to close the practice.",
+      "movements": [
+        "Seated forward fold",
+        "Supine twist",
+        "Savasana"
+      ]
+    }
+  },
+  "phase_notes": {
+    "menstrual": "",
+    "follicular": "",
+    "ovulatory": "",
+    "early_luteal": "",
+    "late_luteal": ""
+  },
+  "author": null,
+  "created_at": "2026-01-01"
+}

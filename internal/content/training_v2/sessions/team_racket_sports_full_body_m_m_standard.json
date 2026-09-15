@@ -1,0 +1,53 @@
+{
+  "id": "team_racket_sports_full_body_m_m_standard_v1",
+  "version": 1,
+  "content_status": "draft_dummy",
+  "activity_type": "team_racket_sports",
+  "intensity": "M",
+  "impact": "M",
+  "muscle_group": "full_body",
+  "duration_tier": "standard",
+  "complexity_tier": "standard",
+  "load_tier": "standard",
+  "duration_minutes": 40,
+  "content": {
+    "warmup": {
+      "duration_minutes": 6,
+      "description": "Sport-prep warmup: footwork and lateral movement.",
+      "movements": [
+        "Lateral shuffles",
+        "High knees",
+        "Carioca steps",
+        "Dynamic arm swings"
+      ]
+    },
+    "main_exercises": [
+      {
+        "name": "Moderate drills with live points (racket sport)",
+        "sets": 1,
+        "reps": "main session block",
+        "rest_seconds": 60,
+        "load_guidance": "Cooperative-to-competitive drills, moderate pace, RPE 5-6",
+        "form_cue": "Recover your ready position between every shot"
+      }
+    ],
+    "cooldown": {
+      "duration_minutes": 6,
+      "description": "Walk it out and stretch the legs and shoulders.",
+      "movements": [
+        "Easy walk",
+        "Standing hamstring stretch",
+        "Shoulder cross-body stretch"
+      ]
+    }
+  },
+  "phase_notes": {
+    "menstrual": "",
+    "follicular": "",
+    "ovulatory": "",
+    "early_luteal": "",
+    "late_luteal": ""
+  },
+  "author": null,
+  "created_at": "2026-01-01"
+}

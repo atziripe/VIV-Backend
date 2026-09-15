@@ -1,0 +1,59 @@
+[
+  {
+    "id": "upper_exercise_1",
+    "name": "Barbell Bench Press",
+    "muscle_group": "upper",
+    "standard": {
+      "sets": 4,
+      "reps": "6-8",
+      "rest_seconds": 120,
+      "load_guidance": "RPE 7-8",
+      "form_cue": "Shoulder blades pinned, controlled descent"
+    },
+    "reduced": {
+      "sets": 3,
+      "reps": "8-10",
+      "rest_seconds": 90,
+      "load_guidance": "RPE 5-6, lighter load than usual",
+      "form_cue": "Slow eccentric, no bounce off the chest"
+    }
+  },
+  {
+    "id": "upper_exercise_2",
+    "name": "Bent-Over Row",
+    "muscle_group": "upper",
+    "standard": {
+      "sets": 3,
+      "reps": "8-10",
+      "rest_seconds": 90,
+      "load_guidance": "RPE 7",
+      "form_cue": "Flat back, pull to the lower ribs"
+    },
+    "reduced": {
+      "sets": 3,
+      "reps": "10-12",
+      "rest_seconds": 75,
+      "load_guidance": "RPE 5, lighter load than usual",
+      "form_cue": "Controlled tempo, squeeze at the top"
+    }
+  },
+  {
+    "id": "upper_exercise_3",
+    "name": "Overhead Press",
+    "muscle_group": "upper",
+    "standard": {
+      "sets": 3,
+      "reps": "8-10",
+      "rest_seconds": 90,
+      "load_guidance": "RPE 6-7",
+      "form_cue": "Ribs stacked over hips, avoid over-arching"
+    },
+    "reduced": {
+      "sets": 2,
+      "reps": "10-12",
+      "rest_seconds": 60,
+      "load_guidance": "RPE 5, lighter load than usual",
+      "form_cue": "Slow and controlled through the full range"
+    }
+  }
+]

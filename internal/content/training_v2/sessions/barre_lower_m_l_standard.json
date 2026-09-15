@@ -1,0 +1,60 @@
+{
+  "id": "barre_lower_m_l_standard_v1",
+  "version": 1,
+  "content_status": "draft_dummy",
+  "activity_type": "barre",
+  "intensity": "M",
+  "impact": "L",
+  "muscle_group": "lower",
+  "duration_tier": "standard",
+  "complexity_tier": "standard",
+  "load_tier": "standard",
+  "duration_minutes": 35,
+  "content": {
+    "warmup": {
+      "duration_minutes": 5,
+      "description": "Pli\u00e9s and ankle work to warm up the legs and feet.",
+      "movements": [
+        "Parallel pli\u00e9 pulses",
+        "Ankle circles",
+        "Hip circles at the barre"
+      ]
+    },
+    "main_exercises": [
+      {
+        "name": "Pli\u00e9 sequence with light hand weights",
+        "sets": 3,
+        "reps": "16 reps",
+        "rest_seconds": 25,
+        "load_guidance": "1-2kg dumbbells, RPE 5-6",
+        "form_cue": "Keep the weight steady, the legs do the work"
+      },
+      {
+        "name": "Single-leg standing series with isometric hold",
+        "sets": 2,
+        "reps": "8 reps + 10 sec hold per side",
+        "rest_seconds": 20,
+        "load_guidance": "Bodyweight",
+        "form_cue": "Hold the hardest position, don't rush through it"
+      }
+    ],
+    "cooldown": {
+      "duration_minutes": 5,
+      "description": "Standing stretch sequence for quads, calves and hips.",
+      "movements": [
+        "Quad stretch at the barre",
+        "Calf stretch",
+        "Standing figure-four hip stretch"
+      ]
+    }
+  },
+  "phase_notes": {
+    "menstrual": "",
+    "follicular": "",
+    "ovulatory": "",
+    "early_luteal": "",
+    "late_luteal": ""
+  },
+  "author": null,
+  "created_at": "2026-01-01"
+}

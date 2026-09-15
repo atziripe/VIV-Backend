@@ -1,0 +1,50 @@
+{
+  "id": "swimming_full_body_m_l_standard_v1",
+  "version": 1,
+  "content_status": "draft_dummy",
+  "activity_type": "swimming",
+  "intensity": "M",
+  "impact": "L",
+  "muscle_group": "full_body",
+  "duration_tier": "standard",
+  "complexity_tier": "standard",
+  "load_tier": "standard",
+  "duration_minutes": 35,
+  "content": {
+    "warmup": {
+      "duration_minutes": 5,
+      "description": "Easy warmup laps to settle into the water.",
+      "movements": [
+        "200m easy freestyle",
+        "Light arm circles poolside"
+      ]
+    },
+    "main_exercises": [
+      {
+        "name": "Steady swim with technique drills (catch-up drill, kickboard sets)",
+        "sets": 1,
+        "reps": "25 min total",
+        "rest_seconds": 0,
+        "load_guidance": "RPE 5-6",
+        "form_cue": "Focus on a clean catch and full extension, not just speed"
+      }
+    ],
+    "cooldown": {
+      "duration_minutes": 5,
+      "description": "Easy cool-down laps and a shoulder stretch.",
+      "movements": [
+        "150m easy backstroke or float",
+        "Shoulder cross-body stretch"
+      ]
+    }
+  },
+  "phase_notes": {
+    "menstrual": "",
+    "follicular": "",
+    "ovulatory": "",
+    "early_luteal": "",
+    "late_luteal": ""
+  },
+  "author": null,
+  "created_at": "2026-01-01"
+}

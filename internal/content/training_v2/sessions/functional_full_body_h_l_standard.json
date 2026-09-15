@@ -1,0 +1,52 @@
+{
+  "id": "functional_full_body_h_l_standard_v1",
+  "version": 1,
+  "content_status": "draft_dummy",
+  "activity_type": "functional",
+  "intensity": "H",
+  "impact": "L",
+  "muscle_group": "full_body",
+  "duration_tier": "standard",
+  "complexity_tier": "standard",
+  "load_tier": "standard",
+  "duration_minutes": 40,
+  "content": {
+    "warmup": {
+      "duration_minutes": 5,
+      "description": "Full-body dynamic prep for mixed-modality work.",
+      "movements": [
+        "Bodyweight squats",
+        "Arm circles",
+        "Walking lunges with a twist"
+      ]
+    },
+    "main_exercises": [
+      {
+        "name": "High-effort strength-endurance circuit (heavy carry, sled push, dumbbell row)",
+        "sets": 1,
+        "reps": "3-4 rounds, station-style",
+        "rest_seconds": 45,
+        "load_guidance": "Heavy load, RPE 8",
+        "form_cue": "Keep the ribs stacked over the pelvis under load"
+      }
+    ],
+    "cooldown": {
+      "duration_minutes": 5,
+      "description": "Walk it out, then stretch the major muscle groups.",
+      "movements": [
+        "Easy walk",
+        "Standing quad stretch",
+        "Doorway chest stretch"
+      ]
+    }
+  },
+  "phase_notes": {
+    "menstrual": "",
+    "follicular": "",
+    "ovulatory": "",
+    "early_luteal": "",
+    "late_luteal": ""
+  },
+  "author": null,
+  "created_at": "2026-01-01"
+}

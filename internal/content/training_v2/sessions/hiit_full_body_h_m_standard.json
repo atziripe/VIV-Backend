@@ -1,0 +1,52 @@
+{
+  "id": "hiit_full_body_h_m_standard_v1",
+  "version": 1,
+  "content_status": "draft_dummy",
+  "activity_type": "hiit",
+  "intensity": "H",
+  "impact": "M",
+  "muscle_group": "full_body",
+  "duration_tier": "standard",
+  "complexity_tier": "standard",
+  "load_tier": "standard",
+  "duration_minutes": 25,
+  "content": {
+    "warmup": {
+      "duration_minutes": 5,
+      "description": "Dynamic full-body prep to raise heart rate before work intervals.",
+      "movements": [
+        "Jumping jacks",
+        "Bodyweight squats",
+        "Arm circles"
+      ]
+    },
+    "main_exercises": [
+      {
+        "name": "Low-impact circuit (squat, reverse lunge, mountain climber, plank shoulder tap)",
+        "sets": 4,
+        "reps": "40 sec work / 20 sec rest per station",
+        "rest_seconds": 20,
+        "load_guidance": "Bodyweight, no jumping, RPE 8-9",
+        "form_cue": "Keep one foot grounded \u2014 drive intensity through speed and tension, not impact"
+      }
+    ],
+    "cooldown": {
+      "duration_minutes": 5,
+      "description": "Walk it out, then stretch the major muscle groups.",
+      "movements": [
+        "Easy walk in place",
+        "Standing quad stretch",
+        "Chest opener stretch"
+      ]
+    }
+  },
+  "phase_notes": {
+    "menstrual": "",
+    "follicular": "",
+    "ovulatory": "",
+    "early_luteal": "",
+    "late_luteal": ""
+  },
+  "author": null,
+  "created_at": "2026-01-01"
+}

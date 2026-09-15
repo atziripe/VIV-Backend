@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"time"
@@ -39,21 +40,31 @@ type onboardingRequest struct {
 	StressReactivity   string `json:"stress_reactivity"`
 	StressLevel        string `json:"stress_level"`
 	Priority           string `json:"priority"`
+
+	// Activities and GoalID are the new-pipeline catalog/goal selections
+	// (VIV-101/VIV-102), validated by the usecase against the real
+	// taxonomy/profiles. GoalID is a single string on purpose: a caller
+	// submitting a JSON array here fails at decode time below, before it
+	// ever reaches the usecase.
+	Activities []string `json:"activities"`
+	GoalID     string   `json:"goal_id"`
 }
 
 type onboardingResponse struct {
-	ID                  string  `json:"id"`
-	OnboardingCompleted bool    `json:"onboarding_completed"`
-	DOB                 string  `json:"dob"`
-	WeightKg            float64 `json:"weight_kg"`
-	HeightCm            float64 `json:"height_cm"`
-	TrainingOften       string  `json:"training_often"`
-	TrainingType        string  `json:"training_type"`
-	TrainingTime        string  `json:"training_time"`
-	TrainingGoals       string  `json:"training_goals"`
-	SleepWindow         string  `json:"sleep_window"`
-	StressLevel         string  `json:"stress_level"`
-	Priority            string  `json:"priority"`
+	ID                  string   `json:"id"`
+	OnboardingCompleted bool     `json:"onboarding_completed"`
+	DOB                 string   `json:"dob"`
+	WeightKg            float64  `json:"weight_kg"`
+	HeightCm            float64  `json:"height_cm"`
+	TrainingOften       string   `json:"training_often"`
+	TrainingType        string   `json:"training_type"`
+	TrainingTime        string   `json:"training_time"`
+	TrainingGoals       string   `json:"training_goals"`
+	SleepWindow         string   `json:"sleep_window"`
+	StressLevel         string   `json:"stress_level"`
+	Priority            string   `json:"priority"`
+	Activities          []string `json:"activities"`
+	GoalID              string   `json:"goal_id"`
 }
 
 type OnboardingHandler struct {
@@ -126,12 +137,28 @@ func (h *OnboardingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		StressReactivity:   req.StressReactivity,
 		StressLevel:        req.StressLevel,
 		Priority:           req.Priority,
+
+		Activities: req.Activities,
+		GoalID:     req.GoalID,
 	}
 
 	out, err := h.UC.Execute(ctx, in)
 	if err != nil {
-		http.Error(w, "failed to complete onboarding", http.StatusInternalServerError)
+		var invalidActivity usecase.InvalidActivityError
+		var invalidGoal usecase.InvalidGoalError
+		switch {
+		case errors.As(err, &invalidActivity), errors.As(err, &invalidGoal):
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		default:
+			log.Printf("[onboarding] complete onboarding error: %v", err)
+			http.Error(w, "failed to complete onboarding", http.StatusInternalServerError)
+		}
 		return
+	}
+
+	activities := make([]string, len(out.User.UserCatalog))
+	for i, a := range out.User.UserCatalog {
+		activities[i] = string(a)
 	}
 
 	// 5. Mapear a response
@@ -147,6 +174,8 @@ func (h *OnboardingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		SleepWindow:         out.User.SleepWindow,
 		StressLevel:         out.User.StressLevel,
 		Priority:            out.User.Priority,
+		Activities:          activities,
+		GoalID:              string(out.User.GoalID),
 	}
 
 	w.Header().Set("Content-Type", "application/json")

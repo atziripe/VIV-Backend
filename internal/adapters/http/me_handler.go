@@ -63,6 +63,11 @@ type meResponse struct {
 	LastActivePlanID     *string `json:"last_active_plan_id,omitempty"`
 	LastInjuryReportedAt *string `json:"last_injury_reported_at,omitempty"`
 
+	// Activities and GoalID are the new-pipeline catalog/goal selections
+	// (VIV-101/VIV-102), captured at onboarding — see onboarding_handler.go.
+	Activities []string `json:"activities"`
+	GoalID     string   `json:"goal_id"`
+
 	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"updated_at"`
 }
@@ -107,6 +112,11 @@ func toMeResponse(u *domain.User) meResponse {
 		onboardingInt = 1
 	}
 
+	activities := make([]string, len(u.UserCatalog))
+	for i, a := range u.UserCatalog {
+		activities[i] = string(a)
+	}
+
 	return meResponse{
 		ID:                     u.ID,
 		Username:               u.Username,
@@ -148,6 +158,9 @@ func toMeResponse(u *domain.User) meResponse {
 		TrainingPaused:       u.TrainingPaused,
 		LastActivePlanID:     u.LastActivePlanID,
 		LastInjuryReportedAt: lastInjuryStr,
+
+		Activities: activities,
+		GoalID:     string(u.GoalID),
 
 		CreatedAt: createdStr,
 		UpdatedAt: updatedStr,

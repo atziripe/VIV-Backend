@@ -1,0 +1,59 @@
+[
+  {
+    "id": "lower_exercise_1",
+    "name": "Barbell Back Squat",
+    "muscle_group": "lower",
+    "standard": {
+      "sets": 4,
+      "reps": "6-8",
+      "rest_seconds": 120,
+      "load_guidance": "RPE 7-8",
+      "form_cue": "Brace the core, knees track over the toes"
+    },
+    "reduced": {
+      "sets": 3,
+      "reps": "8-10",
+      "rest_seconds": 90,
+      "load_guidance": "RPE 5-6, lighter load than usual",
+      "form_cue": "Focus on control over load today"
+    }
+  },
+  {
+    "id": "lower_exercise_2",
+    "name": "Romanian Deadlift",
+    "muscle_group": "lower",
+    "standard": {
+      "sets": 3,
+      "reps": "8-10",
+      "rest_seconds": 90,
+      "load_guidance": "RPE 7",
+      "form_cue": "Hinge at the hips, keep the bar close to the legs"
+    },
+    "reduced": {
+      "sets": 3,
+      "reps": "10-12",
+      "rest_seconds": 75,
+      "load_guidance": "RPE 5, lighter load than usual",
+      "form_cue": "Slow and controlled through the full range"
+    }
+  },
+  {
+    "id": "lower_exercise_3",
+    "name": "Walking Lunge",
+    "muscle_group": "lower",
+    "standard": {
+      "sets": 3,
+      "reps": "10 per leg",
+      "rest_seconds": 60,
+      "load_guidance": "RPE 6-7, dumbbells optional",
+      "form_cue": "Upright torso, front knee tracks over the ankle"
+    },
+    "reduced": {
+      "sets": 2,
+      "reps": "10 per leg",
+      "rest_seconds": 60,
+      "load_guidance": "Bodyweight only",
+      "form_cue": "Shorter stride, controlled tempo"
+    }
+  }
+]

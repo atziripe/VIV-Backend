@@ -1,0 +1,59 @@
+[
+  {
+    "id": "core_exercise_1",
+    "name": "Plank",
+    "muscle_group": "core",
+    "standard": {
+      "sets": 3,
+      "reps": "45-60 sec",
+      "rest_seconds": 45,
+      "load_guidance": "Bodyweight",
+      "form_cue": "Neutral spine, ribs down, glutes engaged"
+    },
+    "reduced": {
+      "sets": 2,
+      "reps": "30-40 sec",
+      "rest_seconds": 45,
+      "load_guidance": "Bodyweight, shorter hold than usual",
+      "form_cue": "Drop to knees if form breaks down"
+    }
+  },
+  {
+    "id": "core_exercise_2",
+    "name": "Dead Bug",
+    "muscle_group": "core",
+    "standard": {
+      "sets": 3,
+      "reps": "10 per side",
+      "rest_seconds": 45,
+      "load_guidance": "Bodyweight",
+      "form_cue": "Press the lower back into the floor throughout"
+    },
+    "reduced": {
+      "sets": 2,
+      "reps": "8 per side",
+      "rest_seconds": 45,
+      "load_guidance": "Bodyweight, smaller range than usual",
+      "form_cue": "Move only as far as the lower back stays flat"
+    }
+  },
+  {
+    "id": "core_exercise_3",
+    "name": "Pallof Press",
+    "muscle_group": "core",
+    "standard": {
+      "sets": 3,
+      "reps": "10 per side",
+      "rest_seconds": 45,
+      "load_guidance": "RPE 6",
+      "form_cue": "Resist rotation, press straight out from the chest"
+    },
+    "reduced": {
+      "sets": 2,
+      "reps": "10 per side",
+      "rest_seconds": 45,
+      "load_guidance": "RPE 4, lighter resistance than usual",
+      "form_cue": "Slow tempo, focus on staying square"
+    }
+  }
+]

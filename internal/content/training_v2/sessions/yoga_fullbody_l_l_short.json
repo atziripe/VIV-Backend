@@ -1,0 +1,44 @@
+{
+  "id": "yoga_fullbody_l_l_short_v1",
+  "version": 1,
+  "content_status": "draft_dummy",
+  "activity_type": "yoga",
+  "intensity": "L",
+  "impact": "L",
+  "muscle_group": "full_body",
+  "duration_tier": "short",
+  "complexity_tier": "standard",
+  "load_tier": "standard",
+  "duration_minutes": 15,
+  "content": {
+    "warmup": {
+      "duration_minutes": 2,
+      "description": "Quick breath-led settle-in.",
+      "movements": ["Seated breathing", "Cat-cow"]
+    },
+    "main_exercises": [
+      {
+        "name": "Shortened sun salutation flow",
+        "sets": 2,
+        "reps": "1 flow",
+        "rest_seconds": 20,
+        "load_guidance": "Bodyweight, slow deliberate tempo",
+        "form_cue": "Lead every transition with the breath, not momentum"
+      }
+    ],
+    "cooldown": {
+      "duration_minutes": 3,
+      "description": "Brief seated stillness to close the session.",
+      "movements": ["Seated forward fold", "Savasana"]
+    }
+  },
+  "phase_notes": {
+    "menstrual": "",
+    "follicular": "",
+    "ovulatory": "",
+    "early_luteal": "",
+    "late_luteal": ""
+  },
+  "author": null,
+  "created_at": "2026-01-01"
+}

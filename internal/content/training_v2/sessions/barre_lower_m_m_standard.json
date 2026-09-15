@@ -1,0 +1,60 @@
+{
+  "id": "barre_lower_m_m_standard_v1",
+  "version": 1,
+  "content_status": "draft_dummy",
+  "activity_type": "barre",
+  "intensity": "M",
+  "impact": "M",
+  "muscle_group": "lower",
+  "duration_tier": "standard",
+  "complexity_tier": "standard",
+  "load_tier": "standard",
+  "duration_minutes": 38,
+  "content": {
+    "warmup": {
+      "duration_minutes": 5,
+      "description": "Pli\u00e9s and ankle work to warm up the legs and feet.",
+      "movements": [
+        "Parallel pli\u00e9 pulses",
+        "Ankle circles",
+        "Hip circles at the barre"
+      ]
+    },
+    "main_exercises": [
+      {
+        "name": "Pli\u00e9 pulse sequence with light hops",
+        "sets": 3,
+        "reps": "16 reps + 8 small hops",
+        "rest_seconds": 25,
+        "load_guidance": "Bodyweight, low hop height",
+        "form_cue": "Land soft through the whole foot, knees tracking over toes"
+      },
+      {
+        "name": "Single-leg series with small jumps",
+        "sets": 2,
+        "reps": "8 reps + 6 small jumps per side",
+        "rest_seconds": 20,
+        "load_guidance": "Bodyweight",
+        "form_cue": "Quiet landings \u2014 that's the sign of good control, not height"
+      }
+    ],
+    "cooldown": {
+      "duration_minutes": 5,
+      "description": "Standing stretch sequence for quads, calves and hips.",
+      "movements": [
+        "Quad stretch at the barre",
+        "Calf stretch",
+        "Standing figure-four hip stretch"
+      ]
+    }
+  },
+  "phase_notes": {
+    "menstrual": "",
+    "follicular": "",
+    "ovulatory": "",
+    "early_luteal": "",
+    "late_luteal": ""
+  },
+  "author": null,
+  "created_at": "2026-01-01"
+}

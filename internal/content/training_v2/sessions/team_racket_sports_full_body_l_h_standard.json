@@ -1,0 +1,53 @@
+{
+  "id": "team_racket_sports_full_body_l_h_standard_v1",
+  "version": 1,
+  "content_status": "draft_dummy",
+  "activity_type": "team_racket_sports",
+  "intensity": "L",
+  "impact": "H",
+  "muscle_group": "full_body",
+  "duration_tier": "standard",
+  "complexity_tier": "standard",
+  "load_tier": "standard",
+  "duration_minutes": 30,
+  "content": {
+    "warmup": {
+      "duration_minutes": 6,
+      "description": "Sport-prep warmup: footwork and lateral movement.",
+      "movements": [
+        "Lateral shuffles",
+        "High knees",
+        "Carioca steps",
+        "Dynamic arm swings"
+      ]
+    },
+    "main_exercises": [
+      {
+        "name": "Light small-sided game (team sport pace)",
+        "sets": 1,
+        "reps": "main session block",
+        "rest_seconds": 60,
+        "load_guidance": "Easy small-sided possession game, RPE 4-5",
+        "form_cue": "Keep movements unhurried \u2014 this is about touch and reads, not speed"
+      }
+    ],
+    "cooldown": {
+      "duration_minutes": 6,
+      "description": "Walk it out and stretch the legs and shoulders.",
+      "movements": [
+        "Easy walk",
+        "Standing hamstring stretch",
+        "Shoulder cross-body stretch"
+      ]
+    }
+  },
+  "phase_notes": {
+    "menstrual": "",
+    "follicular": "",
+    "ovulatory": "",
+    "early_luteal": "",
+    "late_luteal": ""
+  },
+  "author": null,
+  "created_at": "2026-01-01"
+}

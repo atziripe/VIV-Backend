@@ -1,0 +1,60 @@
+{
+  "id": "pilates_full_body_l_l_standard_v1",
+  "version": 1,
+  "content_status": "draft_dummy",
+  "activity_type": "pilates",
+  "intensity": "L",
+  "impact": "L",
+  "muscle_group": "full_body",
+  "duration_tier": "standard",
+  "complexity_tier": "standard",
+  "load_tier": "standard",
+  "duration_minutes": 30,
+  "content": {
+    "warmup": {
+      "duration_minutes": 5,
+      "description": "Breath-led warmup to find pelvic and spinal control.",
+      "movements": [
+        "Seated breathing",
+        "Pelvic tilts",
+        "Spinal articulation (roll-down)"
+      ]
+    },
+    "main_exercises": [
+      {
+        "name": "Mat fundamentals flow (Hundred, Roll-Up, Single Leg Circles)",
+        "sets": 2,
+        "reps": "10-12 reps per exercise",
+        "rest_seconds": 20,
+        "load_guidance": "Bodyweight, focus on control over speed",
+        "form_cue": "Exhale on the effort, keep the spine imprinted"
+      },
+      {
+        "name": "Side-lying leg series",
+        "sets": 2,
+        "reps": "12 reps per side",
+        "rest_seconds": 15,
+        "load_guidance": "Bodyweight",
+        "form_cue": "Keep the hips stacked, move from the leg not the low back"
+      }
+    ],
+    "cooldown": {
+      "duration_minutes": 5,
+      "description": "Slow stretch sequence to release through the spine and hips.",
+      "movements": [
+        "Seated spinal twist",
+        "Child's pose",
+        "Hip flexor stretch"
+      ]
+    }
+  },
+  "phase_notes": {
+    "menstrual": "",
+    "follicular": "",
+    "ovulatory": "",
+    "early_luteal": "",
+    "late_luteal": ""
+  },
+  "author": null,
+  "created_at": "2026-01-01"
+}

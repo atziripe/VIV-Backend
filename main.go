@@ -22,6 +22,8 @@ import (
 	"viv/internal/adapters/repository"
 	"viv/internal/adapters/runner"
 	"viv/internal/config"
+	corecontent "viv/internal/core/content"
+	"viv/internal/core/mesocycle"
 	corenutrition "viv/internal/core/nutrition"
 	"viv/internal/core/recovery"
 	"viv/internal/core/rules"
@@ -92,6 +94,12 @@ func main() {
 	fsPlanRepo := repository.NewFirestorePlanRepository(fsClient)
 	fsPlanJobsRepo := repository.NewFirestorePlanJobsRepository(fsClient)
 	fsDeviceTokenRepo := repository.NewFirestoreDeviceTokenRepository(fsClient)
+
+	// New weekly-plan pipeline (VIV-106..113) — Firestore-only, no Neon
+	// counterpart yet, same as lifestyleRepo below.
+	weeklyPlanDraftRepo := repository.NewFirestoreWeeklyPlanDraftRepository(fsClient)
+	exercisePinRepo := repository.NewFirestoreExercisePinRepository(fsClient)
+	dailyCheckinRepo := repository.NewFirestoreDailyCheckinRepository(fsClient)
 
 	// Neon (secondary — dual-write target)
 	// If DATABASE_URL is missing or Neon is unreachable, the app falls back to
@@ -192,7 +200,6 @@ func main() {
 	}
 
 	// ========= Usecases =========
-	onboardingUC := usecase.NewCompleteOnboardingUseCase(userRepo)
 	createCheckinUC := usecase.NewCreateCheckinUseCase(checkinRepo, userRepo, "v1")
 	latestCheckinUC := usecase.NewGetLatestCheckinUseCase(checkinRepo)
 	statusCheckinUC := usecase.NewGetCheckinStatusUseCase(checkinRepo, userRepo)
@@ -222,6 +229,61 @@ func main() {
 	statusTrainingUC := usecase.NewGetPlanGenerationStatusUseCase(planJobsRepo)
 	saveArrangementUC := usecase.NewSaveTrainingArrangementUseCase(planRepo, userRepo, checkinRepo, trainingLib)
 
+	// ========= New Weekly Plan Pipeline (VIV-106..113) =========
+	// Deliberately isolated from the old Training Pipeline above — its own
+	// content directory, its own taxonomy, its own async job flow, reusing
+	// only what's genuinely shared (fsClient, oaClient, cyclePhaseLookup,
+	// planJobsRepo/PlanJob's queued/running/done/failed shape).
+	weeklySessionLib, err := corecontent.LoadSessionLibrary("internal/content/training_v2/sessions")
+	if err != nil {
+		log.Fatalf("failed to load weekly-plan session library: %v", err)
+	}
+	weeklyExerciseLib, err := corecontent.LoadExerciseLibrary("internal/content/training_v2/exercises")
+	if err != nil {
+		log.Fatalf("failed to load weekly-plan exercise library: %v", err)
+	}
+	weeklyMesocycleWarmupCooldownLib, err := corecontent.LoadMesocycleWarmupCooldownLibrary("internal/content/training_v2/mesocycle_warmup_cooldown")
+	if err != nil {
+		log.Fatalf("failed to load mesocycle warmup/cooldown library: %v", err)
+	}
+	log.Printf("weekly-plan content loaded: session library + exercise library + mesocycle warmup/cooldown library")
+
+	// StubExerciseSetSelector: real curated exercise-set selection logic
+	// (VIV-108) doesn't exist yet — this just offers everything the
+	// exercise library has for a muscle group. Swap when that lands.
+	exercisePinService := usecase.NewExercisePinService(exercisePinRepo, mesocycle.StubExerciseSetSelector{}, weeklyExerciseLib)
+
+	weeklyScheduler := openai.NewWeeklyScheduler(oaClient)                                                                                                // VIV-109, real LLM-backed Layer 1
+	ruleEngineValidator := usecase.NewRuleEngineValidator(weeklyScheduler)                                                                                // VIV-110, retries Layer 1 once on a spacing violation
+	jointImpactWarnings := usecase.NewJointImpactWarningsLayer()                                                                                          // VIV-111
+	weeklyContentSelector := usecase.NewSessionContentSelector(weeklySessionLib, weeklyExerciseLib, weeklyMesocycleWarmupCooldownLib, exercisePinService) // VIV-112
+
+	generateWeeklyPlanUC := usecase.NewGenerateWeeklyPlanUsecase(
+		cyclePhaseLookup,
+		weeklyScheduler,
+		ruleEngineValidator,
+		jointImpactWarnings,
+		weeklyContentSelector,
+		weeklyPlanDraftRepo,
+	)
+
+	weeklyPlanRunner := runner.NewLocalWeeklyPlanRunner(planJobsRepo, generateWeeklyPlanUC, 3*time.Minute)
+	startWeeklyPlanUC := usecase.NewStartWeeklyPlanGenerationUseCase(planJobsRepo, weeklyPlanRunner)
+	statusWeeklyPlanUC := usecase.NewGetPlanGenerationStatusUseCase(planJobsRepo)
+	currentWeeklyPlanUC := usecase.NewGetCurrentWeeklyPlanUseCase(weeklyPlanDraftRepo)
+	weeklyPlanDayUC := usecase.NewGetWeeklyPlanDayUseCase(weeklyPlanDraftRepo)
+
+	// Onboarding completion triggers the user's first weekly-plan
+	// generation immediately after persisting — built here, after
+	// generateWeeklyPlanUC exists, since it needs it as a collaborator.
+	onboardingUC := usecase.NewCompleteOnboardingUseCase(userRepo, generateWeeklyPlanUC)
+
+	// Daily check-in (VIV-103/106/107): scores the day's answers, then
+	// either generates a fresh week (no plan covers today yet) or adapts
+	// today's slot in an already-generated one.
+	adaptDailySlotUC := usecase.NewAdaptDailySlotUsecase(cyclePhaseLookup, weeklyPlanDraftRepo)
+	submitDailyCheckinUC := usecase.NewSubmitDailyCheckinUseCase(dailyCheckinRepo, weeklyPlanDraftRepo, userRepo, generateWeeklyPlanUC, adaptDailySlotUC)
+
 	// PATCH /me needs generateNutritionUC (sync macro/meal recompute on
 	// weight/height changes), startTrainingUC (async full regen on cycle
 	// changes), and copyEnricher (so a weight/height-triggered nutrition
@@ -246,6 +308,8 @@ func main() {
 	meHandler := httpadapter.NewMeHandler(getMeUC, updateProfileUC)
 	plansHandler := httpadapter.NewPlansHandler(getCurrentPlanUC, getByIDUC, getByWeekStartUC, statusUC, phaseFeedbackUC)
 	trainingHandler := httpadapter.NewTrainingHandler(startTrainingUC, statusTrainingUC, trainingEngine, resumeTrainingUC, completeDayUC, saveArrangementUC)
+	weeklyPlanHandler := httpadapter.NewWeeklyPlanHandler(startWeeklyPlanUC, statusWeeklyPlanUC, currentWeeklyPlanUC, weeklyPlanDayUC)
+	dailyCheckinHandler := httpadapter.NewDailyCheckinHandler(submitDailyCheckinUC)
 	nutritionHandler := httpadapter.NewNutritionHandler(nutritionUC, mealSelectionUC)
 	recoveryHandler := httpadapter.NewRecoveryHandler(recoveryUC)
 	deviceTokenHandler := httpadapter.NewDeviceTokenHandler(registerDeviceTokenUC)
@@ -268,6 +332,10 @@ func main() {
 	api := chi.NewRouter()
 
 	api.Post("/onboarding", onboardingHandler.ServeHTTP)
+
+	// VIV-103/106/107 daily check-in — distinct from the older /checkins
+	// (plural) weekly check-in below.
+	api.Post("/checkin", dailyCheckinHandler.Submit)
 
 	api.Post("/checkins", checkinHandler.Create)
 	api.Get("/checkins/latest", checkinHandler.Latest)
@@ -292,6 +360,13 @@ func main() {
 	api.Post("/training/validate-arrangement", trainingHandler.ValidateArrangement)
 	api.Post("/training/complete-day", trainingHandler.CompleteDay)
 	api.Post("/training/save-arrangement", trainingHandler.SaveArrangement)
+
+	// New weekly-plan pipeline (VIV-106..113) — async job, same shape as
+	// /training/generate above.
+	api.Post("/training/weekly-plan/generate", weeklyPlanHandler.Generate)
+	api.Get("/training/weekly-plan/generate/status", weeklyPlanHandler.GenerateStatus)
+	api.Get("/training/weekly-plan/current", weeklyPlanHandler.CurrentWeek)
+	api.Get("/training/weekly-plan/day", weeklyPlanHandler.Day)
 
 	api.Get("/nutrition/plan", nutritionHandler.GetPlan)
 	api.Post("/nutrition/meal-selection", nutritionHandler.SaveMealSelection)

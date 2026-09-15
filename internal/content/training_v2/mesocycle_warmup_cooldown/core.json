@@ -1,0 +1,13 @@
+{
+  "muscle_group": "core",
+  "warmup": {
+    "duration_minutes": 5,
+    "description": "Wake up the trunk and find bracing before loading it.",
+    "movements": ["Dead bug", "Bird dog", "Cat-cow", "90/90 breathing"]
+  },
+  "cooldown": {
+    "duration_minutes": 4,
+    "description": "Release through the trunk and low back.",
+    "movements": ["Child's pose", "Seated spinal twist", "Knees-to-chest stretch"]
+  }
+}

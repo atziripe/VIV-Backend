@@ -1,0 +1,59 @@
+[
+  {
+    "id": "full_body_exercise_1",
+    "name": "Kettlebell Swing",
+    "muscle_group": "full_body",
+    "standard": {
+      "sets": 4,
+      "reps": "15-20",
+      "rest_seconds": 60,
+      "load_guidance": "RPE 7",
+      "form_cue": "Hinge, not squat — power from the hips"
+    },
+    "reduced": {
+      "sets": 3,
+      "reps": "12-15",
+      "rest_seconds": 60,
+      "load_guidance": "RPE 5, lighter kettlebell than usual",
+      "form_cue": "Controlled tempo, focus on the hinge pattern"
+    }
+  },
+  {
+    "id": "full_body_exercise_2",
+    "name": "Dumbbell Thruster",
+    "muscle_group": "full_body",
+    "standard": {
+      "sets": 3,
+      "reps": "10-12",
+      "rest_seconds": 75,
+      "load_guidance": "RPE 7",
+      "form_cue": "Full squat depth, drive overhead in one motion"
+    },
+    "reduced": {
+      "sets": 2,
+      "reps": "10-12",
+      "rest_seconds": 75,
+      "load_guidance": "RPE 5, lighter load than usual",
+      "form_cue": "Break into two distinct phases if needed"
+    }
+  },
+  {
+    "id": "full_body_exercise_3",
+    "name": "Renegade Row",
+    "muscle_group": "full_body",
+    "standard": {
+      "sets": 3,
+      "reps": "8 per side",
+      "rest_seconds": 75,
+      "load_guidance": "RPE 6-7",
+      "form_cue": "Minimize hip rotation, brace through the plank"
+    },
+    "reduced": {
+      "sets": 2,
+      "reps": "8 per side",
+      "rest_seconds": 60,
+      "load_guidance": "RPE 5, lighter load than usual",
+      "form_cue": "Widen the stance for more stability if needed"
+    }
+  }
+]
