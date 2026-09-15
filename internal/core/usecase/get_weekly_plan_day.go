@@ -7,19 +7,18 @@ import (
 	"time"
 
 	"viv/internal/core/activity"
+	"viv/internal/core/domain"
 )
 
 // ============================================================================
 // GET WEEKLY PLAN DAY — the "session detail" read for one day of an
 // already-generated week: the warmup/main-work/cooldown breakdown a
-// session-detail screen needs. Pure read of what VIV-106/VIV-112 already
-// persisted on the draft (DayPlan.Content) — this does NOT re-run content
-// selection or exercise pinning.
-//
-// This is read-only, and deliberately only that: it does not implement
-// set-by-set logging, rest timers, or session completion/feedback — a
-// real-time logging flow for mesocycle-pinned (Loggable) days needs its
-// own, separate write endpoints that don't exist yet.
+// session-detail screen needs, plus (for Loggable days) whatever
+// real-time session log already exists — so a client that reopens the
+// app mid-workout can resume instead of losing state. Pure read: this
+// does NOT re-run content selection/exercise pinning, and does not
+// itself implement start/log-set/complete — see session_logging.go for
+// the write side of this flow.
 // ============================================================================
 
 // assumedSecondsPerSet is a first-draft estimate used ONLY to derive a
@@ -92,6 +91,12 @@ type WeeklyPlanDayDetail struct {
 	Warmup        *WeeklyPlanDayBlock
 	MainExercises []WeeklyPlanDayExercise
 	Cooldown      *WeeklyPlanDayBlock
+
+	// Session is the in-progress or completed real-time log for this day
+	// — nil when Loggable is false, or when Loggable is true but the user
+	// hasn't started it yet. See session_logging.go (StartSessionUseCase
+	// et al.) for how it gets created/updated.
+	Session *domain.SessionLog
 }
 
 type GetWeeklyPlanDayOutput struct {
@@ -102,10 +107,11 @@ type GetWeeklyPlanDayOutput struct {
 
 type GetWeeklyPlanDayUseCase struct {
 	Drafts WeeklyPlanDraftRepository
+	Logs   SessionLogRepository
 }
 
-func NewGetWeeklyPlanDayUseCase(drafts WeeklyPlanDraftRepository) *GetWeeklyPlanDayUseCase {
-	return &GetWeeklyPlanDayUseCase{Drafts: drafts}
+func NewGetWeeklyPlanDayUseCase(drafts WeeklyPlanDraftRepository, logs SessionLogRepository) *GetWeeklyPlanDayUseCase {
+	return &GetWeeklyPlanDayUseCase{Drafts: drafts, Logs: logs}
 }
 
 func (uc *GetWeeklyPlanDayUseCase) Execute(ctx context.Context, in GetWeeklyPlanDayInput) (GetWeeklyPlanDayOutput, error) {
@@ -195,6 +201,14 @@ func (uc *GetWeeklyPlanDayUseCase) Execute(ctx context.Context, in GetWeeklyPlan
 				Movements:       day.Content.Cooldown.Movements,
 			}
 		}
+	}
+
+	if detail.Loggable {
+		log, err := uc.Logs.GetByDate(ctx, userID, date)
+		if err != nil {
+			return GetWeeklyPlanDayOutput{}, fmt.Errorf("get weekly plan day: loading session log: %w", err)
+		}
+		detail.Session = log
 	}
 
 	return GetWeeklyPlanDayOutput{Found: true, Day: detail}, nil

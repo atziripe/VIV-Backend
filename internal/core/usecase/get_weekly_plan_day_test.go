@@ -30,7 +30,7 @@ func TestGetWeeklyPlanDay_SessionLibraryPath(t *testing.T) {
 		yogaDay, restDay(), restDay(), restDay(), restDay(), restDay(), restDay(),
 	})
 
-	uc := usecase.NewGetWeeklyPlanDayUseCase(drafts)
+	uc := usecase.NewGetWeeklyPlanDayUseCase(drafts, &fakeSessionLogRepo{})
 	out, err := uc.Execute(context.Background(), usecase.GetWeeklyPlanDayInput{UserID: "u1", Date: monday})
 	if err != nil {
 		t.Fatalf("Execute returned error: %v", err)
@@ -106,7 +106,7 @@ func TestGetWeeklyPlanDay_MesocyclePinnedPath(t *testing.T) {
 		strengthDay, restDay(), restDay(), restDay(), restDay(), restDay(), restDay(),
 	})
 
-	uc := usecase.NewGetWeeklyPlanDayUseCase(drafts)
+	uc := usecase.NewGetWeeklyPlanDayUseCase(drafts, &fakeSessionLogRepo{})
 	out, err := uc.Execute(context.Background(), usecase.GetWeeklyPlanDayInput{UserID: "u1", Date: monday})
 	if err != nil {
 		t.Fatalf("Execute returned error: %v", err)
@@ -149,7 +149,7 @@ func TestGetWeeklyPlanDay_RestDay(t *testing.T) {
 		restDay(), restDay(), restDay(), restDay(), restDay(), restDay(), restDay(),
 	})
 
-	uc := usecase.NewGetWeeklyPlanDayUseCase(drafts)
+	uc := usecase.NewGetWeeklyPlanDayUseCase(drafts, &fakeSessionLogRepo{})
 	out, err := uc.Execute(context.Background(), usecase.GetWeeklyPlanDayInput{UserID: "u1", Date: monday})
 	if err != nil {
 		t.Fatalf("Execute returned error: %v", err)
@@ -167,7 +167,7 @@ func TestGetWeeklyPlanDay_RestDay(t *testing.T) {
 
 func TestGetWeeklyPlanDay_NoPlanCoversDate(t *testing.T) {
 	drafts := &fakeDraftRepo{}
-	uc := usecase.NewGetWeeklyPlanDayUseCase(drafts)
+	uc := usecase.NewGetWeeklyPlanDayUseCase(drafts, &fakeSessionLogRepo{})
 
 	out, err := uc.Execute(context.Background(), usecase.GetWeeklyPlanDayInput{
 		UserID: "u1", Date: time.Date(2026, time.May, 4, 0, 0, 0, 0, time.UTC),

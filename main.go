@@ -100,6 +100,7 @@ func main() {
 	weeklyPlanDraftRepo := repository.NewFirestoreWeeklyPlanDraftRepository(fsClient)
 	exercisePinRepo := repository.NewFirestoreExercisePinRepository(fsClient)
 	dailyCheckinRepo := repository.NewFirestoreDailyCheckinRepository(fsClient)
+	sessionLogRepo := repository.NewFirestoreSessionLogRepository(fsClient)
 
 	// Neon (secondary — dual-write target)
 	// If DATABASE_URL is missing or Neon is unreachable, the app falls back to
@@ -271,7 +272,14 @@ func main() {
 	startWeeklyPlanUC := usecase.NewStartWeeklyPlanGenerationUseCase(planJobsRepo, weeklyPlanRunner)
 	statusWeeklyPlanUC := usecase.NewGetPlanGenerationStatusUseCase(planJobsRepo)
 	currentWeeklyPlanUC := usecase.NewGetCurrentWeeklyPlanUseCase(weeklyPlanDraftRepo)
-	weeklyPlanDayUC := usecase.NewGetWeeklyPlanDayUseCase(weeklyPlanDraftRepo)
+	weeklyPlanDayUC := usecase.NewGetWeeklyPlanDayUseCase(weeklyPlanDraftRepo, sessionLogRepo)
+
+	// Real-time set-by-set session logging (Loggable/mesocycle-pinned
+	// days only, i.e. Strength today) — the write side of the session-
+	// detail screen above.
+	startSessionUC := usecase.NewStartSessionUseCase(weeklyPlanDraftRepo, sessionLogRepo)
+	logSetUC := usecase.NewLogSetUseCase(weeklyPlanDraftRepo, sessionLogRepo)
+	completeSessionUC := usecase.NewCompleteSessionUseCase(weeklyPlanDraftRepo, sessionLogRepo)
 
 	// Onboarding completion triggers the user's first weekly-plan
 	// generation immediately after persisting — built here, after
@@ -309,6 +317,7 @@ func main() {
 	plansHandler := httpadapter.NewPlansHandler(getCurrentPlanUC, getByIDUC, getByWeekStartUC, statusUC, phaseFeedbackUC)
 	trainingHandler := httpadapter.NewTrainingHandler(startTrainingUC, statusTrainingUC, trainingEngine, resumeTrainingUC, completeDayUC, saveArrangementUC)
 	weeklyPlanHandler := httpadapter.NewWeeklyPlanHandler(startWeeklyPlanUC, statusWeeklyPlanUC, currentWeeklyPlanUC, weeklyPlanDayUC)
+	sessionLogHandler := httpadapter.NewSessionLogHandler(startSessionUC, logSetUC, completeSessionUC)
 	dailyCheckinHandler := httpadapter.NewDailyCheckinHandler(submitDailyCheckinUC)
 	nutritionHandler := httpadapter.NewNutritionHandler(nutritionUC, mealSelectionUC)
 	recoveryHandler := httpadapter.NewRecoveryHandler(recoveryUC)
@@ -367,6 +376,9 @@ func main() {
 	api.Get("/training/weekly-plan/generate/status", weeklyPlanHandler.GenerateStatus)
 	api.Get("/training/weekly-plan/current", weeklyPlanHandler.CurrentWeek)
 	api.Get("/training/weekly-plan/day", weeklyPlanHandler.Day)
+	api.Post("/training/weekly-plan/day/start", sessionLogHandler.Start)
+	api.Post("/training/weekly-plan/day/log-set", sessionLogHandler.LogSet)
+	api.Post("/training/weekly-plan/day/complete", sessionLogHandler.Complete)
 
 	api.Get("/nutrition/plan", nutritionHandler.GetPlan)
 	api.Post("/nutrition/meal-selection", nutritionHandler.SaveMealSelection)

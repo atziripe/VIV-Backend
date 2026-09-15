@@ -412,6 +412,85 @@ func selectSubBody(path string, body map[string]any) any {
 		}
 		return out
 
+	case "/training/weekly-plan/day/start":
+		// body: { "day_start": { "date": "2026-05-04" } }
+		v, ok := body["day_start"]
+		if !ok || v == nil {
+			return map[string]any{}
+		}
+		m, ok := v.(map[string]any)
+		if !ok {
+			return map[string]any{}
+		}
+		out := map[string]any{}
+		if raw, exists := m["date"]; exists {
+			if s, ok := raw.(string); ok {
+				if t := strings.TrimSpace(s); t != "" {
+					out["date"] = t
+				}
+			}
+		}
+		return out
+
+	case "/training/weekly-plan/day/log-set":
+		// body: { "log_set": { "date": "...", "exercise_id": "...", "set_number": 2, "weight_kg": 18, "reps": 9 } }
+		v, ok := body["log_set"]
+		if !ok || v == nil {
+			return map[string]any{}
+		}
+		m, ok := v.(map[string]any)
+		if !ok {
+			return map[string]any{}
+		}
+		out := map[string]any{}
+		copyTrim := func(key string) {
+			raw, exists := m[key]
+			if !exists || raw == nil {
+				return
+			}
+			if s, ok := raw.(string); ok {
+				if t := strings.TrimSpace(s); t != "" {
+					out[key] = t
+				}
+				return
+			}
+			out[key] = raw
+		}
+		copyTrim("date")
+		copyTrim("exercise_id")
+		copyTrim("set_number")
+		copyTrim("weight_kg")
+		copyTrim("reps")
+		return out
+
+	case "/training/weekly-plan/day/complete":
+		// body: { "day_complete": { "date": "...", "feedback": "right" } }
+		v, ok := body["day_complete"]
+		if !ok || v == nil {
+			return map[string]any{}
+		}
+		m, ok := v.(map[string]any)
+		if !ok {
+			return map[string]any{}
+		}
+		out := map[string]any{}
+		copyTrim := func(key string) {
+			raw, exists := m[key]
+			if !exists || raw == nil {
+				return
+			}
+			if s, ok := raw.(string); ok {
+				if t := strings.TrimSpace(s); t != "" {
+					out[key] = t
+				}
+				return
+			}
+			out[key] = raw
+		}
+		copyTrim("date")
+		copyTrim("feedback")
+		return out
+
 	case "/training/save-arrangement":
 		v, ok := body["training_save_arrangement"]
 		if !ok || v == nil {

@@ -286,17 +286,25 @@ type weeklyPlanDayDetailResponse struct {
 	Warmup        *weeklyPlanDayBlockResponse     `json:"warmup,omitempty"`
 	MainExercises []weeklyPlanDayExerciseResponse `json:"main_exercises,omitempty"`
 	Cooldown      *weeklyPlanDayBlockResponse     `json:"cooldown,omitempty"`
+
+	// Session is the in-progress or completed real-time log for a
+	// Loggable day, if one has been started — see SessionLogHandler
+	// (POST .../day/start, .../log-set, .../complete) for how it's
+	// written. nil means not started yet.
+	Session *sessionLogResponse `json:"session,omitempty"`
 }
 
 // GET /training/weekly-plan/day?date=YYYY-MM-DD
 //
 // Session-detail read for one day of the already-generated week — the
 // warmup/main-work/cooldown breakdown a session-detail screen needs,
-// plus (for mesocycle-pinned days) a stable id per exercise so a
-// follow-up real-time logging flow can reference specific exercises.
-// This endpoint is read-only: it does NOT implement set-by-set logging,
-// rest timers, or session completion/feedback — those need their own,
-// separate write endpoints that don't exist yet.
+// plus (for Loggable days) a stable id per exercise and whatever
+// real-time session log already exists, so a client that reopens the
+// app mid-workout can resume instead of losing state. This endpoint is
+// read-only itself; see SessionLogHandler for the write side
+// (start/log-set/complete). There is no rest-timer endpoint — the
+// countdown between sets is derived client-side from each exercise's
+// rest_seconds, already present below.
 //
 // date is required and trusted as-is from the client, same reasoning as
 // every other date-scoped endpoint here.
@@ -367,6 +375,10 @@ func (h *WeeklyPlanHandler) Day(w http.ResponseWriter, r *http.Request) {
 		resp.DurationMinutes = d.DurationMinutes
 		resp.DurationIsEstimated = d.DurationIsEstimated
 		resp.ExerciseCount = len(d.MainExercises)
+		if d.Session != nil {
+			sr := toSessionLogResponse(*d.Session)
+			resp.Session = &sr
+		}
 
 		if d.Warmup != nil {
 			resp.Warmup = &weeklyPlanDayBlockResponse{
