@@ -78,7 +78,20 @@ func newSubmitCheckinUC(
 	generator *spyWeeklyPlanGenerator,
 	adapter *spyDailyAdapter,
 ) *usecase.SubmitDailyCheckinUseCase {
-	return usecase.NewSubmitDailyCheckinUseCase(checkins, drafts, users, generator, adapter)
+	return usecase.NewSubmitDailyCheckinUseCase(checkins, drafts, users, generator, adapter, nil)
+}
+
+// spyNutritionResync is a usecase.NutritionResyncer fake that records every
+// call it receives — used to verify SubmitDailyCheckinUseCase only triggers
+// a resync when the training week actually changed (a fresh generation, or
+// an adaptation with Changed=true), not on every check-in.
+type spyNutritionResync struct {
+	calls []usecase.WeekDraft
+}
+
+func (s *spyNutritionResync) Execute(_ context.Context, _ string, draft usecase.WeekDraft) error {
+	s.calls = append(s.calls, draft)
+	return nil
 }
 
 var okCheckin = checkin.DailyCheckin{
@@ -308,4 +321,66 @@ func TestSubmitDailyCheckin_GenerationPath_ReasonFromAdjustmentLever(t *testing.
 	if out.Reason != want {
 		t.Errorf("Reason = %q, want %q", out.Reason, want)
 	}
+}
+
+// ============================================================================
+// Nutrition resync: only triggered when the training week actually changed.
+// ============================================================================
+
+func TestSubmitDailyCheckin_GenerationPath_TriggersNutritionResync(t *testing.T) {
+	date := time.Date(2026, time.May, 4, 0, 0, 0, 0, time.UTC)
+	users := &fakeUserRepo{users: map[string]*domain.User{"u1": {ID: "u1"}}}
+	generator := &spyWeeklyPlanGenerator{
+		draft: weekDraftCovering(date, goal.ConsistencyWellbeing, trainingDay(activity.Strength, activity.IntensityM, activity.ImpactM, false)),
+	}
+	resync := &spyNutritionResync{}
+	uc := usecase.NewSubmitDailyCheckinUseCase(&fakeDailyCheckinRepo{}, &fakeDraftRepo{}, users, generator, &spyDailyAdapter{}, resync)
+
+	if _, err := uc.Execute(context.Background(), usecase.SubmitDailyCheckinInput{UserID: "u1", Date: date, Answers: okCheckin}); err != nil {
+		t.Fatalf("Execute returned error: %v", err)
+	}
+	if len(resync.calls) != 1 {
+		t.Fatalf("resync calls = %d, want 1 (a fresh week always resyncs nutrition)", len(resync.calls))
+	}
+}
+
+func TestSubmitDailyCheckin_AdaptationPath_ResyncsOnlyWhenChanged(t *testing.T) {
+	date := time.Date(2026, time.May, 4, 0, 0, 0, 0, time.UTC)
+	users := &fakeUserRepo{users: map[string]*domain.User{"u1": {ID: "u1"}}}
+
+	t.Run("not changed — no resync", func(t *testing.T) {
+		drafts := &fakeDraftRepo{}
+		seedDraft(t, drafts, "u1", date, goal.ConsistencyWellbeing, [7]usecase.DayPlan{
+			trainingDay(activity.Yoga, activity.IntensityL, activity.ImpactL, false),
+			restDay(), restDay(), restDay(), restDay(), restDay(), restDay(),
+		})
+		adapter := &spyDailyAdapter{out: usecase.AdaptDailySlotOutput{Changed: false}}
+		resync := &spyNutritionResync{}
+		uc := usecase.NewSubmitDailyCheckinUseCase(&fakeDailyCheckinRepo{}, drafts, users, &spyWeeklyPlanGenerator{}, adapter, resync)
+
+		if _, err := uc.Execute(context.Background(), usecase.SubmitDailyCheckinInput{UserID: "u1", Date: date, Answers: okCheckin}); err != nil {
+			t.Fatalf("Execute returned error: %v", err)
+		}
+		if len(resync.calls) != 0 {
+			t.Errorf("resync calls = %d, want 0 (nothing about the week changed)", len(resync.calls))
+		}
+	})
+
+	t.Run("changed — resyncs", func(t *testing.T) {
+		drafts := &fakeDraftRepo{}
+		seedDraft(t, drafts, "u1", date, goal.ConsistencyWellbeing, [7]usecase.DayPlan{
+			trainingDay(activity.Yoga, activity.IntensityH, activity.ImpactH, false),
+			restDay(), restDay(), restDay(), restDay(), restDay(), restDay(),
+		})
+		adapter := &spyDailyAdapter{out: usecase.AdaptDailySlotOutput{Changed: true, Reason: usecase.AdjustmentReason(cascade.AdjustmentRelaxIntensity)}}
+		resync := &spyNutritionResync{}
+		uc := usecase.NewSubmitDailyCheckinUseCase(&fakeDailyCheckinRepo{}, drafts, users, &spyWeeklyPlanGenerator{}, adapter, resync)
+
+		if _, err := uc.Execute(context.Background(), usecase.SubmitDailyCheckinInput{UserID: "u1", Date: date, Answers: okCheckin}); err != nil {
+			t.Fatalf("Execute returned error: %v", err)
+		}
+		if len(resync.calls) != 1 {
+			t.Errorf("resync calls = %d, want 1 (the adaptation changed today's slot)", len(resync.calls))
+		}
+	})
 }

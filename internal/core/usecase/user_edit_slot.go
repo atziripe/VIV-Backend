@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"viv/internal/core/activity"
 	"viv/internal/core/cascade"
 )
 
@@ -16,11 +17,12 @@ import (
 // human changed this by hand — only offer a safety suggestion here, never
 // silently overwrite it" (design doc §9).
 type UserEditSlotUsecase struct {
-	drafts WeeklyPlanDraftRepository
+	drafts  WeeklyPlanDraftRepository
+	content ContentSelectionLayer
 }
 
-func NewUserEditSlotUsecase(drafts WeeklyPlanDraftRepository) *UserEditSlotUsecase {
-	return &UserEditSlotUsecase{drafts: drafts}
+func NewUserEditSlotUsecase(drafts WeeklyPlanDraftRepository, content ContentSelectionLayer) *UserEditSlotUsecase {
+	return &UserEditSlotUsecase{drafts: drafts, content: content}
 }
 
 type UserEditSlotInput struct {
@@ -38,13 +40,26 @@ type UserEditSlotInput struct {
 // NewAssignment.ActivityType being empty — an edit that clears the
 // activity type is read as "make this day a rest day."
 //
-// This only ever touches the single day for Date — every other day in the
-// week is left exactly as it was, both in memory and in storage (see
-// WeeklyPlanDraftRepository.UpdateDaySlot).
+// The edited day's Content (VIV-112's hydrated session/exercises) is
+// re-selected against the new Assignment before saving — otherwise a day
+// edited from, say, Strength to Yoga would keep showing Strength's
+// exercises. Content selection runs over the whole in-memory draft
+// (ContentSelectionLayer's only shape) but only the edited day is ever
+// persisted, via WeeklyPlanDraftRepository.UpdateDaySlot — every other
+// day in the week is left exactly as it was, both in memory and in
+// storage. Warning (VIV-111's joint-impact annotation) is cleared rather
+// than recomputed: it was computed for the old assignment and would be
+// misleading left as-is, but recomputing it needs the warnings/overrides
+// layer this usecase doesn't otherwise depend on.
 func (uc *UserEditSlotUsecase) Execute(ctx context.Context, in UserEditSlotInput) (DayPlan, error) {
 	userID := strings.TrimSpace(in.UserID)
 	if userID == "" {
 		return DayPlan{}, fmt.Errorf("user edit slot: userID is required")
+	}
+	if in.NewAssignment.ActivityType != "" {
+		if _, ok := activity.ByID(in.NewAssignment.ActivityType); !ok {
+			return DayPlan{}, fmt.Errorf("user edit slot: unknown activity id %q", in.NewAssignment.ActivityType)
+		}
 	}
 
 	draft, err := uc.drafts.GetByDate(ctx, userID, in.Date)
@@ -63,9 +78,21 @@ func (uc *UserEditSlotUsecase) Execute(ctx context.Context, in UserEditSlotInput
 	newAssignment := in.NewAssignment
 	newAssignment.UserOverrode = true
 
-	day := draft.Days[idx]
-	day.Assignment = newAssignment
-	day.IsRestDay = newAssignment.ActivityType == ""
+	draft.Days[idx].Assignment = newAssignment
+	draft.Days[idx].IsRestDay = newAssignment.ActivityType == ""
+	draft.Days[idx].Warning = ""
+
+	var day DayPlan
+	if draft.Days[idx].IsRestDay {
+		draft.Days[idx].Content = nil
+		day = draft.Days[idx]
+	} else {
+		reselected, err := uc.content.SelectContent(ctx, *draft)
+		if err != nil {
+			return DayPlan{}, fmt.Errorf("user edit slot: selecting content: %w", err)
+		}
+		day = reselected.Days[idx]
+	}
 
 	if err := uc.drafts.UpdateDaySlot(ctx, userID, draft.ID, idx, day); err != nil {
 		return DayPlan{}, fmt.Errorf("user edit slot: saving edit: %w", err)

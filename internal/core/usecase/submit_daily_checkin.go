@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -32,6 +33,15 @@ import (
 // this usecase's own tests don't need AdaptDailySlotUsecase's collaborators.
 type DailyAdapter interface {
 	Execute(ctx context.Context, input AdaptDailySlotInput) (AdaptDailySlotOutput, error)
+}
+
+// NutritionResyncer keeps a standalone nutrition plan aligned with the
+// training week backing it — see resync_nutrition_plan.go. Satisfied
+// directly by *ResyncNutritionPlanUseCase; declared narrowly here for the
+// same testability reasons as DailyAdapter/WeeklyPlanGenerator. Optional:
+// leave nil to skip (nutrition isn't wired everywhere yet).
+type NutritionResyncer interface {
+	Execute(ctx context.Context, userID string, draft WeekDraft) error
 }
 
 // DailyCheckinRepository persists VIV-103's daily check-ins — one record
@@ -75,11 +85,12 @@ type SubmitDailyCheckinOutput struct {
 }
 
 type SubmitDailyCheckinUseCase struct {
-	Checkins  DailyCheckinRepository
-	Drafts    WeeklyPlanDraftRepository
-	Users     UserRepository
-	Generator WeeklyPlanGenerator
-	Adapter   DailyAdapter
+	Checkins        DailyCheckinRepository
+	Drafts          WeeklyPlanDraftRepository
+	Users           UserRepository
+	Generator       WeeklyPlanGenerator
+	Adapter         DailyAdapter
+	NutritionResync NutritionResyncer // optional, nil-safe
 }
 
 func NewSubmitDailyCheckinUseCase(
@@ -88,13 +99,15 @@ func NewSubmitDailyCheckinUseCase(
 	users UserRepository,
 	generator WeeklyPlanGenerator,
 	adapter DailyAdapter,
+	nutritionResync NutritionResyncer,
 ) *SubmitDailyCheckinUseCase {
 	return &SubmitDailyCheckinUseCase{
-		Checkins:  checkins,
-		Drafts:    drafts,
-		Users:     users,
-		Generator: generator,
-		Adapter:   adapter,
+		Checkins:        checkins,
+		Drafts:          drafts,
+		Users:           users,
+		Generator:       generator,
+		Adapter:         adapter,
+		NutritionResync: nutritionResync,
 	}
 }
 
@@ -182,6 +195,8 @@ func (uc *SubmitDailyCheckinUseCase) generateWeek(
 	}
 	day := out.Draft.Days[idx]
 
+	uc.resyncNutrition(ctx, userID, out.Draft)
+
 	return SubmitDailyCheckinOutput{
 		Date:        date,
 		Readiness:   readiness,
@@ -209,6 +224,16 @@ func (uc *SubmitDailyCheckinUseCase) adaptDay(
 		return SubmitDailyCheckinOutput{}, fmt.Errorf("submit daily checkin: adapting today: %w", err)
 	}
 
+	// Only a Changed adaptation actually touched the persisted week — a
+	// re-fetch (rather than splicing out.Assignment into the pre-adaptation
+	// draft this method was handed) keeps this correct regardless of what
+	// else the adapter's write path updates on the day.
+	if out.Changed {
+		if full, ferr := uc.Drafts.GetByDate(ctx, userID, date); ferr == nil && full != nil {
+			uc.resyncNutrition(ctx, userID, *full)
+		}
+	}
+
 	return SubmitDailyCheckinOutput{
 		Date:        out.Date,
 		Readiness:   readiness,
@@ -218,4 +243,17 @@ func (uc *SubmitDailyCheckinUseCase) adaptDay(
 		Reason:      out.Reason,
 		Suggestion:  out.Suggestion,
 	}, nil
+}
+
+// resyncNutrition realigns the user's standalone nutrition plan (if any)
+// with a training week that just changed — best-effort, exactly like
+// CopyEnricher/triggerFirstWeeklyPlan elsewhere in this pipeline: a stale
+// nutrition plan is never worth failing or delaying the check-in over.
+func (uc *SubmitDailyCheckinUseCase) resyncNutrition(ctx context.Context, userID string, draft WeekDraft) {
+	if uc.NutritionResync == nil {
+		return
+	}
+	if err := uc.NutritionResync.Execute(ctx, userID, draft); err != nil {
+		log.Printf("[submit-checkin] nutrition resync failed user=%s err=%v", userID, err)
+	}
 }

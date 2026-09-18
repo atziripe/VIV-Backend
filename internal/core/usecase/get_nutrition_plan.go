@@ -20,10 +20,11 @@ type GetNutritionPlanOutput struct {
 }
 
 type GetNutritionPlanUseCase struct {
-	users    UserRepository
-	plans    PlanRepository
-	checkins CheckinRepository
-	cycle    CyclePhaseLookup
+	users          UserRepository
+	plans          PlanRepository
+	checkins       CheckinRepository
+	cycle          CyclePhaseLookup
+	nutritionPlans NutritionPlanRepository // optional, nil-safe — the new pipeline's standalone nutrition plan
 }
 
 func NewGetNutritionPlanUseCase(
@@ -31,12 +32,14 @@ func NewGetNutritionPlanUseCase(
 	plans PlanRepository,
 	checkins CheckinRepository,
 	cycle CyclePhaseLookup,
+	nutritionPlans NutritionPlanRepository,
 ) *GetNutritionPlanUseCase {
 	return &GetNutritionPlanUseCase{
-		users:    users,
-		plans:    plans,
-		checkins: checkins,
-		cycle:    cycle,
+		users:          users,
+		plans:          plans,
+		checkins:       checkins,
+		cycle:          cycle,
+		nutritionPlans: nutritionPlans,
 	}
 }
 
@@ -53,6 +56,21 @@ func (uc *GetNutritionPlanUseCase) Execute(ctx context.Context, in GetNutritionP
 	}
 	if user == nil {
 		return nil, fmt.Errorf("user not found: %s", userID)
+	}
+
+	// New pipeline: a standalone nutrition plan, generated on demand via
+	// SubmitNutritionOnboardingUseCase, takes priority over the old
+	// Plan-based lookup below — but only when no explicit plan_id was
+	// requested, since a plan_id only ever makes sense for the old,
+	// versioned-per-generation Plan documents.
+	if uc.nutritionPlans != nil && strings.TrimSpace(in.PlanID) == "" {
+		np, err := uc.nutritionPlans.GetByUserID(ctx, userID)
+		if err != nil {
+			return nil, fmt.Errorf("loading nutrition plan: %w", err)
+		}
+		if np != nil {
+			return &GetNutritionPlanOutput{Nutrition: np.Plan}, nil
+		}
 	}
 
 	// Load plan

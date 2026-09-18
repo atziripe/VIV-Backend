@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"viv/internal/core/activity"
+	"viv/internal/core/cascade"
 	"viv/internal/core/usecase"
 
 	"github.com/getsentry/sentry-go"
@@ -17,10 +19,12 @@ import (
 // shape for the old pipeline: start returns 202 + a job_id immediately,
 // the client polls status until it's done/failed.
 type WeeklyPlanHandler struct {
-	StartGenUC  *usecase.StartWeeklyPlanGenerationUseCase
-	JobStatusUC *usecase.GetPlanGenerationStatusUseCase
-	CurrentUC   *usecase.GetCurrentWeeklyPlanUseCase
-	DayUC       *usecase.GetWeeklyPlanDayUseCase
+	StartGenUC    *usecase.StartWeeklyPlanGenerationUseCase
+	JobStatusUC   *usecase.GetPlanGenerationStatusUseCase
+	CurrentUC     *usecase.GetCurrentWeeklyPlanUseCase
+	DayUC         *usecase.GetWeeklyPlanDayUseCase
+	NoteUC        *usecase.GetWeeklyNoteUseCase
+	EditDaySlotUC *usecase.UserEditSlotUsecase
 }
 
 func NewWeeklyPlanHandler(
@@ -28,8 +32,10 @@ func NewWeeklyPlanHandler(
 	jobStatusUC *usecase.GetPlanGenerationStatusUseCase,
 	currentUC *usecase.GetCurrentWeeklyPlanUseCase,
 	dayUC *usecase.GetWeeklyPlanDayUseCase,
+	noteUC *usecase.GetWeeklyNoteUseCase,
+	editDaySlotUC *usecase.UserEditSlotUsecase,
 ) *WeeklyPlanHandler {
-	return &WeeklyPlanHandler{StartGenUC: startGenUC, JobStatusUC: jobStatusUC, CurrentUC: currentUC, DayUC: dayUC}
+	return &WeeklyPlanHandler{StartGenUC: startGenUC, JobStatusUC: jobStatusUC, CurrentUC: currentUC, DayUC: dayUC, NoteUC: noteUC, EditDaySlotUC: editDaySlotUC}
 }
 
 type generateWeeklyPlanResponse struct {
@@ -400,6 +406,161 @@ func (h *WeeklyPlanHandler) Day(w http.ResponseWriter, r *http.Request) {
 				LoadGuidance: e.LoadGuidance, FormCue: e.FormCue,
 			})
 		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(resp)
+}
+
+type weeklyNoteResponse struct {
+	Date string `json:"date"`
+	Note string `json:"note"`
+}
+
+// GET /training/weekly-plan/note?date=YYYY-MM-DD
+//
+// Today's short, tone-setting note for the already-generated week (VIV-113)
+// — a real LLM call, made synchronously on each request since there's
+// nothing else for this endpoint to return meanwhile. date is required and
+// trusted as-is from the client, same reasoning as every other date-scoped
+// endpoint here. 204 when no generated week covers date.
+func (h *WeeklyPlanHandler) Note(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	userID, ok := UserIDFromContext(ctx)
+	if !ok || userID == "" {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	dateStr := strings.TrimSpace(r.URL.Query().Get("date"))
+	if dateStr == "" {
+		http.Error(w, "date is required", http.StatusBadRequest)
+		return
+	}
+	date, err := time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		http.Error(w, "invalid date: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	out, err := h.NoteUC.Execute(ctx, usecase.GetWeeklyNoteInput{UserID: userID, Date: date})
+	if err != nil {
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
+		log.Printf("[weeklyplan.note] error: %+v\n", err)
+		http.Error(w, "failed to get weekly note", http.StatusInternalServerError)
+		return
+	}
+	if !out.Found {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(weeklyNoteResponse{Date: dateStr, Note: out.Note})
+}
+
+type editDaySlotRequest struct {
+	Date         string `json:"date"`
+	ActivityType string `json:"activity_type"` // "" clears the day to rest
+	Intensity    string `json:"intensity"`
+	Impact       string `json:"impact"`
+	MuscleGroup  string `json:"muscle_group"`
+}
+
+type editDaySlotResponse struct {
+	Date         string `json:"date"`
+	Weekday      string `json:"weekday"`
+	IsRestDay    bool   `json:"is_rest_day"`
+	ActivityType string `json:"activity_type,omitempty"`
+	Intensity    string `json:"intensity,omitempty"`
+	Impact       string `json:"impact,omitempty"`
+	MuscleGroup  string `json:"muscle_group,omitempty"`
+}
+
+// PATCH /training/weekly-plan/day
+//
+// Replaces a single day's slot by hand (VIV-106's design doc §9) — send an
+// empty/omitted activity_type to turn the day into a rest day instead.
+// Sets SlotAssignment.UserOverrode so later daily adaptation (VIV-107)
+// only ever suggests a safety-relevant change here, never silently
+// overwrites it. Re-hydrates the day's content (warmup/exercises/cooldown)
+// against the new assignment before saving — the response reflects the
+// new assignment only; call GET .../day for the full hydrated detail.
+// activity_type/intensity/impact/muscle_group always resolve to the
+// activity's standard duration/complexity/load — there's no manual-edit
+// concept of a reduced/short variant.
+func (h *WeeklyPlanHandler) EditDaySlot(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	userID, ok := UserIDFromContext(ctx)
+	if !ok || userID == "" {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var req editDaySlotRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid json body", http.StatusBadRequest)
+		return
+	}
+
+	dateStr := strings.TrimSpace(req.Date)
+	if dateStr == "" {
+		http.Error(w, "date is required", http.StatusBadRequest)
+		return
+	}
+	date, err := time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		http.Error(w, "invalid date: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var assignment cascade.SlotAssignment
+	if strings.TrimSpace(req.ActivityType) != "" {
+		assignment = cascade.SlotAssignment{
+			ActivityType:   activity.ID(req.ActivityType),
+			Intensity:      activity.IntensityLevel(req.Intensity),
+			Impact:         activity.ImpactLevel(req.Impact),
+			MuscleGroup:    activity.MuscleGroup(req.MuscleGroup),
+			DurationTier:   cascade.DurationStandard,
+			ComplexityTier: cascade.ComplexityStandard,
+			LoadTier:       cascade.LoadStandard,
+		}
+	}
+
+	day, err := h.EditDaySlotUC.Execute(ctx, usecase.UserEditSlotInput{
+		UserID:        userID,
+		Date:          date,
+		NewAssignment: assignment,
+	})
+	if err != nil {
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
+		log.Printf("[weeklyplan.edit-day-slot] error: %+v\n", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	resp := editDaySlotResponse{
+		Date:      dateStr,
+		Weekday:   day.Weekday,
+		IsRestDay: day.IsRestDay,
+	}
+	if !day.IsRestDay {
+		resp.ActivityType = string(day.Assignment.ActivityType)
+		resp.Intensity = string(day.Assignment.Intensity)
+		resp.Impact = string(day.Assignment.Impact)
+		resp.MuscleGroup = string(day.Assignment.MuscleGroup)
 	}
 
 	w.Header().Set("Content-Type", "application/json")

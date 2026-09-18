@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"log/slog"
-	"net/http"
 	stdhttp "net/http"
 	"os"
 	"os/signal"
@@ -101,6 +100,7 @@ func main() {
 	exercisePinRepo := repository.NewFirestoreExercisePinRepository(fsClient)
 	dailyCheckinRepo := repository.NewFirestoreDailyCheckinRepository(fsClient)
 	sessionLogRepo := repository.NewFirestoreSessionLogRepository(fsClient)
+	nutritionPlanRepo := repository.NewFirestoreNutritionPlanRepository(fsClient)
 
 	// Neon (secondary — dual-write target)
 	// If DATABASE_URL is missing or Neon is unreachable, the app falls back to
@@ -184,6 +184,7 @@ func main() {
 	copyGen := openai.NewCopyGenerator(oaClient)
 	copyCache := mealgen.NewInMemoryCopyCache()
 	copyEnricher := mealgen.NewAsyncCopyEnricher(copyGen, copyCache, planRepo)
+	nutritionPlanCopyEnricher := mealgen.NewAsyncNutritionPlanCopyEnricher(copyGen, copyCache, nutritionPlanRepo)
 
 	// ========= Recovery Pipeline =========
 	bannerLib, err := recovery.LoadBannerLibrary("internal/content/recovery")
@@ -274,6 +275,18 @@ func main() {
 	currentWeeklyPlanUC := usecase.NewGetCurrentWeeklyPlanUseCase(weeklyPlanDraftRepo)
 	weeklyPlanDayUC := usecase.NewGetWeeklyPlanDayUseCase(weeklyPlanDraftRepo, sessionLogRepo)
 
+	// Weekly note (VIV-113) — real LLM call, small plain-value input only
+	// (see weekly_note.go's doc comments), wired here so it's finally
+	// reachable via GET /training/weekly-plan/note.
+	weeklyNoteGen := openai.NewWeeklyNoteGenerator(oaClient)
+	weeklyNoteUC := usecase.NewWeeklyNoteUsecase(weeklyNoteGen)
+	getWeeklyNoteUC := usecase.NewGetWeeklyNoteUseCase(weeklyPlanDraftRepo, weeklyNoteUC)
+
+	// Manual day-slot edit (design doc §9) — wired here since it needs
+	// weeklyContentSelector (VIV-112) to re-hydrate the edited day's
+	// content, same collaborator generateWeeklyPlanUC above already uses.
+	editDaySlotUC := usecase.NewUserEditSlotUsecase(weeklyPlanDraftRepo, weeklyContentSelector)
+
 	// Real-time set-by-set session logging (Loggable/mesocycle-pinned
 	// days only, i.e. Strength today) — the write side of the session-
 	// detail screen above.
@@ -290,7 +303,8 @@ func main() {
 	// either generates a fresh week (no plan covers today yet) or adapts
 	// today's slot in an already-generated one.
 	adaptDailySlotUC := usecase.NewAdaptDailySlotUsecase(cyclePhaseLookup, weeklyPlanDraftRepo)
-	submitDailyCheckinUC := usecase.NewSubmitDailyCheckinUseCase(dailyCheckinRepo, weeklyPlanDraftRepo, userRepo, generateWeeklyPlanUC, adaptDailySlotUC)
+	resyncNutritionPlanUC := usecase.NewResyncNutritionPlanUseCase(nutritionPlanRepo, userRepo)
+	submitDailyCheckinUC := usecase.NewSubmitDailyCheckinUseCase(dailyCheckinRepo, weeklyPlanDraftRepo, userRepo, generateWeeklyPlanUC, adaptDailySlotUC, resyncNutritionPlanUC)
 
 	// PATCH /me needs generateNutritionUC (sync macro/meal recompute on
 	// weight/height changes), startTrainingUC (async full regen on cycle
@@ -299,8 +313,14 @@ func main() {
 	// built after all three exist.
 	updateProfileUC := usecase.NewUpdateProfileUseCase(userRepo, planRepo, checkinRepo, cyclePhaseLookup, generateNutritionUC, startTrainingUC, copyEnricher)
 
-	nutritionUC := usecase.NewGetNutritionPlanUseCase(userRepo, planRepo, checkinRepo, cyclePhaseLookup)
+	nutritionUC := usecase.NewGetNutritionPlanUseCase(userRepo, planRepo, checkinRepo, cyclePhaseLookup, nutritionPlanRepo)
 	mealSelectionUC := usecase.NewSaveMealSelectionUseCase(planRepo)
+	saveNutritionMealSelectionUC := usecase.NewSaveNutritionMealSelectionUseCase(nutritionPlanRepo)
+
+	// New pipeline: nutrition is generated on demand once the user opts
+	// into the nutrition module (see submit_nutrition_onboarding.go), not
+	// bundled with training onboarding.
+	submitNutritionOnboardingUC := usecase.NewSubmitNutritionOnboardingUseCase(userRepo, weeklyPlanDraftRepo, cyclePhaseLookup, generateNutritionUC, nutritionPlanRepo, nutritionPlanCopyEnricher)
 	recoveryUC := usecase.NewGetRecoveryUseCase(userRepo, planRepo, cyclePhaseLookup, bannerLib, movesContentLib)
 
 	phaseFeedbackUC := usecase.NewSavePhaseFeedbackUseCase(planRepo)
@@ -316,10 +336,10 @@ func main() {
 	meHandler := httpadapter.NewMeHandler(getMeUC, updateProfileUC)
 	plansHandler := httpadapter.NewPlansHandler(getCurrentPlanUC, getByIDUC, getByWeekStartUC, statusUC, phaseFeedbackUC)
 	trainingHandler := httpadapter.NewTrainingHandler(startTrainingUC, statusTrainingUC, trainingEngine, resumeTrainingUC, completeDayUC, saveArrangementUC)
-	weeklyPlanHandler := httpadapter.NewWeeklyPlanHandler(startWeeklyPlanUC, statusWeeklyPlanUC, currentWeeklyPlanUC, weeklyPlanDayUC)
+	weeklyPlanHandler := httpadapter.NewWeeklyPlanHandler(startWeeklyPlanUC, statusWeeklyPlanUC, currentWeeklyPlanUC, weeklyPlanDayUC, getWeeklyNoteUC, editDaySlotUC)
 	sessionLogHandler := httpadapter.NewSessionLogHandler(startSessionUC, logSetUC, completeSessionUC)
 	dailyCheckinHandler := httpadapter.NewDailyCheckinHandler(submitDailyCheckinUC)
-	nutritionHandler := httpadapter.NewNutritionHandler(nutritionUC, mealSelectionUC)
+	nutritionHandler := httpadapter.NewNutritionHandler(nutritionUC, mealSelectionUC, submitNutritionOnboardingUC, saveNutritionMealSelectionUC)
 	recoveryHandler := httpadapter.NewRecoveryHandler(recoveryUC)
 	deviceTokenHandler := httpadapter.NewDeviceTokenHandler(registerDeviceTokenUC)
 	periodHandler := httpadapter.NewPeriodHandler(logPeriodStartUC)
@@ -356,10 +376,8 @@ func main() {
 	api.Get("/me", meHandler.GetMe)
 	api.Patch("/me", meHandler.UpdateProfile)
 
-	//api.Post("/plans/generate", plansHandler.Generate)
 	api.Get("/plans/current", plansHandler.GetCurrent)
 	api.Get("/plans/{id}", plansHandler.GetByID)
-	//api.Post("/plans/adjust", plansHandler.Adjust)
 	api.Get("/plans/week/{week_start}", plansHandler.GetByWeekStart)
 	api.Get("/plans/generate/status", plansHandler.GenerateStatus)
 
@@ -376,25 +394,20 @@ func main() {
 	api.Get("/training/weekly-plan/generate/status", weeklyPlanHandler.GenerateStatus)
 	api.Get("/training/weekly-plan/current", weeklyPlanHandler.CurrentWeek)
 	api.Get("/training/weekly-plan/day", weeklyPlanHandler.Day)
+	api.Patch("/training/weekly-plan/day", weeklyPlanHandler.EditDaySlot)
+	api.Get("/training/weekly-plan/note", weeklyPlanHandler.Note)
 	api.Post("/training/weekly-plan/day/start", sessionLogHandler.Start)
 	api.Post("/training/weekly-plan/day/log-set", sessionLogHandler.LogSet)
 	api.Post("/training/weekly-plan/day/complete", sessionLogHandler.Complete)
 
 	api.Get("/nutrition/plan", nutritionHandler.GetPlan)
 	api.Post("/nutrition/meal-selection", nutritionHandler.SaveMealSelection)
+	api.Post("/nutrition/onboarding", nutritionHandler.SubmitOnboarding)
 	api.Get("/recovery/today", recoveryHandler.GetToday)
 	api.Post("/plans/phase-feedback", plansHandler.SavePhaseFeedback)
 
 	api.Post("/users/me/device-token", deviceTokenHandler.Upsert)
 	api.Post("/cycle/period-start", periodHandler.LogStart)
-	// POST /debug/sunday-checkin  — QUITAR EN PRODUCCIÓN
-	r.Post("/debug/sunday-checkin", func(w http.ResponseWriter, r *http.Request) {
-		if err := sundayCheckinUC.Execute(r.Context()); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		w.WriteHeader(http.StatusOK)
-	})
 
 	chi.Walk(api, func(method string, route string, handler stdhttp.Handler, middlewares ...func(stdhttp.Handler) stdhttp.Handler) error {
 		log.Printf("[api.route] %s %s", method, route)

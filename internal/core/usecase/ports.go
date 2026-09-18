@@ -58,6 +58,22 @@ type CopyEnricher interface {
 	EnrichAsync(userID, planID string, plan domain.NutritionWeekPlan)
 }
 
+// NutritionPlanRepository stores the new pipeline's standalone nutrition
+// plan (domain.NutritionPlan) — one document per user, not versioned per
+// generation like the old pipeline's PlanRepository/domain.Plan.
+type NutritionPlanRepository interface {
+	GetByUserID(ctx context.Context, userID string) (*domain.NutritionPlan, error)
+	Save(ctx context.Context, userID string, plan domain.NutritionWeekPlan) error
+}
+
+// NutritionPlanCopyEnricher is CopyEnricher's counterpart for
+// NutritionPlanRepository — same async, best-effort copy-polish behavior,
+// without the old pipeline's planID. Optional: leave nil to skip
+// enrichment.
+type NutritionPlanCopyEnricher interface {
+	EnrichAsync(userID string, plan domain.NutritionWeekPlan)
+}
+
 type PlanGenerator interface {
 	GeneratePlan(
 		ctx context.Context,

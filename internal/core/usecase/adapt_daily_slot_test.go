@@ -9,6 +9,7 @@ import (
 	"viv/internal/core/activity"
 	"viv/internal/core/cascade"
 	"viv/internal/core/checkin"
+	"viv/internal/core/content"
 	"viv/internal/core/domain"
 	"viv/internal/core/goal"
 	"viv/internal/core/usecase"
@@ -392,7 +393,7 @@ func TestUserEditSlot_SetsUserOverrodeTrue(t *testing.T) {
 		restDay(), restDay(), restDay(), restDay(), restDay(), restDay(),
 	})
 
-	uc := usecase.NewUserEditSlotUsecase(drafts)
+	uc := usecase.NewUserEditSlotUsecase(drafts, usecase.NoopContentSelectionLayer{})
 	newAssignment := cascade.SlotAssignment{
 		ActivityType: activity.Yoga,
 		Intensity:    activity.IntensityL,
@@ -434,7 +435,7 @@ func TestUserEditSlot_DoesNotTouchOtherDays(t *testing.T) {
 		monday, restDay(), restDay(), restDay(), restDay(), restDay(), restDay(),
 	})
 
-	uc := usecase.NewUserEditSlotUsecase(drafts)
+	uc := usecase.NewUserEditSlotUsecase(drafts, usecase.NoopContentSelectionLayer{})
 	_, err := uc.Execute(context.Background(), usecase.UserEditSlotInput{
 		UserID: "u1",
 		Date:   weekStart.AddDate(0, 0, 3), // Thursday
@@ -471,7 +472,7 @@ func TestUserEditSlot_ClearingActivityTypeMarksRestDay(t *testing.T) {
 		restDay(), restDay(), restDay(), restDay(), restDay(), restDay(),
 	})
 
-	uc := usecase.NewUserEditSlotUsecase(drafts)
+	uc := usecase.NewUserEditSlotUsecase(drafts, usecase.NoopContentSelectionLayer{})
 	got, err := uc.Execute(context.Background(), usecase.UserEditSlotInput{
 		UserID:        "u1",
 		Date:          weekStart,
@@ -482,5 +483,89 @@ func TestUserEditSlot_ClearingActivityTypeMarksRestDay(t *testing.T) {
 	}
 	if !got.IsRestDay {
 		t.Error("expected clearing the activity type to mark the day as a rest day")
+	}
+}
+
+// fakeContentSelector is a usecase.ContentSelectionLayer fake that stamps a
+// fixed, recognizable SelectedContent onto every non-rest day it sees —
+// used to verify UserEditSlotUsecase actually re-selects content for the
+// edited day (rather than leaving whatever content the day's PREVIOUS
+// assignment had), and clears it for a day edited into a rest day.
+type fakeContentSelector struct {
+	content usecase.SelectedContent
+	calls   int
+}
+
+func (f *fakeContentSelector) SelectContent(_ context.Context, draft usecase.WeekDraft) (usecase.WeekDraft, error) {
+	f.calls++
+	for i := range draft.Days {
+		if draft.Days[i].IsRestDay {
+			continue
+		}
+		c := f.content
+		draft.Days[i].Content = &c
+	}
+	return draft, nil
+}
+
+func TestUserEditSlot_ReselectsContentForTheEditedDay(t *testing.T) {
+	drafts := &fakeDraftRepo{}
+	weekStart := time.Date(2026, time.May, 4, 0, 0, 0, 0, time.UTC)
+
+	monday := trainingDay(activity.Strength, activity.IntensityM, activity.ImpactM, false)
+	staleContent := usecase.SelectedContent{Session: &content.Session{DurationMinutes: 99}}
+	monday.Content = &staleContent
+	seedDraft(t, drafts, "u1", weekStart, goal.StrengthMuscle, [7]usecase.DayPlan{
+		monday, restDay(), restDay(), restDay(), restDay(), restDay(), restDay(),
+	})
+
+	selector := &fakeContentSelector{content: usecase.SelectedContent{Session: &content.Session{DurationMinutes: 20}}}
+	uc := usecase.NewUserEditSlotUsecase(drafts, selector)
+
+	got, err := uc.Execute(context.Background(), usecase.UserEditSlotInput{
+		UserID: "u1",
+		Date:   weekStart,
+		NewAssignment: cascade.SlotAssignment{
+			ActivityType: activity.Yoga, Intensity: activity.IntensityL, Impact: activity.ImpactL,
+		},
+	})
+	if err != nil {
+		t.Fatalf("Execute returned error: %v", err)
+	}
+	if selector.calls != 1 {
+		t.Fatalf("content selector calls = %d, want 1", selector.calls)
+	}
+	if got.Content == nil || got.Content.Session == nil || got.Content.Session.DurationMinutes != 20 {
+		t.Errorf("Content = %+v, want the re-selected content (duration 20), not the stale Strength content (duration 99)", got.Content)
+	}
+}
+
+func TestUserEditSlot_ClearingToRestDayClearsContentWithoutReselecting(t *testing.T) {
+	drafts := &fakeDraftRepo{}
+	weekStart := time.Date(2026, time.May, 4, 0, 0, 0, 0, time.UTC)
+
+	monday := trainingDay(activity.Strength, activity.IntensityM, activity.ImpactM, false)
+	staleContent := usecase.SelectedContent{Session: &content.Session{DurationMinutes: 99}}
+	monday.Content = &staleContent
+	seedDraft(t, drafts, "u1", weekStart, goal.StrengthMuscle, [7]usecase.DayPlan{
+		monday, restDay(), restDay(), restDay(), restDay(), restDay(), restDay(),
+	})
+
+	selector := &fakeContentSelector{}
+	uc := usecase.NewUserEditSlotUsecase(drafts, selector)
+
+	got, err := uc.Execute(context.Background(), usecase.UserEditSlotInput{
+		UserID:        "u1",
+		Date:          weekStart,
+		NewAssignment: cascade.SlotAssignment{}, // empty ActivityType -> rest day
+	})
+	if err != nil {
+		t.Fatalf("Execute returned error: %v", err)
+	}
+	if selector.calls != 0 {
+		t.Errorf("content selector calls = %d, want 0 (a rest day never needs content)", selector.calls)
+	}
+	if got.Content != nil {
+		t.Errorf("Content = %+v, want nil for a day cleared to rest", got.Content)
 	}
 }

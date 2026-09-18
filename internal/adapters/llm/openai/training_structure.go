@@ -257,3 +257,29 @@ func currentWeekStart() time.Time {
 	monday := now.AddDate(0, 0, -int(weekday-time.Monday))
 	return time.Date(monday.Year(), monday.Month(), monday.Day(), 0, 0, 0, 0, time.UTC)
 }
+
+func sanitizeJSON(s string) string {
+	s = strings.TrimSpace(s)
+
+	// Remove markdown code fences
+	if strings.HasPrefix(s, "```") {
+		s = strings.TrimPrefix(s, "```json")
+		s = strings.TrimPrefix(s, "```")
+		s = strings.TrimSpace(s)
+		s = strings.TrimSuffix(s, "```")
+		s = strings.TrimSpace(s)
+	}
+
+	// Remove trailing commas before } or ] (common LLM mistake)
+	// e.g., {"key": "value",} → {"key": "value"}
+	for _, pair := range []struct{ bad, good string }{
+		{",}", "}"},
+		{",]", "]"},
+		{", }", "}"},
+		{", ]", "]"},
+	} {
+		s = strings.ReplaceAll(s, pair.bad, pair.good)
+	}
+
+	return s
+}
