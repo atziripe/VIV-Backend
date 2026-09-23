@@ -8,14 +8,17 @@ import (
 
 // WeeklyPlanGenerationRunner starts background generation for the new
 // pipeline (VIV-106..113) — same async shape as PlanGenerationRunner (the
-// old system's equivalent), but takes a generationDate instead of a
-// checkinID: the new pipeline resolves readiness/goal/catalog on its own
-// (see GenerateWeeklyPlanUsecase's documented defaults) rather than being
-// handed a specific check-in to load.
+// old system's equivalent). It takes the full GenerateWeeklyPlanInput
+// (rather than just a generationDate) so a caller that already knows the
+// real goal/catalog/readiness to use — like CompleteOnboardingUseCase —
+// can pass them through instead of falling back to
+// GenerateWeeklyPlanUsecase's documented defaults, which is what happens
+// when a caller — like StartWeeklyPlanGenerationUseCase — leaves them
+// unset.
 type WeeklyPlanGenerationRunner interface {
 	// Run starts the background generation process for a previously
 	// created job. Must return immediately (non-blocking).
-	Run(userID, jobID string, generationDate time.Time)
+	Run(jobID string, input GenerateWeeklyPlanInput)
 }
 
 // StartWeeklyPlanGenerationUseCase is the new pipeline's counterpart to
@@ -47,7 +50,7 @@ func (uc *StartWeeklyPlanGenerationUseCase) Execute(ctx context.Context, userID 
 	}
 
 	// Non-blocking: runner must return immediately.
-	uc.runner.Run(userID, jobID, generationDate)
+	uc.runner.Run(jobID, GenerateWeeklyPlanInput{UserID: userID, GenerationDate: generationDate})
 
 	return jobID, nil
 }

@@ -255,7 +255,7 @@ func main() {
 	currentWeeklyPlanUC := usecase.NewGetCurrentWeeklyPlanUseCase(weeklyPlanDraftRepo)
 	weeklyPlanDayUC := usecase.NewGetWeeklyPlanDayUseCase(weeklyPlanDraftRepo, sessionLogRepo)
 
-	// Weekly note (VIV-113) — real LLM call, small plain-value input only
+	// Weekly note — real LLM call, small plain-value input only
 	// (see weekly_note.go's doc comments), wired here so it's finally
 	// reachable via GET /training/weekly-plan/note.
 	weeklyNoteGen := openai.NewWeeklyNoteGenerator(oaClient)
@@ -274,10 +274,13 @@ func main() {
 	logSetUC := usecase.NewLogSetUseCase(weeklyPlanDraftRepo, sessionLogRepo)
 	completeSessionUC := usecase.NewCompleteSessionUseCase(weeklyPlanDraftRepo, sessionLogRepo)
 
-	// Onboarding completion triggers the user's first weekly-plan
-	// generation immediately after persisting — built here, after
-	// generateWeeklyPlanUC exists, since it needs it as a collaborator.
-	onboardingUC := usecase.NewCompleteOnboardingUseCase(userRepo, generateWeeklyPlanUC)
+	// Onboarding completion queues the user's first weekly-plan generation
+	// right after persisting — async, via the same planJobsRepo/
+	// weeklyPlanRunner pair POST /training/weekly-plan/generate uses, so
+	// POST /onboarding returns without waiting on the LLM scheduling call.
+	// Built here, after weeklyPlanRunner exists, since it needs it as a
+	// collaborator.
+	onboardingUC := usecase.NewCompleteOnboardingUseCase(userRepo, planJobsRepo, weeklyPlanRunner)
 
 	// Daily check-in (VIV-103/106/107): scores the day's answers, then
 	// either generates a fresh week (no plan covers today yet) or adapts

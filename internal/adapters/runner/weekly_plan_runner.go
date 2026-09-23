@@ -31,10 +31,15 @@ func NewLocalWeeklyPlanRunner(
 }
 
 // Run starts background weekly-plan generation. Must return immediately
-// (non-blocking) — implements usecase.WeeklyPlanGenerationRunner.
-func (r *LocalWeeklyPlanRunner) Run(userID, jobID string, generationDate time.Time) {
-	userID = strings.TrimSpace(userID)
+// (non-blocking) — implements usecase.WeeklyPlanGenerationRunner. input
+// carries whatever the caller already knows (StartWeeklyPlanGenerationUseCase
+// leaves GoalID/Catalog/Readiness unset, letting GenerateWeeklyPlanUsecase
+// fall back to its documented defaults; CompleteOnboardingUseCase sets them
+// from the just-saved user instead).
+func (r *LocalWeeklyPlanRunner) Run(jobID string, input usecase.GenerateWeeklyPlanInput) {
 	jobID = strings.TrimSpace(jobID)
+	userID := strings.TrimSpace(input.UserID)
+	input.UserID = userID
 
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
@@ -44,10 +49,7 @@ func (r *LocalWeeklyPlanRunner) Run(userID, jobID string, generationDate time.Ti
 			log.Printf("[weeklyplan.runner] mark running failed user=%s job=%s err=%v", userID, jobID, err)
 		}
 
-		out, err := r.generateUC.Execute(ctx, usecase.GenerateWeeklyPlanInput{
-			UserID:         userID,
-			GenerationDate: generationDate,
-		})
+		out, err := r.generateUC.Execute(ctx, input)
 		if err != nil {
 			log.Printf("[weeklyplan.runner] generation failed user=%s job=%s err=%v", userID, jobID, err)
 			_ = r.jobsRepo.MarkFailed(context.Background(), userID, jobID, err.Error())

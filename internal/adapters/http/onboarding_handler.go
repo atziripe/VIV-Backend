@@ -65,6 +65,12 @@ type onboardingResponse struct {
 	Priority            string   `json:"priority"`
 	Activities          []string `json:"activities"`
 	GoalID              string   `json:"goal_id"`
+
+	// WeeklyPlanJobID is the id of the just-queued first weekly-plan
+	// generation — poll it the same way as /training/weekly-plan/generate's
+	// job_id, via GET /training/weekly-plan/generate/status?job_id=....
+	// Omitted when queuing failed; onboarding itself still succeeded.
+	WeeklyPlanJobID string `json:"weekly_plan_job_id,omitempty"`
 }
 
 type OnboardingHandler struct {
@@ -176,6 +182,7 @@ func (h *OnboardingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Priority:            out.User.Priority,
 		Activities:          activities,
 		GoalID:              string(out.User.GoalID),
+		WeeklyPlanJobID:     out.WeeklyPlanJobID,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

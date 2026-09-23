@@ -60,6 +60,14 @@ type CompleteOnboardingInput struct {
 
 type CompleteOnboardingOutput struct {
 	User *domain.User
+
+	// WeeklyPlanJobID is the id of the queued first weekly-plan generation
+	// (see triggerFirstWeeklyPlanAsync) — poll it via the same
+	// GET /training/weekly-plan/generate/status?job_id=... endpoint
+	// /training/weekly-plan/generate's job uses. Empty when queuing itself
+	// failed or JobsRepo/Runner aren't wired — onboarding still succeeded,
+	// there's just nothing to poll.
+	WeeklyPlanJobID string
 }
 
 // WeeklyPlanGenerator triggers the user's first weekly-plan generation
@@ -86,12 +94,13 @@ var DefaultOnboardingReadiness = checkin.ReadinessDimensions{
 }
 
 type CompleteOnboardingUseCase struct {
-	Users         UserRepository
-	WeeklyPlanGen WeeklyPlanGenerator
+	Users    UserRepository
+	JobsRepo PlanJobsRepository
+	Runner   WeeklyPlanGenerationRunner
 }
 
-func NewCompleteOnboardingUseCase(users UserRepository, weeklyPlanGen WeeklyPlanGenerator) *CompleteOnboardingUseCase {
-	return &CompleteOnboardingUseCase{Users: users, WeeklyPlanGen: weeklyPlanGen}
+func NewCompleteOnboardingUseCase(users UserRepository, jobsRepo PlanJobsRepository, runner WeeklyPlanGenerationRunner) *CompleteOnboardingUseCase {
+	return &CompleteOnboardingUseCase{Users: users, JobsRepo: jobsRepo, Runner: runner}
 }
 
 func (uc *CompleteOnboardingUseCase) Execute(ctx context.Context, in CompleteOnboardingInput) (*CompleteOnboardingOutput, error) {
@@ -164,9 +173,9 @@ func (uc *CompleteOnboardingUseCase) Execute(ctx context.Context, in CompleteOnb
 		return nil, err
 	}
 
-	uc.triggerFirstWeeklyPlan(ctx, user)
+	jobID := uc.triggerFirstWeeklyPlanAsync(ctx, user)
 
-	return &CompleteOnboardingOutput{User: user}, nil
+	return &CompleteOnboardingOutput{User: user, WeeklyPlanJobID: jobID}, nil
 }
 
 // validateActivityIDs checks every submitted activity id against the real
@@ -203,31 +212,42 @@ func validateGoalID(raw string) (goal.ID, error) {
 	return id, nil
 }
 
-// triggerFirstWeeklyPlan kicks off the user's first weekly-plan generation
-// (VIV-106) right after onboarding persists, using the catalog/goal just
-// saved and DefaultOnboardingReadiness (no check-in exists yet to derive
-// real readiness from). A failure here is logged and otherwise swallowed:
-// onboarding has already succeeded and must never be rolled back or fail
-// because plan generation had trouble — the user still gets a plan on the
-// next regular run.
-func (uc *CompleteOnboardingUseCase) triggerFirstWeeklyPlan(ctx context.Context, user *domain.User) {
-	if uc.WeeklyPlanGen == nil {
-		return
+// triggerFirstWeeklyPlanAsync queues the user's first weekly-plan
+// generation (VIV-106) right after onboarding persists, using the
+// catalog/goal just saved and DefaultOnboardingReadiness (no check-in
+// exists yet to derive real readiness from) — async, via the same
+// job/runner pair POST /training/weekly-plan/generate uses (see
+// WeeklyPlanGenerationRunner), so POST /onboarding returns as soon as the
+// profile is saved instead of blocking on the LLM scheduling call.
+// Returns the job id for the client to poll (GET
+// /training/weekly-plan/generate/status?job_id=...), or "" when queuing
+// itself failed or JobsRepo/Runner aren't wired. Either way this never
+// surfaces an error: onboarding has already succeeded and must never be
+// rolled back or fail because plan generation had trouble — the user
+// still gets a plan on the next regular run.
+func (uc *CompleteOnboardingUseCase) triggerFirstWeeklyPlanAsync(ctx context.Context, user *domain.User) string {
+	if uc.JobsRepo == nil || uc.Runner == nil {
+		return ""
 	}
 	now := time.Now().UTC()
 	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 	readiness := DefaultOnboardingReadiness
 
-	_, err := uc.WeeklyPlanGen.Execute(ctx, GenerateWeeklyPlanInput{
+	jobID, err := uc.JobsRepo.CreateQueued(ctx, user.ID, "")
+	if err != nil {
+		log.Printf("[onboarding] failed to queue first weekly-plan generation for user %s: %v", user.ID, err)
+		return ""
+	}
+
+	uc.Runner.Run(jobID, GenerateWeeklyPlanInput{
 		UserID:         user.ID,
 		GenerationDate: today,
 		GoalID:         user.GoalID,
 		Catalog:        cascade.UserCatalog{Activities: user.UserCatalog},
 		Readiness:      &readiness,
 	})
-	if err != nil {
-		log.Printf("[onboarding] first weekly-plan generation failed for user %s: %v", user.ID, err)
-	}
+
+	return jobID
 }
 
 func getCycleType(reqCycleType string) string {
