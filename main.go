@@ -195,11 +195,6 @@ func main() {
 	reportLifestyleUC := usecase.NewReportLifestyleChangeUseCase(lifestyleRepo, userRepo)
 	listLifestyleUC := usecase.NewListLifestyleChangesUseCase(lifestyleRepo)
 
-	// Always-available period logging — reuses the same cycle recalibration
-	// as onboarding/check-in's cycle_start, but without the weekly check-in
-	// gate (Mom Test P0: logging must work the day it happens, not only Sunday).
-	logPeriodStartUC := usecase.NewLogPeriodStartUseCase(userRepo)
-
 	getMeUC := usecase.NewGetCurrentUserUseCase(userRepo)
 	getCurrentPlanUC := usecase.NewGetCurrentPlanUseCase(userRepo, planRepo)
 
@@ -290,6 +285,14 @@ func main() {
 	adaptDailySlotUC := usecase.NewAdaptDailySlotUsecase(cyclePhaseLookup, weeklyPlanDraftRepo)
 	resyncNutritionPlanUC := usecase.NewResyncNutritionPlanUseCase(nutritionPlanRepo, userRepo)
 	submitDailyCheckinUC := usecase.NewSubmitDailyCheckinUseCase(dailyCheckinRepo, weeklyPlanDraftRepo, userRepo, generateWeeklyPlanUC, adaptDailySlotUC, resyncNutritionPlanUC)
+
+	// Always-available period logging — reuses the same cycle recalibration
+	// as onboarding/check-in's cycle_start, but without the weekly check-in
+	// gate (Mom Test P0: logging must work the day it happens, not only
+	// Sunday). Drafts/generateWeeklyPlanUC/resyncNutritionPlanUC let a
+	// report that lands off-prediction rebuild the current week around the
+	// real anchor, same generator submitDailyCheckinUC's rollover uses.
+	logPeriodStartUC := usecase.NewLogPeriodStartUseCase(userRepo, weeklyPlanDraftRepo, generateWeeklyPlanUC, resyncNutritionPlanUC)
 
 	// PATCH /me needs generateNutritionUC (sync macro/meal recompute on
 	// weight/height changes), startTrainingUC (async full regen on cycle

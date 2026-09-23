@@ -23,6 +23,15 @@ type User struct {
 	CycleAnchorAt       *time.Time
 	PeriodDuration      string
 
+	// CycleEstimationDisabled is the "it varies — stop estimating" opt-out
+	// from the late-period nudge — when true, usecase.ExpectedPeriodDate/
+	// DaysLate stop predicting a next period date at all, rather than
+	// surfacing an estimate the user has explicitly said isn't reliable
+	// for her. Cycle day/phase tracking from whatever anchor is on file is
+	// unaffected; this only gates the *prediction* of when the next one
+	// starts.
+	CycleEstimationDisabled bool
+
 	TrainingOften    string
 	TrainingDuration string
 	TrainingType     string

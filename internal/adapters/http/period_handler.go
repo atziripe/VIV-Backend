@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -30,6 +31,30 @@ type logPeriodStartResponse struct {
 	CycleSummary   cycleSummary `json:"cycle_summary"`
 	CycleUpdatedAt string       `json:"cycle_updated_at"`
 	CycleAnchorAt  string       `json:"cycle_anchor_at,omitempty"`
+
+	// CycleDurationChanged/PreviousCycleDuration/CycleDuration describe a
+	// recalibration — "VIV now has you at a 33-day cycle" in the client's
+	// copy — omitted (zero values) when this report matched the prior
+	// estimate closely enough not to change it.
+	CycleDurationChanged  bool `json:"cycle_duration_changed"`
+	PreviousCycleDuration int  `json:"previous_cycle_duration,omitempty"`
+	CycleDuration         int  `json:"cycle_duration,omitempty"`
+
+	NextEstimatedPeriodDate string `json:"next_estimated_period_date,omitempty"`
+
+	// WeekRebuilt/Moved describe whether — and how — this report's date
+	// differed enough from the prediction to regenerate the current
+	// week's shape around the real anchor. See MovedDay.
+	WeekRebuilt bool          `json:"week_rebuilt"`
+	Moved       []movedDayDTO `json:"moved,omitempty"`
+}
+
+type movedDayDTO struct {
+	Weekday         string `json:"weekday"`
+	Date            string `json:"date"`
+	IsRestDay       bool   `json:"is_rest_day"`
+	Title           string `json:"title,omitempty"`
+	DurationMinutes int    `json:"duration_minutes,omitempty"`
 }
 
 // POST /cycle/period-start
@@ -65,16 +90,32 @@ func (h *PeriodHandler) LogStart(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := logPeriodStartResponse{
-		CycleDay: out.CycleDay,
-		CycleSummary: cycleSummary{
-			CurrentPhase:       out.CurrentPhase,
-			NextPhase:          out.NextPhase,
-			DaysUntilNextPhase: out.DaysUntilNextPhase,
-		},
-		CycleUpdatedAt: time.Now().UTC().Format("2006-01-02"),
+		CycleDay:             out.CycleDay,
+		CycleSummary:         buildCycleSummary(out.User, out.CurrentPhase, out.NextPhase, out.DaysUntilNextPhase),
+		CycleUpdatedAt:       time.Now().UTC().Format("2006-01-02"),
+		CycleDurationChanged: out.CycleDurationChanged,
+		WeekRebuilt:          out.WeekRebuilt,
 	}
 	if out.User.CycleAnchorAt != nil {
 		resp.CycleAnchorAt = out.User.CycleAnchorAt.Format("2006-01-02")
+	}
+	if out.CycleDurationChanged {
+		resp.PreviousCycleDuration = out.PreviousCycleDuration
+		if d, err := strconv.Atoi(out.User.CycleDuration); err == nil {
+			resp.CycleDuration = d
+		}
+	}
+	if !out.NextEstimatedPeriodDate.IsZero() {
+		resp.NextEstimatedPeriodDate = out.NextEstimatedPeriodDate.Format("2006-01-02")
+	}
+	for _, m := range out.Moved {
+		resp.Moved = append(resp.Moved, movedDayDTO{
+			Weekday:         m.Weekday,
+			Date:            m.Date.Format("2006-01-02"),
+			IsRestDay:       m.IsRestDay,
+			Title:           m.Title,
+			DurationMinutes: m.DurationMinutes,
+		})
 	}
 
 	w.Header().Set("Content-Type", "application/json")
