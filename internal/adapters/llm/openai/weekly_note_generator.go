@@ -33,7 +33,7 @@ func (g *WeeklyNoteGenerator) GenerateNote(ctx context.Context, input usecase.We
 		{Role: openaiapi.ChatMessageRoleUser, Content: buildWeeklyNoteUserPrompt(input)},
 	}
 
-	resp, err := g.client.Chat(ctx, msgs)
+	resp, err := g.client.Chat(ctx, "weekly_note", msgs)
 	if err != nil {
 		return "", fmt.Errorf("openai call failed: %w", err)
 	}

@@ -14,24 +14,17 @@ import (
 )
 
 type PlansHandler struct {
-	CurrentUC *usecase.GetCurrentPlanUseCase
-	GetByIDUC *usecase.GetPlanByIDUseCase
-	//AdjustUC         *usecase.AdjustPlanUseCase
+	CurrentUC        *usecase.GetCurrentPlanUseCase
+	GetByIDUC        *usecase.GetPlanByIDUseCase
 	GetByWeekStartUC *usecase.GetPlanByWeekStartUseCase
-	//StartGenUC       *usecase.StartPlanGenerationUseCase
-	JobStatusUC     *usecase.GetPlanGenerationStatusUseCase
-	PhaseFeedbackUC *usecase.SavePhaseFeedbackUseCase
+	JobStatusUC      *usecase.GetPlanGenerationStatusUseCase
+	PhaseFeedbackUC  *usecase.SavePhaseFeedbackUseCase
 }
-
-//type adjustPlanRequest struct {
-//	LifestyleChangeID string `json:"lifestyle_change_id"`
-//}
 
 func NewPlansHandler(
 	currentUC *usecase.GetCurrentPlanUseCase,
 	getByIDUC *usecase.GetPlanByIDUseCase,
 	getByWeekStartUC *usecase.GetPlanByWeekStartUseCase,
-	//startGenUC *usecase.StartPlanGenerationUseCase,
 	jobStatusUC *usecase.GetPlanGenerationStatusUseCase,
 	phaseFeedbackUC *usecase.SavePhaseFeedbackUseCase,
 ) *PlansHandler {
@@ -39,17 +32,13 @@ func NewPlansHandler(
 		CurrentUC:        currentUC,
 		GetByIDUC:        getByIDUC,
 		GetByWeekStartUC: getByWeekStartUC,
-		//StartGenUC:       startGenUC,
-		JobStatusUC:     jobStatusUC,
-		PhaseFeedbackUC: phaseFeedbackUC,
+		JobStatusUC:      jobStatusUC,
+		PhaseFeedbackUC:  phaseFeedbackUC,
 	}
 }
 
 // ---------- REQUESTS ----------
 
-type generatePlanRequest struct {
-	CheckinID *string `json:"checkin_id,omitempty"`
-}
 type phaseFeedbackRequest struct {
 	PlanID                    string `json:"plan_id"`
 	Phase                     string `json:"phase"`
@@ -88,10 +77,6 @@ type planResponse struct {
 	TokensOutput  int    `json:"tokens_output,omitempty"`
 }
 
-type generatePlanAsyncResponse struct {
-	JobID string `json:"job_id"`
-}
-
 type planJobStatusResponse struct {
 	Status string  `json:"status"`
 	PlanID *string `json:"plan_id,omitempty"`
@@ -99,46 +84,6 @@ type planJobStatusResponse struct {
 }
 
 // ---------- HANDLERS ----------
-
-// POST /plans/generate
-/*func (h *PlansHandler) Generate(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	userID, ok := UserIDFromContext(ctx)
-	if !ok || userID == "" {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	var req generatePlanRequest
-	decErr := json.NewDecoder(r.Body).Decode(&req)
-	if decErr != nil && decErr != io.EOF {
-		http.Error(w, "invalid json body", http.StatusBadRequest)
-		return
-	}
-
-	checkinID := ""
-	if req.CheckinID != nil {
-		checkinID = strings.TrimSpace(*req.CheckinID)
-	}
-	if checkinID == "null" {
-		checkinID = ""
-	}
-	if strings.EqualFold(checkinID, "null") {
-		checkinID = ""
-	}
-
-	jobID, err := h.StartGenUC.Execute(ctx, userID, checkinID)
-	if err != nil {
-		log.Printf("[plans.generate] start job error: %+v\n", err)
-		http.Error(w, "failed to start plan generation", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusAccepted) // 202
-	_ = json.NewEncoder(w).Encode(generatePlanAsyncResponse{JobID: jobID})
-}*/
 
 // GET /plans/generate/status?job_id=...
 func (h *PlansHandler) GenerateStatus(w http.ResponseWriter, r *http.Request) {
@@ -271,51 +216,6 @@ func (h *PlansHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(resp)
 }
-
-// POST /plans/adjust
-/*func (h *PlansHandler) Adjust(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	userID, ok := UserIDFromContext(ctx)
-	if !ok || userID == "" {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	var req adjustPlanRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid json body", http.StatusBadRequest)
-		return
-	}
-	if req.LifestyleChangeID == "" {
-		http.Error(w, "lifestyle_change_id is required", http.StatusBadRequest)
-		return
-	}
-
-	out, err := h.AdjustUC.Execute(ctx, usecase.AdjustPlanInput{
-		UserID:            userID,
-		LifestyleChangeID: req.LifestyleChangeID,
-	})
-	if err != nil {
-		log.Printf("[plans.adjust] error: %+v\n", err)
-		http.Error(w, "failed to adjust plan", http.StatusInternalServerError)
-		return
-	}
-	cycle := &cycleInfo{
-		CurrentPhase:       out.CurrentPhase,
-		NextPhase:          out.NextPhase,
-		DaysUntilNextPhase: out.DaysUntilNextPhase,
-	}
-	if out == nil || out.Plan == nil {
-		http.Error(w, "plan not found", http.StatusNotFound)
-		return
-	}
-
-	resp := mapPlanToResponse(out.Plan, nil, cycle)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	_ = json.NewEncoder(w).Encode(resp)
-}*/
 
 // GET /plans/week/{week_start}
 func (h *PlansHandler) GetByWeekStart(w http.ResponseWriter, r *http.Request) {

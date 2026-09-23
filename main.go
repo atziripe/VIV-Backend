@@ -255,7 +255,7 @@ func main() {
 	currentWeeklyPlanUC := usecase.NewGetCurrentWeeklyPlanUseCase(weeklyPlanDraftRepo)
 	weeklyPlanDayUC := usecase.NewGetWeeklyPlanDayUseCase(weeklyPlanDraftRepo, sessionLogRepo)
 
-	// Weekly note — real LLM call, small plain-value input only
+	// Weekly note (VIV-113) — real LLM call, small plain-value input only
 	// (see weekly_note.go's doc comments), wired here so it's finally
 	// reachable via GET /training/weekly-plan/note.
 	weeklyNoteGen := openai.NewWeeklyNoteGenerator(oaClient)
@@ -416,6 +416,7 @@ func main() {
 	})
 
 	protected := chi.NewRouter()
+	protected.Use(httpadapter.AppCheckMiddleware(cfg.FirebaseProjectNumber, cfg.AppCheckEnforce))
 	protected.Use(httpadapter.FirebaseAuthMiddleware(authClient))
 	protected.Use(httpadapter.EnsureUserMiddleware(userRepo))
 

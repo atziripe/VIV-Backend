@@ -60,6 +60,14 @@ type WeekDraft struct {
 	Target         weeklytarget.WeeklyTarget
 	Days           [7]DayPlan // fixed-size, mirroring domain.WeekArrangement's "always exactly 7 days" guarantee
 	CreatedAt      time.Time
+
+	// Notes caches VIV-113's weekly note per date already generated for
+	// this draft — keyed by "2006-01-02" (the same date GetWeeklyNoteInput
+	// is scoped to), value is the generated note text. See
+	// GetWeeklyNoteUseCase and WeeklyPlanDraftRepository.SetNote. Cleared
+	// by UpdateDaySlot whenever any day changes, since a stale note could
+	// describe content that no longer matches the week.
+	Notes map[string]string
 }
 
 // ============================================================================
@@ -117,8 +125,19 @@ type WeeklyPlanDraftRepository interface {
 	// UpdateDaySlot persists a change to exactly one day (0-6) of an
 	// already-saved draft, without rewriting the rest of the week. This is
 	// what lets adaptation and manual edits guarantee they never touch any
-	// other day's SlotAssignment.
+	// other day's SlotAssignment. Also clears the draft's whole Notes
+	// cache (see SetNote) — a day changing anywhere in the week can make
+	// any already-cached note stale, since WeeklyNoteInput summarizes all
+	// 7 days, not just the one requested.
 	UpdateDaySlot(ctx context.Context, userID, draftID string, dayIndex int, day DayPlan) error
+
+	// SetNote caches a generated weekly note (VIV-113) for one date of an
+	// already-saved draft, keyed the same way as WeekDraft.Notes
+	// ("2006-01-02"). Best-effort from the caller's point of view —
+	// GetWeeklyNoteUseCase still returns the note it just generated even
+	// if the cache write fails; a cache miss next time just costs another
+	// LLM call, not a broken response.
+	SetNote(ctx context.Context, userID, draftID, dateKey, note string) error
 }
 
 // ============================================================================

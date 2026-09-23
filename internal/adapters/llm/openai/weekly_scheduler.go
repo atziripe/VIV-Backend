@@ -109,7 +109,7 @@ func (s *WeeklyScheduler) requestAndValidate(
 		{Role: openaiapi.ChatMessageRoleUser, Content: userPrompt},
 	}
 
-	resp, err := s.client.Chat(ctx, msgs)
+	resp, err := s.client.Chat(ctx, "weekly_scheduling", msgs)
 	if err != nil {
 		return [7]scheduling.DayPlacement{}, fmt.Errorf("openai call failed: %w", err)
 	}

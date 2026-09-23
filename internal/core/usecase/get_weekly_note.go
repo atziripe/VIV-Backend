@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 )
@@ -52,9 +53,21 @@ func (uc *GetWeeklyNoteUseCase) Execute(ctx context.Context, in GetWeeklyNoteInp
 		return GetWeeklyNoteOutput{}, nil
 	}
 
+	dateKey := date.Format("2006-01-02")
+	if cached, ok := draft.Notes[dateKey]; ok {
+		return GetWeeklyNoteOutput{Found: true, Note: cached}, nil
+	}
+
 	note, err := uc.Notes.Execute(ctx, *draft, date)
 	if err != nil {
 		return GetWeeklyNoteOutput{}, fmt.Errorf("get weekly note: %w", err)
+	}
+
+	// Best-effort: the note was already generated successfully, so a
+	// failure to cache it must never turn into a failed response — it
+	// just means the next request pays for another LLM call.
+	if err := uc.Drafts.SetNote(ctx, userID, draft.ID, dateKey, note); err != nil {
+		log.Printf("[weeklynote] failed to cache note user=%s draft=%s date=%s: %v", userID, draft.ID, dateKey, err)
 	}
 
 	return GetWeeklyNoteOutput{Found: true, Note: note}, nil

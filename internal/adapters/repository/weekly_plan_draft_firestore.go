@@ -147,6 +147,42 @@ func (r *FirestoreWeeklyPlanDraftRepository) UpdateDaySlot(ctx context.Context, 
 	}
 
 	draft.Days[dayIndex] = day
+	draft.Notes = nil // any cached weekly note may now describe a stale week
+
+	payload, err := json.Marshal(draft)
+	if err != nil {
+		return fmt.Errorf("marshaling weekly plan draft: %w", err)
+	}
+
+	_, err = docRef.Update(ctx, []firestore.Update{
+		{Path: "draft_json", Value: string(payload)},
+	})
+	return err
+}
+
+// SetNote caches a generated weekly note for one date, the same
+// read-modify-write-the-whole-blob pattern UpdateDaySlot uses.
+func (r *FirestoreWeeklyPlanDraftRepository) SetNote(ctx context.Context, userID, draftID, dateKey, note string) error {
+	docRef := r.col(userID).Doc(draftID)
+	doc, err := docRef.Get(ctx)
+	if err != nil {
+		return err
+	}
+
+	var dd weeklyPlanDraftDoc
+	if err := doc.DataTo(&dd); err != nil {
+		return err
+	}
+
+	var draft usecase.WeekDraft
+	if err := json.Unmarshal([]byte(dd.DraftJSON), &draft); err != nil {
+		return fmt.Errorf("unmarshaling weekly plan draft: %w", err)
+	}
+
+	if draft.Notes == nil {
+		draft.Notes = map[string]string{}
+	}
+	draft.Notes[dateKey] = note
 
 	payload, err := json.Marshal(draft)
 	if err != nil {

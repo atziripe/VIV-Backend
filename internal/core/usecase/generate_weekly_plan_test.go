@@ -32,10 +32,13 @@ func (f fakePhaseLookup) CurrentPhase(_ context.Context, _ string) (domain.Cycle
 // the VIV-106 (generation) and VIV-107 (adaptation/manual edit) tests in
 // this package.
 type fakeDraftRepo struct {
-	saved     *usecase.WeekDraft // last SaveDraft result — kept for the pre-existing VIV-106 tests
-	err       error              // SaveDraft error
-	getErr    error
-	updateErr error
+	saved      *usecase.WeekDraft // last SaveDraft result — kept for the pre-existing VIV-106 tests
+	err        error              // SaveDraft error
+	getErr     error
+	updateErr  error
+	setNoteErr error
+
+	setNoteCalls int
 
 	byUser map[string]map[string]*usecase.WeekDraft // userID -> draftID -> draft
 }
@@ -86,6 +89,23 @@ func (f *fakeDraftRepo) UpdateDaySlot(_ context.Context, userID, draftID string,
 		return fmt.Errorf("fakeDraftRepo: draft %s not found for user %s", draftID, userID)
 	}
 	d.Days[dayIndex] = day
+	d.Notes = nil // mirrors FirestoreWeeklyPlanDraftRepository.UpdateDaySlot
+	return nil
+}
+
+func (f *fakeDraftRepo) SetNote(_ context.Context, userID, draftID, dateKey, note string) error {
+	if f.setNoteErr != nil {
+		return f.setNoteErr
+	}
+	d, ok := f.byUser[userID][draftID]
+	if !ok {
+		return fmt.Errorf("fakeDraftRepo: draft %s not found for user %s", draftID, userID)
+	}
+	if d.Notes == nil {
+		d.Notes = map[string]string{}
+	}
+	d.Notes[dateKey] = note
+	f.setNoteCalls++
 	return nil
 }
 

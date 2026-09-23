@@ -34,7 +34,7 @@ func (g *CopyGenerator) GenerateCopy(ctx context.Context, requests []mealgen.Cop
 		{Role: openaiapi.ChatMessageRoleUser, Content: buildCopyUserPrompt(requests)},
 	}
 
-	resp, err := g.client.Chat(ctx, msgs)
+	resp, err := g.client.Chat(ctx, "meal_copy", msgs)
 	if err != nil {
 		return nil, fmt.Errorf("openai call failed: %w", err)
 	}

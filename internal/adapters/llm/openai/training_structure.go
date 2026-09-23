@@ -42,7 +42,7 @@ func (g *TrainingStructureGenerator) GenerateWeekStructure(
 		{Role: openaiapi.ChatMessageRoleUser, Content: userPrompt},
 	}
 
-	resp, err := g.client.Chat(ctx, msgs)
+	resp, err := g.client.Chat(ctx, "training_structure", msgs)
 	if err != nil {
 		return domain.WeekArrangement{}, usecase.TokenUsage{}, fmt.Errorf("openai call failed: %w", err)
 	}
