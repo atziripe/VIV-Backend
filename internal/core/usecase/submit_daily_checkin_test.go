@@ -32,6 +32,13 @@ func (f *fakeDailyCheckinRepo) Upsert(_ context.Context, c *domain.DailyCheckin)
 	return nil
 }
 
+func (f *fakeDailyCheckinRepo) GetByDate(_ context.Context, userID string, date time.Time) (*domain.DailyCheckin, error) {
+	if f.byKey == nil {
+		return nil, nil
+	}
+	return f.byKey[userID+"|"+date.Format("2006-01-02")], nil
+}
+
 // spyDailyAdapter is a usecase.DailyAdapter fake that records every call
 // it receives and returns a configurable, fixed output — used to verify
 // SubmitDailyCheckinUseCase's dispatch logic and data threading without

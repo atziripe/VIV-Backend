@@ -196,7 +196,9 @@ func isAllowedRoute(method, path string) bool {
 		return true
 	case method == "POST" && strings.HasPrefix(path, "/nutrition/"):
 		return true
-	case method == "GET" && path == "/recovery/today":
+	case method == "GET" && strings.HasPrefix(path, "/recovery/"):
+		return true
+	case method == "POST" && strings.HasPrefix(path, "/recovery/"):
 		return true
 	case method == "POST" && path == "/users/me/device-token":
 		return true

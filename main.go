@@ -24,7 +24,6 @@ import (
 	corecontent "viv/internal/core/content"
 	"viv/internal/core/mesocycle"
 	corenutrition "viv/internal/core/nutrition"
-	"viv/internal/core/recovery"
 	"viv/internal/core/rules"
 	rulestraining "viv/internal/core/rules/training"
 	coretraining "viv/internal/core/training"
@@ -101,6 +100,7 @@ func main() {
 	dailyCheckinRepo := repository.NewFirestoreDailyCheckinRepository(fsClient)
 	sessionLogRepo := repository.NewFirestoreSessionLogRepository(fsClient)
 	nutritionPlanRepo := repository.NewFirestoreNutritionPlanRepository(fsClient)
+	recoveryActionRepo := repository.NewFirestoreRecoveryActionRepository(fsClient)
 
 	// Neon (secondary — dual-write target)
 	// If DATABASE_URL is missing or Neon is unreachable, the app falls back to
@@ -185,21 +185,6 @@ func main() {
 	copyCache := mealgen.NewInMemoryCopyCache()
 	copyEnricher := mealgen.NewAsyncCopyEnricher(copyGen, copyCache, planRepo)
 	nutritionPlanCopyEnricher := mealgen.NewAsyncNutritionPlanCopyEnricher(copyGen, copyCache, nutritionPlanRepo)
-
-	// ========= Recovery Pipeline =========
-	bannerLib, err := recovery.LoadBannerLibrary("internal/content/recovery")
-	if err != nil {
-		log.Printf("warning: banner library not loaded: %v", err)
-	} else {
-		log.Printf("recovery banner library loaded: %d entries", bannerLib.EntryCount())
-	}
-
-	movesContentLib, err := recovery.LoadMovesContentLibrary("internal/content/recovery")
-	if err != nil {
-		log.Printf("warning: moves content library not loaded: %v", err)
-	} else {
-		log.Printf("recovery moves library loaded: %d entries", movesContentLib.EntryCount())
-	}
 
 	// ========= Usecases =========
 	createCheckinUC := usecase.NewCreateCheckinUseCase(checkinRepo, userRepo, "v1")
@@ -321,7 +306,16 @@ func main() {
 	// into the nutrition module (see submit_nutrition_onboarding.go), not
 	// bundled with training onboarding.
 	submitNutritionOnboardingUC := usecase.NewSubmitNutritionOnboardingUseCase(userRepo, weeklyPlanDraftRepo, cyclePhaseLookup, generateNutritionUC, nutritionPlanRepo, nutritionPlanCopyEnricher)
-	recoveryUC := usecase.NewGetRecoveryUseCase(userRepo, planRepo, cyclePhaseLookup, bannerLib, movesContentLib)
+
+	// Session-driven recovery card (VIV Recovery Engine Decision Table
+	// spec). Replaces the old cycle-phase banner entirely — the old
+	// GetRecoveryUseCase/domain.Plan-based /recovery/today was removed
+	// because it silently faked an "onboarding" banner forever for any
+	// new-pipeline user (who never has a domain.Plan). Reuses
+	// weeklyContentSelector (VIV-112) to re-hydrate content for whichever
+	// day a high-cost reschedule moves.
+	getRecoveryCardUC := usecase.NewGetRecoveryCardUseCase(weeklyPlanDraftRepo, dailyCheckinRepo, userRepo, recoveryActionRepo, weeklyContentSelector)
+	saveRecoveryActionUC := usecase.NewSaveRecoveryActionUseCase(recoveryActionRepo)
 
 	phaseFeedbackUC := usecase.NewSavePhaseFeedbackUseCase(planRepo)
 
@@ -340,7 +334,7 @@ func main() {
 	sessionLogHandler := httpadapter.NewSessionLogHandler(startSessionUC, logSetUC, completeSessionUC)
 	dailyCheckinHandler := httpadapter.NewDailyCheckinHandler(submitDailyCheckinUC)
 	nutritionHandler := httpadapter.NewNutritionHandler(nutritionUC, mealSelectionUC, submitNutritionOnboardingUC, saveNutritionMealSelectionUC)
-	recoveryHandler := httpadapter.NewRecoveryHandler(recoveryUC)
+	recoveryCardHandler := httpadapter.NewRecoveryCardHandler(getRecoveryCardUC, saveRecoveryActionUC)
 	deviceTokenHandler := httpadapter.NewDeviceTokenHandler(registerDeviceTokenUC)
 	periodHandler := httpadapter.NewPeriodHandler(logPeriodStartUC)
 
@@ -403,7 +397,8 @@ func main() {
 	api.Get("/nutrition/plan", nutritionHandler.GetPlan)
 	api.Post("/nutrition/meal-selection", nutritionHandler.SaveMealSelection)
 	api.Post("/nutrition/onboarding", nutritionHandler.SubmitOnboarding)
-	api.Get("/recovery/today", recoveryHandler.GetToday)
+	api.Get("/recovery/card", recoveryCardHandler.GetCard)
+	api.Post("/recovery/card/action", recoveryCardHandler.SaveAction)
 	api.Post("/plans/phase-feedback", plansHandler.SavePhaseFeedback)
 
 	api.Post("/users/me/device-token", deviceTokenHandler.Upsert)

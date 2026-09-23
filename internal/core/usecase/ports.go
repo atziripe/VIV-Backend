@@ -74,6 +74,14 @@ type NutritionPlanCopyEnricher interface {
 	EnrichAsync(userID string, plan domain.NutritionWeekPlan)
 }
 
+// RecoveryActionRepository persists what the user did with a given day's
+// recovery card (see GetRecoveryCardUseCase/SaveRecoveryActionUseCase) —
+// one record per (userID, date).
+type RecoveryActionRepository interface {
+	Upsert(ctx context.Context, a *domain.RecoveryAction) error
+	GetByDate(ctx context.Context, userID string, date time.Time) (*domain.RecoveryAction, error)
+}
+
 type PlanGenerator interface {
 	GeneratePlan(
 		ctx context.Context,

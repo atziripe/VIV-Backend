@@ -5,7 +5,10 @@ import (
 	"time"
 
 	"cloud.google.com/go/firestore"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
+	"viv/internal/core/checkin"
 	"viv/internal/core/domain"
 	"viv/internal/core/usecase"
 )
@@ -58,4 +61,39 @@ func (r *FirestoreDailyCheckinRepository) Upsert(ctx context.Context, c *domain.
 		Collection("daily_checkins").Doc(c.Date.Format("2006-01-02")).
 		Set(ctx, doc)
 	return err
+}
+
+func (r *FirestoreDailyCheckinRepository) GetByDate(ctx context.Context, userID string, date time.Time) (*domain.DailyCheckin, error) {
+	snap, err := r.client.
+		Collection("users").Doc(userID).
+		Collection("daily_checkins").Doc(date.Format("2006-01-02")).
+		Get(ctx)
+	if err != nil {
+		if status.Code(err) == codes.NotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	var d dailyCheckinDoc
+	if err := snap.DataTo(&d); err != nil {
+		return nil, err
+	}
+
+	return &domain.DailyCheckin{
+		UserID: userID,
+		Date:   date,
+		Answers: checkin.DailyCheckin{
+			Sleep:  checkin.SleepAnswer(d.Sleep),
+			Body:   checkin.BodyAnswer(d.Body),
+			Demand: checkin.DemandAnswer(d.Demand),
+			Need:   checkin.NeedAnswer(d.Need),
+		},
+		Readiness: checkin.ReadinessDimensions{
+			RecoveryCapacity: checkin.RecoveryCapacity(d.Recovery),
+			LifeBandwidth:    checkin.LifeBandwidth(d.Bandwidth),
+			BuildReadiness:   checkin.BuildReadiness(d.Build),
+		},
+		SubmittedAt: d.SubmittedAt,
+	}, nil
 }

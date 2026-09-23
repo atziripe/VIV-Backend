@@ -52,6 +52,12 @@ type DailyCheckinRepository interface {
 	// idempotent by construction: a second submission for the same date
 	// updates the existing record instead of creating a duplicate.
 	Upsert(ctx context.Context, c *domain.DailyCheckin) error
+
+	// GetByDate returns the check-in for (userID, date), or nil if none
+	// was ever submitted for that date — used by the sleep-debt recovery
+	// modifier (see get_recovery_card.go) to look at the prior night's
+	// answer.
+	GetByDate(ctx context.Context, userID string, date time.Time) (*domain.DailyCheckin, error)
 }
 
 type SubmitDailyCheckinInput struct {
