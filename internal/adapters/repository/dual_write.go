@@ -17,7 +17,9 @@ import (
 	"log/slog"
 	"time"
 
+	"viv/internal/core/activity"
 	"viv/internal/core/domain"
+	"viv/internal/core/mesocycle"
 	"viv/internal/core/usecase"
 )
 
@@ -288,4 +290,253 @@ func (r *DualDeviceTokenRepository) Deactivate(ctx context.Context, userID strin
 
 func (r *DualDeviceTokenRepository) GetAllActiveByTimezone(ctx context.Context) (map[string][]*domain.DeviceToken, error) {
 	return r.primary.GetAllActiveByTimezone(ctx)
+}
+
+// ============================================================
+// RecoveryActionRepository dual-write
+// ============================================================
+
+var _ usecase.RecoveryActionRepository = (*DualRecoveryActionRepository)(nil)
+
+type DualRecoveryActionRepository struct {
+	primary   usecase.RecoveryActionRepository
+	secondary usecase.RecoveryActionRepository
+}
+
+func NewDualRecoveryActionRepository(primary, secondary usecase.RecoveryActionRepository) *DualRecoveryActionRepository {
+	return &DualRecoveryActionRepository{primary: primary, secondary: secondary}
+}
+
+func (r *DualRecoveryActionRepository) Upsert(ctx context.Context, a *domain.RecoveryAction) error {
+	if err := r.primary.Upsert(ctx, a); err != nil {
+		return err
+	}
+	if err := r.secondary.Upsert(ctx, a); err != nil {
+		slog.Error("dual-write: neon recovery_action upsert failed", "user_id", a.UserID, "err", err)
+	}
+	return nil
+}
+
+func (r *DualRecoveryActionRepository) GetByDate(ctx context.Context, userID string, date time.Time) (*domain.RecoveryAction, error) {
+	return r.primary.GetByDate(ctx, userID, date)
+}
+
+// ============================================================
+// LifestyleChangeRepository dual-write
+// ============================================================
+
+var _ usecase.LifestyleChangeRepository = (*DualLifestyleChangeRepository)(nil)
+
+type DualLifestyleChangeRepository struct {
+	primary   usecase.LifestyleChangeRepository
+	secondary usecase.LifestyleChangeRepository
+}
+
+func NewDualLifestyleChangeRepository(primary, secondary usecase.LifestyleChangeRepository) *DualLifestyleChangeRepository {
+	return &DualLifestyleChangeRepository{primary: primary, secondary: secondary}
+}
+
+func (r *DualLifestyleChangeRepository) Create(ctx context.Context, e *domain.LifestyleChange) error {
+	if err := r.primary.Create(ctx, e); err != nil {
+		return err
+	}
+	if err := r.secondary.Create(ctx, e); err != nil {
+		slog.Error("dual-write: neon lifestyle_change create failed", "change_id", e.ID, "err", err)
+	}
+	return nil
+}
+
+func (r *DualLifestyleChangeRepository) ListByUser(ctx context.Context, userID string, limit int) ([]*domain.LifestyleChange, error) {
+	return r.primary.ListByUser(ctx, userID, limit)
+}
+
+func (r *DualLifestyleChangeRepository) GetByID(ctx context.Context, userID, changeID string) (*domain.LifestyleChange, error) {
+	return r.primary.GetByID(ctx, userID, changeID)
+}
+
+func (r *DualLifestyleChangeRepository) SetPlanID(ctx context.Context, userID, changeID, planID string) error {
+	if err := r.primary.SetPlanID(ctx, userID, changeID, planID); err != nil {
+		return err
+	}
+	if err := r.secondary.SetPlanID(ctx, userID, changeID, planID); err != nil {
+		slog.Error("dual-write: neon lifestyle_change set_plan_id failed", "change_id", changeID, "err", err)
+	}
+	return nil
+}
+
+// ============================================================
+// DailyCheckinRepository dual-write
+// ============================================================
+
+var _ usecase.DailyCheckinRepository = (*DualDailyCheckinRepository)(nil)
+
+type DualDailyCheckinRepository struct {
+	primary   usecase.DailyCheckinRepository
+	secondary usecase.DailyCheckinRepository
+}
+
+func NewDualDailyCheckinRepository(primary, secondary usecase.DailyCheckinRepository) *DualDailyCheckinRepository {
+	return &DualDailyCheckinRepository{primary: primary, secondary: secondary}
+}
+
+func (r *DualDailyCheckinRepository) Upsert(ctx context.Context, c *domain.DailyCheckin) error {
+	if err := r.primary.Upsert(ctx, c); err != nil {
+		return err
+	}
+	if err := r.secondary.Upsert(ctx, c); err != nil {
+		slog.Error("dual-write: neon daily_checkin upsert failed", "user_id", c.UserID, "err", err)
+	}
+	return nil
+}
+
+func (r *DualDailyCheckinRepository) GetByDate(ctx context.Context, userID string, date time.Time) (*domain.DailyCheckin, error) {
+	return r.primary.GetByDate(ctx, userID, date)
+}
+
+// ============================================================
+// SessionLogRepository dual-write
+// ============================================================
+
+var _ usecase.SessionLogRepository = (*DualSessionLogRepository)(nil)
+
+type DualSessionLogRepository struct {
+	primary   usecase.SessionLogRepository
+	secondary usecase.SessionLogRepository
+}
+
+func NewDualSessionLogRepository(primary, secondary usecase.SessionLogRepository) *DualSessionLogRepository {
+	return &DualSessionLogRepository{primary: primary, secondary: secondary}
+}
+
+func (r *DualSessionLogRepository) GetByDate(ctx context.Context, userID string, date time.Time) (*domain.SessionLog, error) {
+	return r.primary.GetByDate(ctx, userID, date)
+}
+
+func (r *DualSessionLogRepository) Upsert(ctx context.Context, log *domain.SessionLog) error {
+	if err := r.primary.Upsert(ctx, log); err != nil {
+		return err
+	}
+	if err := r.secondary.Upsert(ctx, log); err != nil {
+		slog.Error("dual-write: neon session_log upsert failed", "user_id", log.UserID, "err", err)
+	}
+	return nil
+}
+
+// ============================================================
+// ExercisePinRepository dual-write
+// ============================================================
+
+var _ usecase.ExercisePinRepository = (*DualExercisePinRepository)(nil)
+
+type DualExercisePinRepository struct {
+	primary   usecase.ExercisePinRepository
+	secondary usecase.ExercisePinRepository
+}
+
+func NewDualExercisePinRepository(primary, secondary usecase.ExercisePinRepository) *DualExercisePinRepository {
+	return &DualExercisePinRepository{primary: primary, secondary: secondary}
+}
+
+func (r *DualExercisePinRepository) Get(ctx context.Context, userID string, activityType activity.ID, muscleGroup activity.MuscleGroup) (*mesocycle.PinnedExerciseSet, error) {
+	return r.primary.Get(ctx, userID, activityType, muscleGroup)
+}
+
+func (r *DualExercisePinRepository) Save(ctx context.Context, userID string, pin mesocycle.PinnedExerciseSet) error {
+	if err := r.primary.Save(ctx, userID, pin); err != nil {
+		return err
+	}
+	if err := r.secondary.Save(ctx, userID, pin); err != nil {
+		slog.Error("dual-write: neon exercise_pin save failed", "user_id", userID, "err", err)
+	}
+	return nil
+}
+
+// ============================================================
+// NutritionPlanRepository dual-write
+// ============================================================
+
+var _ usecase.NutritionPlanRepository = (*DualNutritionPlanRepository)(nil)
+
+type DualNutritionPlanRepository struct {
+	primary   usecase.NutritionPlanRepository
+	secondary usecase.NutritionPlanRepository
+}
+
+func NewDualNutritionPlanRepository(primary, secondary usecase.NutritionPlanRepository) *DualNutritionPlanRepository {
+	return &DualNutritionPlanRepository{primary: primary, secondary: secondary}
+}
+
+func (r *DualNutritionPlanRepository) GetByUserID(ctx context.Context, userID string) (*domain.NutritionPlan, error) {
+	return r.primary.GetByUserID(ctx, userID)
+}
+
+func (r *DualNutritionPlanRepository) Save(ctx context.Context, userID string, plan domain.NutritionWeekPlan) error {
+	if err := r.primary.Save(ctx, userID, plan); err != nil {
+		return err
+	}
+	if err := r.secondary.Save(ctx, userID, plan); err != nil {
+		slog.Error("dual-write: neon nutrition_plan save failed", "user_id", userID, "err", err)
+	}
+	return nil
+}
+
+// ============================================================
+// WeeklyPlanDraftRepository dual-write
+// ============================================================
+
+var _ usecase.WeeklyPlanDraftRepository = (*DualWeeklyPlanDraftRepository)(nil)
+
+type DualWeeklyPlanDraftRepository struct {
+	primary   usecase.WeeklyPlanDraftRepository
+	secondary usecase.WeeklyPlanDraftRepository
+}
+
+func NewDualWeeklyPlanDraftRepository(primary, secondary usecase.WeeklyPlanDraftRepository) *DualWeeklyPlanDraftRepository {
+	return &DualWeeklyPlanDraftRepository{primary: primary, secondary: secondary}
+}
+
+// weeklyPlanDraftLinker is implemented by NeonWeeklyPlanDraftRepository so
+// its row can be tagged with the Firestore-generated draft ID at creation
+// time — same reasoning as planJobLinker: every UpdateDaySlot/SetNote call
+// after SaveDraft only ever carries that Firestore ID.
+type weeklyPlanDraftLinker interface {
+	SaveDraftLinked(ctx context.Context, draft *usecase.WeekDraft, firestoreDraftID string) error
+}
+
+func (r *DualWeeklyPlanDraftRepository) SaveDraft(ctx context.Context, draft *usecase.WeekDraft) error {
+	if err := r.primary.SaveDraft(ctx, draft); err != nil {
+		return err
+	}
+	if linker, ok := r.secondary.(weeklyPlanDraftLinker); ok {
+		if err := linker.SaveDraftLinked(ctx, draft, draft.ID); err != nil {
+			slog.Error("dual-write: neon weekly_plan_draft save failed", "draft_id", draft.ID, "err", err)
+		}
+	} else if err := r.secondary.SaveDraft(ctx, draft); err != nil {
+		slog.Error("dual-write: neon weekly_plan_draft save failed", "draft_id", draft.ID, "err", err)
+	}
+	return nil
+}
+
+func (r *DualWeeklyPlanDraftRepository) GetByDate(ctx context.Context, userID string, date time.Time) (*usecase.WeekDraft, error) {
+	return r.primary.GetByDate(ctx, userID, date)
+}
+
+func (r *DualWeeklyPlanDraftRepository) UpdateDaySlot(ctx context.Context, userID, draftID string, dayIndex int, day usecase.DayPlan) error {
+	if err := r.primary.UpdateDaySlot(ctx, userID, draftID, dayIndex, day); err != nil {
+		return err
+	}
+	if err := r.secondary.UpdateDaySlot(ctx, userID, draftID, dayIndex, day); err != nil {
+		slog.Error("dual-write: neon weekly_plan_draft update_day_slot failed", "draft_id", draftID, "err", err)
+	}
+	return nil
+}
+
+func (r *DualWeeklyPlanDraftRepository) SetNote(ctx context.Context, userID, draftID, dateKey, note string) error {
+	if err := r.primary.SetNote(ctx, userID, draftID, dateKey, note); err != nil {
+		return err
+	}
+	if err := r.secondary.SetNote(ctx, userID, draftID, dateKey, note); err != nil {
+		slog.Error("dual-write: neon weekly_plan_draft set_note failed", "draft_id", draftID, "err", err)
+	}
+	return nil
 }

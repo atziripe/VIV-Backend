@@ -93,24 +93,32 @@ func main() {
 	fsPlanJobsRepo := repository.NewFirestorePlanJobsRepository(fsClient)
 	fsDeviceTokenRepo := repository.NewFirestoreDeviceTokenRepository(fsClient)
 
-	// New weekly-plan pipeline (VIV-106..113) — Firestore-only, no Neon
-	// counterpart yet, same as lifestyleRepo below.
-	weeklyPlanDraftRepo := repository.NewFirestoreWeeklyPlanDraftRepository(fsClient)
-	exercisePinRepo := repository.NewFirestoreExercisePinRepository(fsClient)
-	dailyCheckinRepo := repository.NewFirestoreDailyCheckinRepository(fsClient)
-	sessionLogRepo := repository.NewFirestoreSessionLogRepository(fsClient)
-	nutritionPlanRepo := repository.NewFirestoreNutritionPlanRepository(fsClient)
-	recoveryActionRepo := repository.NewFirestoreRecoveryActionRepository(fsClient)
+	// New weekly-plan pipeline (VIV-106..113) — Firestore primary, same
+	// dual-write treatment as the block above now that each has a Neon
+	// counterpart.
+	fsWeeklyPlanDraftRepo := repository.NewFirestoreWeeklyPlanDraftRepository(fsClient)
+	fsExercisePinRepo := repository.NewFirestoreExercisePinRepository(fsClient)
+	fsDailyCheckinRepo := repository.NewFirestoreDailyCheckinRepository(fsClient)
+	fsSessionLogRepo := repository.NewFirestoreSessionLogRepository(fsClient)
+	fsNutritionPlanRepo := repository.NewFirestoreNutritionPlanRepository(fsClient)
+	fsRecoveryActionRepo := repository.NewFirestoreRecoveryActionRepository(fsClient)
 
 	// Neon (secondary — dual-write target)
 	// If DATABASE_URL is missing or Neon is unreachable, the app falls back to
 	// Firestore-only mode and logs a warning. No crash, no downtime.
 	var (
-		userRepo        usecase.UserRepository        = fsUserRepo
-		checkinRepo     usecase.CheckinRepository     = fsCheckinRepo
-		planRepo        usecase.PlanRepository        = fsPlanRepo
-		planJobsRepo    usecase.PlanJobsRepository    = fsPlanJobsRepo
-		deviceTokenRepo usecase.DeviceTokenRepository = fsDeviceTokenRepo
+		userRepo            usecase.UserRepository            = fsUserRepo
+		checkinRepo         usecase.CheckinRepository         = fsCheckinRepo
+		planRepo            usecase.PlanRepository            = fsPlanRepo
+		planJobsRepo        usecase.PlanJobsRepository        = fsPlanJobsRepo
+		deviceTokenRepo     usecase.DeviceTokenRepository     = fsDeviceTokenRepo
+		lifestyleRepo       usecase.LifestyleChangeRepository = fsLifestyleRepo
+		weeklyPlanDraftRepo usecase.WeeklyPlanDraftRepository = fsWeeklyPlanDraftRepo
+		exercisePinRepo     usecase.ExercisePinRepository     = fsExercisePinRepo
+		dailyCheckinRepo    usecase.DailyCheckinRepository    = fsDailyCheckinRepo
+		sessionLogRepo      usecase.SessionLogRepository      = fsSessionLogRepo
+		nutritionPlanRepo   usecase.NutritionPlanRepository   = fsNutritionPlanRepo
+		recoveryActionRepo  usecase.RecoveryActionRepository  = fsRecoveryActionRepo
 	)
 
 	if dbURL := os.Getenv("DATABASE_URL"); dbURL != "" {
@@ -124,13 +132,17 @@ func main() {
 			planRepo = repository.NewDualPlanRepository(fsPlanRepo, repository.NewNeonPlanRepository(neonPool))
 			planJobsRepo = repository.NewDualPlanJobsRepository(fsPlanJobsRepo, repository.NewNeonPlanJobsRepository(neonPool))
 			deviceTokenRepo = repository.NewDualDeviceTokenRepository(fsDeviceTokenRepo, repository.NewNeonDeviceTokenRepository(neonPool))
+			lifestyleRepo = repository.NewDualLifestyleChangeRepository(fsLifestyleRepo, repository.NewNeonLifestyleChangeRepository(neonPool))
+			weeklyPlanDraftRepo = repository.NewDualWeeklyPlanDraftRepository(fsWeeklyPlanDraftRepo, repository.NewNeonWeeklyPlanDraftRepository(neonPool))
+			exercisePinRepo = repository.NewDualExercisePinRepository(fsExercisePinRepo, repository.NewNeonExercisePinRepository(neonPool))
+			dailyCheckinRepo = repository.NewDualDailyCheckinRepository(fsDailyCheckinRepo, repository.NewNeonDailyCheckinRepository(neonPool))
+			sessionLogRepo = repository.NewDualSessionLogRepository(fsSessionLogRepo, repository.NewNeonSessionLogRepository(neonPool))
+			nutritionPlanRepo = repository.NewDualNutritionPlanRepository(fsNutritionPlanRepo, repository.NewNeonNutritionPlanRepository(neonPool))
+			recoveryActionRepo = repository.NewDualRecoveryActionRepository(fsRecoveryActionRepo, repository.NewNeonRecoveryActionRepository(neonPool))
 		}
 	} else {
 		slog.Warn("DATABASE_URL not set — running Firestore-only (no dual-write)")
 	}
-
-	// lifestyleRepo has no Neon implementation yet — stays Firestore-only
-	lifestyleRepo := fsLifestyleRepo
 
 	fcmRepo := repository.NewFCMRepository(app)
 
