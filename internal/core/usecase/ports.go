@@ -11,6 +11,33 @@ type UserRepository interface {
 	Save(ctx context.Context, user *domain.User) error
 }
 
+// AccountDataStore wipes every record of a user's data from the primary
+// store (Firestore). DeleteAccountUseCase treats this as fatal: if it
+// fails, the account is NOT closed, so the caller can retry safely —
+// see that usecase's doc comment for the full ordering rationale.
+type AccountDataStore interface {
+	DeleteAllUserData(ctx context.Context, userID string) error
+}
+
+// AccountAnonymizer captures a non-identifying snapshot of a user's
+// profile (the same bucketed shape the long-standing user_profiles_anon
+// view exposes) and then deletes every Neon row tied to them in one
+// transaction — Neon's own foreign keys cascade the rest once `users`
+// is gone. Optional and best-effort from DeleteAccountUseCase's point
+// of view, matching this codebase's "Firestore primary, Neon secondary"
+// convention everywhere else: a failure here is logged, never fatal.
+type AccountAnonymizer interface {
+	AnonymizeAndDeleteUser(ctx context.Context, userID string) error
+}
+
+// AuthAccountDeleter deletes the Firebase Auth account itself. Without
+// this, a user's data is gone but they could still log back in — which
+// both fails "the account is actually deleted" and would silently
+// re-provision a blank profile via EnsureUserMiddleware.
+type AuthAccountDeleter interface {
+	DeleteUser(ctx context.Context, userID string) error
+}
+
 type CheckinRepository interface {
 	Create(ctx context.Context, c *domain.Checkin) error
 	GetByID(ctx context.Context, userID string, id string) (*domain.Checkin, error)

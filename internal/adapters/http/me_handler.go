@@ -12,12 +12,13 @@ import (
 )
 
 type MeHandler struct {
-	UC           *usecase.GetCurrentUserUseCase
-	UpdateProfUC *usecase.UpdateProfileUseCase
+	UC              *usecase.GetCurrentUserUseCase
+	UpdateProfUC    *usecase.UpdateProfileUseCase
+	DeleteAccountUC *usecase.DeleteAccountUseCase
 }
 
-func NewMeHandler(uc *usecase.GetCurrentUserUseCase, updateProfUC *usecase.UpdateProfileUseCase) *MeHandler {
-	return &MeHandler{UC: uc, UpdateProfUC: updateProfUC}
+func NewMeHandler(uc *usecase.GetCurrentUserUseCase, updateProfUC *usecase.UpdateProfileUseCase, deleteAccountUC *usecase.DeleteAccountUseCase) *MeHandler {
+	return &MeHandler{UC: uc, UpdateProfUC: updateProfUC, DeleteAccountUC: deleteAccountUC}
 }
 
 // Lo que devolvemos al frontend (puedes ajustar campos)
@@ -374,4 +375,25 @@ func (h *MeHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(resp)
+}
+
+// DeleteAccount permanently deletes the caller's account and all of their
+// data (App Store guideline 5.1.1v) — see usecase.DeleteAccountUseCase for
+// what "all of their data" means and why anonymized/aggregate data is kept.
+func (h *MeHandler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	userID, ok := UserIDFromContext(ctx)
+	if !ok || userID == "" {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if err := h.DeleteAccountUC.Execute(ctx, userID); err != nil {
+		log.Printf("[delete-account] execute error: %v", err)
+		http.Error(w, "failed to delete account", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

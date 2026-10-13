@@ -119,6 +119,10 @@ func main() {
 		sessionLogRepo      usecase.SessionLogRepository      = fsSessionLogRepo
 		nutritionPlanRepo   usecase.NutritionPlanRepository   = fsNutritionPlanRepo
 		recoveryActionRepo  usecase.RecoveryActionRepository  = fsRecoveryActionRepo
+
+		// accountAnonymizer stays nil in Firestore-only mode — DeleteAccountUseCase
+		// treats that as "no Neon anonymized snapshot taken", not an error.
+		accountAnonymizer usecase.AccountAnonymizer
 	)
 
 	if dbURL := os.Getenv("DATABASE_URL"); dbURL != "" {
@@ -139,6 +143,7 @@ func main() {
 			sessionLogRepo = repository.NewDualSessionLogRepository(fsSessionLogRepo, repository.NewNeonSessionLogRepository(neonPool))
 			nutritionPlanRepo = repository.NewDualNutritionPlanRepository(fsNutritionPlanRepo, repository.NewNeonNutritionPlanRepository(neonPool))
 			recoveryActionRepo = repository.NewDualRecoveryActionRepository(fsRecoveryActionRepo, repository.NewNeonRecoveryActionRepository(neonPool))
+			accountAnonymizer = repository.NewNeonAccountAnonymizer(neonPool)
 		}
 	} else {
 		slog.Warn("DATABASE_URL not set — running Firestore-only (no dual-write)")
@@ -335,17 +340,28 @@ func main() {
 	getRecoveryCardUC := usecase.NewGetRecoveryCardUseCase(weeklyPlanDraftRepo, dailyCheckinRepo, userRepo, recoveryActionRepo, weeklyContentSelector)
 	saveRecoveryActionUC := usecase.NewSaveRecoveryActionUseCase(recoveryActionRepo)
 
+	// Home screen redesign — single aggregated read, reuses getRecoveryCardUC
+	// as-is rather than re-threading weeklyContentSelector into a second place.
+	getHomeTimelineUC := usecase.NewGetHomeTimelineUseCase(userRepo, weeklyPlanDraftRepo, dailyCheckinRepo, sessionLogRepo, nutritionPlanRepo, getRecoveryCardUC)
+
 	phaseFeedbackUC := usecase.NewSavePhaseFeedbackUseCase(planRepo)
 
 	registerDeviceTokenUC := usecase.NewRegisterDeviceTokenUseCase(deviceTokenRepo)
 	sundayCheckinUC := usecase.NewSendSundayCheckinUseCase(deviceTokenRepo, fcmRepo)
 	trainingReminderUC := usecase.NewSendTrainingReminderUseCase(deviceTokenRepo, fcmRepo, planRepo)
 
+	// App Store account-deletion requirement (guideline 5.1.1v) — see
+	// usecase.DeleteAccountUseCase's doc comment for the deletion ordering.
+	accountDataStore := repository.NewFirestoreAccountDataStore(fsClient)
+	authAccountDeleter := repository.NewFirebaseAuthAccountDeleter(authClient)
+	deleteAccountUC := usecase.NewDeleteAccountUseCase(accountDataStore, accountAnonymizer, authAccountDeleter)
+
 	// ========= Handlers =========
 	onboardingHandler := httpadapter.NewOnboardingHandler(onboardingUC)
 	checkinHandler := httpadapter.NewCheckinHandler(createCheckinUC, latestCheckinUC, statusCheckinUC)
 	lifestyleHandler := httpadapter.NewLifestyleHandler(reportLifestyleUC, listLifestyleUC)
-	meHandler := httpadapter.NewMeHandler(getMeUC, updateProfileUC)
+	meHandler := httpadapter.NewMeHandler(getMeUC, updateProfileUC, deleteAccountUC)
+	homeHandler := httpadapter.NewHomeHandler(getHomeTimelineUC)
 	plansHandler := httpadapter.NewPlansHandler(getCurrentPlanUC, getByIDUC, getByWeekStartUC, statusUC, phaseFeedbackUC)
 	trainingHandler := httpadapter.NewTrainingHandler(startTrainingUC, statusTrainingUC, trainingEngine, resumeTrainingUC, completeDayUC, saveArrangementUC)
 	weeklyPlanHandler := httpadapter.NewWeeklyPlanHandler(startWeeklyPlanUC, statusWeeklyPlanUC, currentWeeklyPlanUC, weeklyPlanDayUC, getWeeklyNoteUC, editDaySlotUC)
@@ -387,6 +403,9 @@ func main() {
 
 	api.Get("/me", meHandler.GetMe)
 	api.Patch("/me", meHandler.UpdateProfile)
+	api.Delete("/me", meHandler.DeleteAccount)
+
+	api.Get("/home/today", homeHandler.GetToday)
 
 	api.Get("/plans/current", plansHandler.GetCurrent)
 	api.Get("/plans/{id}", plansHandler.GetByID)
