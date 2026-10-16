@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strconv"
 	"time"
@@ -56,6 +57,20 @@ type CompleteOnboardingInput struct {
 	// to submit more than one goal fails at JSON-decode time already.
 	Activities []string
 	GoalID     string
+
+	// HealthDataConsent must be true — onboarding persists cycle/training/
+	// nutrition data, which needs explicit consent under GDPR Art. 9, not
+	// just the usual contract-necessity basis. There's no "onboard without
+	// it" path: Execute rejects the request outright (ErrConsentRequired)
+	// rather than silently proceeding without a consent record.
+	HealthDataConsent bool
+
+	// AIProcessingConsent is optional — see domain.ConsentAIProcessing's
+	// doc comment for exactly which OpenAI calls it gates (the weekly note
+	// and meal-copy polish, not weekly scheduling). Recorded as whatever
+	// the caller sent, true or false, so declining is captured just as
+	// explicitly as granting.
+	AIProcessingConsent bool
 }
 
 type CompleteOnboardingOutput struct {
@@ -97,14 +112,19 @@ type CompleteOnboardingUseCase struct {
 	Users    UserRepository
 	JobsRepo PlanJobsRepository
 	Runner   WeeklyPlanGenerationRunner
+	Consents ConsentRepository
 }
 
-func NewCompleteOnboardingUseCase(users UserRepository, jobsRepo PlanJobsRepository, runner WeeklyPlanGenerationRunner) *CompleteOnboardingUseCase {
-	return &CompleteOnboardingUseCase{Users: users, JobsRepo: jobsRepo, Runner: runner}
+func NewCompleteOnboardingUseCase(users UserRepository, jobsRepo PlanJobsRepository, runner WeeklyPlanGenerationRunner, consents ConsentRepository) *CompleteOnboardingUseCase {
+	return &CompleteOnboardingUseCase{Users: users, JobsRepo: jobsRepo, Runner: runner, Consents: consents}
 }
 
 func (uc *CompleteOnboardingUseCase) Execute(ctx context.Context, in CompleteOnboardingInput) (*CompleteOnboardingOutput, error) {
 	now := time.Now().UTC()
+
+	if !in.HealthDataConsent {
+		return nil, ErrConsentRequired(string(domain.ConsentHealthDataProcessing))
+	}
 
 	catalogIDs, err := validateActivityIDs(in.Activities)
 	if err != nil {
@@ -168,6 +188,22 @@ func (uc *CompleteOnboardingUseCase) Execute(ctx context.Context, in CompleteOnb
 
 	user.OnboardingCompleted = true
 	user.UpdatedAt = now
+
+	// Recorded *before* the profile save and treated as fatal: this
+	// codebase must never end up with a saved health profile and no
+	// record that consent for it was ever captured — the one scenario
+	// Art. 7.1's "demonstrate consent was given" exists to prevent. The
+	// reverse (consent recorded, profile save then fails) just means the
+	// user redoes onboarding, which is harmless.
+	if err := uc.Consents.Grant(ctx, user.ID, domain.ConsentHealthDataProcessing, true, domain.CurrentPrivacyPolicyVersion); err != nil {
+		return nil, fmt.Errorf("complete onboarding: recording health data consent: %w", err)
+	}
+	// Best-effort: declining/losing this record only means ai_processing
+	// reads back as "not granted" (the safe default), never a compliance
+	// gap the way losing the health-data record would be.
+	if err := uc.Consents.Grant(ctx, user.ID, domain.ConsentAIProcessing, in.AIProcessingConsent, domain.CurrentPrivacyPolicyVersion); err != nil {
+		log.Printf("[onboarding] failed to record ai_processing consent for user %s: %v", user.ID, err)
+	}
 
 	if err := uc.Users.Save(ctx, user); err != nil {
 		return nil, err

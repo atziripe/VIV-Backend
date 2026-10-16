@@ -155,6 +155,11 @@ func isAllowedRoute(method, path string) bool {
 	case method == "GET" && path == "/home/today":
 		return true
 
+	case method == "GET" && path == "/me/consents":
+		return true
+	case method == "POST" && path == "/me/consents":
+		return true
+
 	case method == "POST" && path == "/onboarding":
 		return true
 
@@ -827,6 +832,33 @@ func selectSubBody(path string, body map[string]any) any {
 			}
 		}
 		return out
+
+	case "/me/consents":
+		// body: { "consent": { "purpose": "ai_processing", "granted": true } }
+		v, ok := body["consent"]
+		if !ok || v == nil {
+			return map[string]any{}
+		}
+		m, ok := v.(map[string]any)
+		if !ok {
+			return map[string]any{}
+		}
+
+		out := map[string]any{}
+		if raw, exists := m["purpose"]; exists {
+			if s, ok := raw.(string); ok {
+				if t := strings.TrimSpace(s); t != "" {
+					out["purpose"] = t
+				}
+			}
+		}
+		if raw, exists := m["granted"]; exists {
+			if b, ok := raw.(bool); ok {
+				out["granted"] = b
+			}
+		}
+		return out
+
 	default:
 		return map[string]any{}
 	}

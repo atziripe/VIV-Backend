@@ -16,14 +16,16 @@ type AsyncNutritionPlanCopyEnricher struct {
 	generator CopyGenerator
 	cache     CopyCache
 	plans     usecase.NutritionPlanRepository
+	consents  usecase.ConsentChecker
 	timeout   time.Duration
 }
 
-func NewAsyncNutritionPlanCopyEnricher(generator CopyGenerator, cache CopyCache, plans usecase.NutritionPlanRepository) *AsyncNutritionPlanCopyEnricher {
+func NewAsyncNutritionPlanCopyEnricher(generator CopyGenerator, cache CopyCache, plans usecase.NutritionPlanRepository, consents usecase.ConsentChecker) *AsyncNutritionPlanCopyEnricher {
 	return &AsyncNutritionPlanCopyEnricher{
 		generator: generator,
 		cache:     cache,
 		plans:     plans,
+		consents:  consents,
 		timeout:   60 * time.Second,
 	}
 }
@@ -32,6 +34,13 @@ func (e *AsyncNutritionPlanCopyEnricher) EnrichAsync(userID string, plan domain.
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), e.timeout)
 		defer cancel()
+
+		if granted, err := e.consents.IsGranted(ctx, userID, domain.ConsentAIProcessing); err != nil {
+			log.Printf("[mealgen.copy] consent check failed user=%s err=%v", userID, err)
+			return
+		} else if !granted {
+			return
+		}
 
 		enriched, changed, err := EnrichPlanCopy(ctx, plan, e.generator, e.cache)
 		if err != nil {

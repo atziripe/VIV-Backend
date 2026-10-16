@@ -38,6 +38,31 @@ type AuthAccountDeleter interface {
 	DeleteUser(ctx context.Context, userID string) error
 }
 
+// ConsentRepository stores consent grant/revoke events — append-only, see
+// domain.Consent's doc comment. GetAll resolves the *current* state per
+// purpose (each purpose's most recent record), not the raw history.
+type ConsentRepository interface {
+	Grant(ctx context.Context, userID string, purpose domain.ConsentPurpose, granted bool, policyVersion string) error
+	GetAll(ctx context.Context, userID string) (map[domain.ConsentPurpose]domain.Consent, error)
+}
+
+// ConsentChecker is ConsentRepository's read side, declared narrowly for
+// collaborators that only need a yes/no answer (GetWeeklyNoteUseCase,
+// mealgen's copy enrichers) — same reasoning as every other narrow port in
+// this file. Satisfied by anything with a GetAll-shaped backing store;
+// repository.DualConsentRepository implements both interfaces.
+type ConsentChecker interface {
+	IsGranted(ctx context.Context, userID string, purpose domain.ConsentPurpose) (bool, error)
+}
+
+// ConsentStore is ConsentRepository+ConsentChecker together — the shape
+// main.go wires up as a single value, since the various consent-aware
+// collaborators each only need one half of it.
+type ConsentStore interface {
+	ConsentRepository
+	ConsentChecker
+}
+
 type CheckinRepository interface {
 	Create(ctx context.Context, c *domain.Checkin) error
 	GetByID(ctx context.Context, userID string, id string) (*domain.Checkin, error)

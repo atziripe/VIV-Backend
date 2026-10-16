@@ -108,13 +108,66 @@ func (r *fakeWeeklyPlanGenerationRunner) Run(jobID string, input usecase.Generat
 	}
 }
 
+// fakeConsentRepo is a minimal usecase.ConsentRepository fake — in-memory,
+// keyed by (userID, purpose), overwritten in place rather than truly
+// append-only (the real repositories keep full history; these tests only
+// ever need the latest state).
+type fakeConsentRepo struct {
+	byUser    map[string]map[domain.ConsentPurpose]domain.Consent
+	grantErr  error
+	grantCall []usecase.SetConsentInput
+}
+
+func (f *fakeConsentRepo) Grant(_ context.Context, userID string, purpose domain.ConsentPurpose, granted bool, policyVersion string) error {
+	f.grantCall = append(f.grantCall, usecase.SetConsentInput{UserID: userID, Purpose: purpose, Granted: granted})
+	if f.grantErr != nil {
+		return f.grantErr
+	}
+	if f.byUser == nil {
+		f.byUser = map[string]map[domain.ConsentPurpose]domain.Consent{}
+	}
+	if f.byUser[userID] == nil {
+		f.byUser[userID] = map[domain.ConsentPurpose]domain.Consent{}
+	}
+	f.byUser[userID][purpose] = domain.Consent{UserID: userID, Purpose: purpose, Granted: granted, PolicyVersion: policyVersion}
+	return nil
+}
+
+func (f *fakeConsentRepo) GetAll(_ context.Context, userID string) (map[domain.ConsentPurpose]domain.Consent, error) {
+	return f.byUser[userID], nil
+}
+
+// IsGranted satisfies usecase.ConsentChecker too, so this one fake can
+// stand in for either collaborator across this package's tests.
+func (f *fakeConsentRepo) IsGranted(ctx context.Context, userID string, purpose domain.ConsentPurpose) (bool, error) {
+	all, err := f.GetAll(ctx, userID)
+	if err != nil {
+		return false, err
+	}
+	c, ok := all[purpose]
+	return ok && c.Granted, nil
+}
+
+// grantedConsentRepo is a fakeConsentRepo pre-seeded with every purpose
+// granted for userID — the common case in tests that aren't exercising
+// consent behavior itself, just need a collaborator that says "yes."
+func grantedConsentRepo(userID string) *fakeConsentRepo {
+	return &fakeConsentRepo{byUser: map[string]map[domain.ConsentPurpose]domain.Consent{
+		userID: {
+			domain.ConsentHealthDataProcessing:       {UserID: userID, Purpose: domain.ConsentHealthDataProcessing, Granted: true},
+			domain.ConsentAIProcessing:               {UserID: userID, Purpose: domain.ConsentAIProcessing, Granted: true},
+			domain.ConsentResearchProductImprovement: {UserID: userID, Purpose: domain.ConsentResearchProductImprovement, Granted: true},
+		},
+	}}
+}
+
 // newTestOnboardingUseCase wires a CompleteOnboardingUseCase whose weekly-
 // plan trigger runs synchronously against gen, so assertions on gen.calls
 // right after Execute returns are safe.
 func newTestOnboardingUseCase(repo *fakeUserRepo, gen *spyWeeklyPlanGenerator) (*usecase.CompleteOnboardingUseCase, *fakePlanJobsRepo) {
 	jobs := &fakePlanJobsRepo{}
 	runner := &fakeWeeklyPlanGenerationRunner{gen: gen, jobs: jobs}
-	return usecase.NewCompleteOnboardingUseCase(repo, jobs, runner), jobs
+	return usecase.NewCompleteOnboardingUseCase(repo, jobs, runner, &fakeConsentRepo{}), jobs
 }
 
 func TestCompleteOnboarding_ValidCatalogAndGoalPersist(t *testing.T) {
@@ -123,9 +176,10 @@ func TestCompleteOnboarding_ValidCatalogAndGoalPersist(t *testing.T) {
 	uc, _ := newTestOnboardingUseCase(repo, gen)
 
 	out, err := uc.Execute(context.Background(), usecase.CompleteOnboardingInput{
-		UserID:     "u1",
-		Activities: []string{"strength", "yoga"},
-		GoalID:     "consistency_wellbeing",
+		UserID:            "u1",
+		Activities:        []string{"strength", "yoga"},
+		GoalID:            "consistency_wellbeing",
+		HealthDataConsent: true,
 	})
 	if err != nil {
 		t.Fatalf("Execute returned error: %v", err)
@@ -153,9 +207,10 @@ func TestCompleteOnboarding_InvalidActivityIDRejected(t *testing.T) {
 	uc, _ := newTestOnboardingUseCase(repo, gen)
 
 	_, err := uc.Execute(context.Background(), usecase.CompleteOnboardingInput{
-		UserID:     "u1",
-		Activities: []string{"strength", "not_a_real_activity"},
-		GoalID:     "consistency_wellbeing",
+		UserID:            "u1",
+		Activities:        []string{"strength", "not_a_real_activity"},
+		GoalID:            "consistency_wellbeing",
+		HealthDataConsent: true,
 	})
 	if err == nil {
 		t.Fatal("expected an error for an unrecognized activity id")
@@ -182,8 +237,9 @@ func TestCompleteOnboarding_InvalidGoalIDRejected(t *testing.T) {
 	uc, _ := newTestOnboardingUseCase(repo, gen)
 
 	_, err := uc.Execute(context.Background(), usecase.CompleteOnboardingInput{
-		UserID: "u1",
-		GoalID: "not_a_real_goal",
+		UserID:            "u1",
+		GoalID:            "not_a_real_goal",
+		HealthDataConsent: true,
 	})
 	if err == nil {
 		t.Fatal("expected an error for an unrecognized goal id")
@@ -200,9 +256,10 @@ func TestCompleteOnboarding_TriggersExactlyOneWeeklyPlanGenerationWithDefaultRea
 	uc, jobs := newTestOnboardingUseCase(repo, gen)
 
 	out, err := uc.Execute(context.Background(), usecase.CompleteOnboardingInput{
-		UserID:     "u1",
-		Activities: []string{"strength"},
-		GoalID:     "consistency_wellbeing",
+		UserID:            "u1",
+		Activities:        []string{"strength"},
+		GoalID:            "consistency_wellbeing",
+		HealthDataConsent: true,
 	})
 	if err != nil {
 		t.Fatalf("Execute returned error: %v", err)
@@ -247,9 +304,10 @@ func TestCompleteOnboarding_GenerationFailureDoesNotBlockOrRollBackOnboarding(t 
 	uc, jobs := newTestOnboardingUseCase(repo, gen)
 
 	out, err := uc.Execute(context.Background(), usecase.CompleteOnboardingInput{
-		UserID:     "u1",
-		Activities: []string{"strength"},
-		GoalID:     "consistency_wellbeing",
+		UserID:            "u1",
+		Activities:        []string{"strength"},
+		GoalID:            "consistency_wellbeing",
+		HealthDataConsent: true,
 	})
 	if err != nil {
 		t.Fatalf("Execute returned error even though only plan generation failed: %v", err)
@@ -278,12 +336,13 @@ func TestCompleteOnboarding_JobQueueFailureDoesNotBlockOnboarding(t *testing.T) 
 	gen := &spyWeeklyPlanGenerator{}
 	jobs := &fakePlanJobsRepo{createErr: fmt.Errorf("firestore: simulated outage")}
 	runner := &fakeWeeklyPlanGenerationRunner{gen: gen, jobs: jobs}
-	uc := usecase.NewCompleteOnboardingUseCase(repo, jobs, runner)
+	uc := usecase.NewCompleteOnboardingUseCase(repo, jobs, runner, &fakeConsentRepo{})
 
 	out, err := uc.Execute(context.Background(), usecase.CompleteOnboardingInput{
-		UserID:     "u1",
-		Activities: []string{"strength"},
-		GoalID:     "consistency_wellbeing",
+		UserID:            "u1",
+		Activities:        []string{"strength"},
+		GoalID:            "consistency_wellbeing",
+		HealthDataConsent: true,
 	})
 	if err != nil {
 		t.Fatalf("Execute returned error even though only job queuing failed: %v", err)
@@ -301,12 +360,13 @@ func TestCompleteOnboarding_JobQueueFailureDoesNotBlockOnboarding(t *testing.T) 
 
 func TestCompleteOnboarding_NilJobsRepoOrRunnerSkipsTriggerGracefully(t *testing.T) {
 	repo := &fakeUserRepo{users: map[string]*domain.User{}}
-	uc := usecase.NewCompleteOnboardingUseCase(repo, nil, nil)
+	uc := usecase.NewCompleteOnboardingUseCase(repo, nil, nil, &fakeConsentRepo{})
 
 	out, err := uc.Execute(context.Background(), usecase.CompleteOnboardingInput{
-		UserID:     "u1",
-		Activities: []string{"strength"},
-		GoalID:     "consistency_wellbeing",
+		UserID:            "u1",
+		Activities:        []string{"strength"},
+		GoalID:            "consistency_wellbeing",
+		HealthDataConsent: true,
 	})
 	if err != nil {
 		t.Fatalf("Execute returned error: %v", err)
@@ -316,5 +376,56 @@ func TestCompleteOnboarding_NilJobsRepoOrRunnerSkipsTriggerGracefully(t *testing
 	}
 	if out.WeeklyPlanJobID != "" {
 		t.Errorf("WeeklyPlanJobID = %q, want empty — JobsRepo/Runner aren't wired", out.WeeklyPlanJobID)
+	}
+}
+
+func TestCompleteOnboarding_MissingHealthDataConsentRejected(t *testing.T) {
+	repo := &fakeUserRepo{users: map[string]*domain.User{}}
+	gen := &spyWeeklyPlanGenerator{}
+	uc, _ := newTestOnboardingUseCase(repo, gen)
+
+	_, err := uc.Execute(context.Background(), usecase.CompleteOnboardingInput{
+		UserID:     "u1",
+		Activities: []string{"strength"},
+		GoalID:     "consistency_wellbeing",
+		// HealthDataConsent omitted — zero value false.
+	})
+	if err == nil {
+		t.Fatal("expected an error when health_data_processing consent is missing")
+	}
+	var consentRequired usecase.ConsentRequiredError
+	if !errors.As(err, &consentRequired) {
+		t.Fatalf("error = %v (%T), want usecase.ConsentRequiredError", err, err)
+	}
+	if _, ok := repo.users["u1"]; ok {
+		t.Error("user should not have been persisted without health data consent")
+	}
+}
+
+func TestCompleteOnboarding_RecordsConsentsOnSuccess(t *testing.T) {
+	repo := &fakeUserRepo{users: map[string]*domain.User{}}
+	gen := &spyWeeklyPlanGenerator{}
+	jobs := &fakePlanJobsRepo{}
+	runner := &fakeWeeklyPlanGenerationRunner{gen: gen, jobs: jobs}
+	consents := &fakeConsentRepo{}
+	uc := usecase.NewCompleteOnboardingUseCase(repo, jobs, runner, consents)
+
+	_, err := uc.Execute(context.Background(), usecase.CompleteOnboardingInput{
+		UserID:              "u1",
+		Activities:          []string{"strength"},
+		GoalID:              "consistency_wellbeing",
+		HealthDataConsent:   true,
+		AIProcessingConsent: true,
+	})
+	if err != nil {
+		t.Fatalf("Execute returned error: %v", err)
+	}
+
+	got := consents.byUser["u1"]
+	if c, ok := got[domain.ConsentHealthDataProcessing]; !ok || !c.Granted {
+		t.Errorf("health_data_processing consent = %+v, want granted", got[domain.ConsentHealthDataProcessing])
+	}
+	if c, ok := got[domain.ConsentAIProcessing]; !ok || !c.Granted {
+		t.Errorf("ai_processing consent = %+v, want granted", got[domain.ConsentAIProcessing])
 	}
 }

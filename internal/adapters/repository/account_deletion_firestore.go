@@ -30,6 +30,7 @@ var userSubcollections = []string{
 	"nutrition_plan",
 	"recovery_actions",
 	"weekly_plan_drafts",
+	"consents",
 }
 
 // FirestoreAccountDataStore implements the "hard delete everything"

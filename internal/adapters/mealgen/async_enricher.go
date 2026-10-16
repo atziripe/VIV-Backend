@@ -19,14 +19,16 @@ type AsyncCopyEnricher struct {
 	generator CopyGenerator
 	cache     CopyCache
 	planRepo  usecase.PlanRepository
+	consents  usecase.ConsentChecker
 	timeout   time.Duration
 }
 
-func NewAsyncCopyEnricher(generator CopyGenerator, cache CopyCache, planRepo usecase.PlanRepository) *AsyncCopyEnricher {
+func NewAsyncCopyEnricher(generator CopyGenerator, cache CopyCache, planRepo usecase.PlanRepository, consents usecase.ConsentChecker) *AsyncCopyEnricher {
 	return &AsyncCopyEnricher{
 		generator: generator,
 		cache:     cache,
 		planRepo:  planRepo,
+		consents:  consents,
 		timeout:   60 * time.Second,
 	}
 }
@@ -37,6 +39,16 @@ func (e *AsyncCopyEnricher) EnrichAsync(userID, planID string, plan domain.Nutri
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), e.timeout)
 		defer cancel()
+
+		// Without ai_processing consent, the plan just keeps its raw
+		// template-derived names/descriptions — a normal, already-handled
+		// state (see CopyEnriched), not an error.
+		if granted, err := e.consents.IsGranted(ctx, userID, domain.ConsentAIProcessing); err != nil {
+			log.Printf("[mealgen.copy] consent check failed user=%s plan=%s err=%v", userID, planID, err)
+			return
+		} else if !granted {
+			return
+		}
 
 		enriched, changed, err := EnrichPlanCopy(ctx, plan, e.generator, e.cache)
 		if err != nil {
