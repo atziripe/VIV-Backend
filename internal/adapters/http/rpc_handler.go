@@ -159,6 +159,8 @@ func isAllowedRoute(method, path string) bool {
 		return true
 	case method == "POST" && path == "/me/consents":
 		return true
+	case method == "GET" && path == "/me/export":
+		return true
 
 	case method == "POST" && path == "/onboarding":
 		return true

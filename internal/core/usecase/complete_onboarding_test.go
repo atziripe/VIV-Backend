@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"viv/internal/core/checkin"
 	"viv/internal/core/domain"
@@ -177,6 +178,7 @@ func TestCompleteOnboarding_ValidCatalogAndGoalPersist(t *testing.T) {
 
 	out, err := uc.Execute(context.Background(), usecase.CompleteOnboardingInput{
 		UserID:            "u1",
+		DOB:               "1996-04-12",
 		Activities:        []string{"strength", "yoga"},
 		GoalID:            "consistency_wellbeing",
 		HealthDataConsent: true,
@@ -208,6 +210,7 @@ func TestCompleteOnboarding_InvalidActivityIDRejected(t *testing.T) {
 
 	_, err := uc.Execute(context.Background(), usecase.CompleteOnboardingInput{
 		UserID:            "u1",
+		DOB:               "1996-04-12",
 		Activities:        []string{"strength", "not_a_real_activity"},
 		GoalID:            "consistency_wellbeing",
 		HealthDataConsent: true,
@@ -238,6 +241,7 @@ func TestCompleteOnboarding_InvalidGoalIDRejected(t *testing.T) {
 
 	_, err := uc.Execute(context.Background(), usecase.CompleteOnboardingInput{
 		UserID:            "u1",
+		DOB:               "1996-04-12",
 		GoalID:            "not_a_real_goal",
 		HealthDataConsent: true,
 	})
@@ -257,6 +261,7 @@ func TestCompleteOnboarding_TriggersExactlyOneWeeklyPlanGenerationWithDefaultRea
 
 	out, err := uc.Execute(context.Background(), usecase.CompleteOnboardingInput{
 		UserID:            "u1",
+		DOB:               "1996-04-12",
 		Activities:        []string{"strength"},
 		GoalID:            "consistency_wellbeing",
 		HealthDataConsent: true,
@@ -305,6 +310,7 @@ func TestCompleteOnboarding_GenerationFailureDoesNotBlockOrRollBackOnboarding(t 
 
 	out, err := uc.Execute(context.Background(), usecase.CompleteOnboardingInput{
 		UserID:            "u1",
+		DOB:               "1996-04-12",
 		Activities:        []string{"strength"},
 		GoalID:            "consistency_wellbeing",
 		HealthDataConsent: true,
@@ -340,6 +346,7 @@ func TestCompleteOnboarding_JobQueueFailureDoesNotBlockOnboarding(t *testing.T) 
 
 	out, err := uc.Execute(context.Background(), usecase.CompleteOnboardingInput{
 		UserID:            "u1",
+		DOB:               "1996-04-12",
 		Activities:        []string{"strength"},
 		GoalID:            "consistency_wellbeing",
 		HealthDataConsent: true,
@@ -364,6 +371,7 @@ func TestCompleteOnboarding_NilJobsRepoOrRunnerSkipsTriggerGracefully(t *testing
 
 	out, err := uc.Execute(context.Background(), usecase.CompleteOnboardingInput{
 		UserID:            "u1",
+		DOB:               "1996-04-12",
 		Activities:        []string{"strength"},
 		GoalID:            "consistency_wellbeing",
 		HealthDataConsent: true,
@@ -412,6 +420,7 @@ func TestCompleteOnboarding_RecordsConsentsOnSuccess(t *testing.T) {
 
 	_, err := uc.Execute(context.Background(), usecase.CompleteOnboardingInput{
 		UserID:              "u1",
+		DOB:                 "1996-04-12",
 		Activities:          []string{"strength"},
 		GoalID:              "consistency_wellbeing",
 		HealthDataConsent:   true,
@@ -427,5 +436,90 @@ func TestCompleteOnboarding_RecordsConsentsOnSuccess(t *testing.T) {
 	}
 	if c, ok := got[domain.ConsentAIProcessing]; !ok || !c.Granted {
 		t.Errorf("ai_processing consent = %+v, want granted", got[domain.ConsentAIProcessing])
+	}
+}
+
+func TestCompleteOnboarding_UnderMinimumAgeRejected(t *testing.T) {
+	repo := &fakeUserRepo{users: map[string]*domain.User{}}
+	gen := &spyWeeklyPlanGenerator{}
+	uc, _ := newTestOnboardingUseCase(repo, gen)
+
+	tenYearsAgo := time.Now().AddDate(-10, 0, 0).Format("2006-01-02")
+	_, err := uc.Execute(context.Background(), usecase.CompleteOnboardingInput{
+		UserID:            "u1",
+		DOB:               tenYearsAgo,
+		Activities:        []string{"strength"},
+		GoalID:            "consistency_wellbeing",
+		HealthDataConsent: true,
+	})
+	if err == nil {
+		t.Fatal("expected an error for a 10-year-old's dob")
+	}
+	var underMinimumAge usecase.UnderMinimumAgeError
+	if !errors.As(err, &underMinimumAge) {
+		t.Fatalf("error = %v (%T), want usecase.UnderMinimumAgeError", err, err)
+	}
+	if underMinimumAge.Age != 10 {
+		t.Errorf("Age = %d, want 10", underMinimumAge.Age)
+	}
+	if _, ok := repo.users["u1"]; ok {
+		t.Error("user should not have been persisted when under the minimum age")
+	}
+}
+
+func TestCompleteOnboarding_InvalidDOBFormatRejected(t *testing.T) {
+	repo := &fakeUserRepo{users: map[string]*domain.User{}}
+	gen := &spyWeeklyPlanGenerator{}
+	uc, _ := newTestOnboardingUseCase(repo, gen)
+
+	_, err := uc.Execute(context.Background(), usecase.CompleteOnboardingInput{
+		UserID:            "u1",
+		DOB:               "not-a-date",
+		Activities:        []string{"strength"},
+		GoalID:            "consistency_wellbeing",
+		HealthDataConsent: true,
+	})
+	if err == nil {
+		t.Fatal("expected an error for an unparseable dob")
+	}
+	var invalidDOB usecase.InvalidDOBError
+	if !errors.As(err, &invalidDOB) {
+		t.Fatalf("error = %v (%T), want usecase.InvalidDOBError", err, err)
+	}
+}
+
+func TestCompleteOnboarding_MinimumAgeBoundary(t *testing.T) {
+	now := time.Now()
+
+	testCases := []struct {
+		name      string
+		dob       time.Time
+		wantError bool
+	}{
+		{"turns 18 today", now.AddDate(-18, 0, 0), false},
+		{"turns 18 tomorrow (still 17 today)", now.AddDate(-18, 0, 1), true},
+		{"turned 18 yesterday", now.AddDate(-18, 0, -1), false},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			repo := &fakeUserRepo{users: map[string]*domain.User{}}
+			gen := &spyWeeklyPlanGenerator{}
+			uc, _ := newTestOnboardingUseCase(repo, gen)
+
+			_, err := uc.Execute(context.Background(), usecase.CompleteOnboardingInput{
+				UserID:            "u1",
+				DOB:               tc.dob.Format("2006-01-02"),
+				Activities:        []string{"strength"},
+				GoalID:            "consistency_wellbeing",
+				HealthDataConsent: true,
+			})
+			if tc.wantError && err == nil {
+				t.Errorf("dob=%s: expected an under-minimum-age error, got none", tc.dob.Format("2006-01-02"))
+			}
+			if !tc.wantError && err != nil {
+				t.Errorf("dob=%s: expected no error, got: %v", tc.dob.Format("2006-01-02"), err)
+			}
+		})
 	}
 }

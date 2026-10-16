@@ -359,6 +359,8 @@ func main() {
 	authAccountDeleter := repository.NewFirebaseAuthAccountDeleter(authClient)
 	deleteAccountUC := usecase.NewDeleteAccountUseCase(accountDataStore, accountAnonymizer, authAccountDeleter)
 
+	exportUserDataUC := usecase.NewExportUserDataUseCase(userRepo, consentRepo, lifestyleRepo, nutritionPlanRepo, weeklyPlanDraftRepo, planRepo)
+
 	getConsentsUC := usecase.NewGetConsentsUseCase(consentRepo)
 	setConsentUC := usecase.NewSetConsentUseCase(consentRepo, deleteAccountUC)
 
@@ -369,6 +371,7 @@ func main() {
 	meHandler := httpadapter.NewMeHandler(getMeUC, updateProfileUC, deleteAccountUC)
 	homeHandler := httpadapter.NewHomeHandler(getHomeTimelineUC)
 	consentHandler := httpadapter.NewConsentHandler(getConsentsUC, setConsentUC)
+	exportHandler := httpadapter.NewExportHandler(exportUserDataUC)
 	plansHandler := httpadapter.NewPlansHandler(getCurrentPlanUC, getByIDUC, getByWeekStartUC, statusUC, phaseFeedbackUC)
 	trainingHandler := httpadapter.NewTrainingHandler(startTrainingUC, statusTrainingUC, trainingEngine, resumeTrainingUC, completeDayUC, saveArrangementUC)
 	weeklyPlanHandler := httpadapter.NewWeeklyPlanHandler(startWeeklyPlanUC, statusWeeklyPlanUC, currentWeeklyPlanUC, weeklyPlanDayUC, getWeeklyNoteUC, editDaySlotUC)
@@ -414,6 +417,8 @@ func main() {
 
 	api.Get("/me/consents", consentHandler.GetConsents)
 	api.Post("/me/consents", consentHandler.SetConsent)
+
+	api.Get("/me/export", exportHandler.Export)
 
 	api.Get("/home/today", homeHandler.GetToday)
 
