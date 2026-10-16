@@ -167,8 +167,11 @@ func (h *OnboardingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		var invalidActivity usecase.InvalidActivityError
 		var invalidGoal usecase.InvalidGoalError
 		var consentRequired usecase.ConsentRequiredError
+		var invalidDOB usecase.InvalidDOBError
+		var underMinimumAge usecase.UnderMinimumAgeError
 		switch {
-		case errors.As(err, &invalidActivity), errors.As(err, &invalidGoal), errors.As(err, &consentRequired):
+		case errors.As(err, &invalidActivity), errors.As(err, &invalidGoal), errors.As(err, &consentRequired),
+			errors.As(err, &invalidDOB), errors.As(err, &underMinimumAge):
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		default:
 			log.Printf("[onboarding] complete onboarding error: %v", err)

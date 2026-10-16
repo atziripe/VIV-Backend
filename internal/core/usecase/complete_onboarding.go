@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 
 	"viv/internal/core/activity"
@@ -126,6 +127,10 @@ func (uc *CompleteOnboardingUseCase) Execute(ctx context.Context, in CompleteOnb
 		return nil, ErrConsentRequired(string(domain.ConsentHealthDataProcessing))
 	}
 
+	if err := validateMinimumAge(in.DOB, now); err != nil {
+		return nil, err
+	}
+
 	catalogIDs, err := validateActivityIDs(in.Activities)
 	if err != nil {
 		return nil, err
@@ -212,6 +217,36 @@ func (uc *CompleteOnboardingUseCase) Execute(ctx context.Context, in CompleteOnb
 	jobID := uc.triggerFirstWeeklyPlanAsync(ctx, user)
 
 	return &CompleteOnboardingOutput{User: user, WeeklyPlanJobID: jobID}, nil
+}
+
+// MinimumAge is the App Store/privacy-policy "18+" claim, now actually
+// enforced rather than just asserted in a doc somewhere — see the gap this
+// closes in the Audit Map. VIV has no other age-sensitive logic; this is
+// a hard floor, not a tiered rule.
+const MinimumAge = 18
+
+// validateMinimumAge parses dob (expected "2006-01-02", the same format
+// every other date field in this request uses) and rejects anyone who
+// hasn't yet had their MinimumAge-th birthday as of now. Age is computed
+// precisely (year difference, minus one if this year's birthday hasn't
+// happened yet), not a rough year subtraction.
+func validateMinimumAge(dob string, now time.Time) error {
+	parsed, err := time.Parse("2006-01-02", strings.TrimSpace(dob))
+	if err != nil {
+		return ErrInvalidDOB(dob)
+	}
+
+	age := now.Year() - parsed.Year()
+	hadBirthdayThisYear := now.Month() > parsed.Month() ||
+		(now.Month() == parsed.Month() && now.Day() >= parsed.Day())
+	if !hadBirthdayThisYear {
+		age--
+	}
+
+	if age < MinimumAge {
+		return ErrUnderMinimumAge(age)
+	}
+	return nil
 }
 
 // validateActivityIDs checks every submitted activity id against the real
