@@ -41,7 +41,7 @@ func TestGetWeeklyNote_HappyPath(t *testing.T) {
 	})
 
 	gen := &fakeWeeklyNoteGenerator{note: "Strong start to the week."}
-	uc := usecase.NewGetWeeklyNoteUseCase(drafts, usecase.NewWeeklyNoteUsecase(gen))
+	uc := usecase.NewGetWeeklyNoteUseCase(drafts, usecase.NewWeeklyNoteUsecase(gen), grantedConsentRepo("u1"))
 
 	out, err := uc.Execute(context.Background(), usecase.GetWeeklyNoteInput{UserID: "u1", Date: monday})
 	if err != nil {
@@ -61,7 +61,7 @@ func TestGetWeeklyNote_HappyPath(t *testing.T) {
 func TestGetWeeklyNote_NoDraftCoveringDate_NotFound(t *testing.T) {
 	drafts := &fakeDraftRepo{}
 	gen := &fakeWeeklyNoteGenerator{}
-	uc := usecase.NewGetWeeklyNoteUseCase(drafts, usecase.NewWeeklyNoteUsecase(gen))
+	uc := usecase.NewGetWeeklyNoteUseCase(drafts, usecase.NewWeeklyNoteUsecase(gen), grantedConsentRepo("u1"))
 
 	out, err := uc.Execute(context.Background(), usecase.GetWeeklyNoteInput{UserID: "u1", Date: time.Now()})
 	if err != nil {
@@ -83,7 +83,7 @@ func TestGetWeeklyNote_SecondCallForSameDateIsServedFromCacheNoLLMCall(t *testin
 	})
 
 	gen := &fakeWeeklyNoteGenerator{note: "Strong start to the week."}
-	uc := usecase.NewGetWeeklyNoteUseCase(drafts, usecase.NewWeeklyNoteUsecase(gen))
+	uc := usecase.NewGetWeeklyNoteUseCase(drafts, usecase.NewWeeklyNoteUsecase(gen), grantedConsentRepo("u1"))
 
 	first, err := uc.Execute(context.Background(), usecase.GetWeeklyNoteInput{UserID: "u1", Date: monday})
 	if err != nil {
@@ -126,7 +126,7 @@ func TestGetWeeklyNote_DifferentDatesInSameWeekAreCachedSeparately(t *testing.T)
 	})
 
 	gen := &fakeWeeklyNoteGenerator{note: "Note text."}
-	uc := usecase.NewGetWeeklyNoteUseCase(drafts, usecase.NewWeeklyNoteUsecase(gen))
+	uc := usecase.NewGetWeeklyNoteUseCase(drafts, usecase.NewWeeklyNoteUsecase(gen), grantedConsentRepo("u1"))
 
 	if _, err := uc.Execute(context.Background(), usecase.GetWeeklyNoteInput{UserID: "u1", Date: monday}); err != nil {
 		t.Fatalf("Execute(monday) returned error: %v", err)
@@ -151,7 +151,7 @@ func TestGetWeeklyNote_CacheWriteFailureStillReturnsTheGeneratedNote(t *testing.
 	})
 
 	gen := &fakeWeeklyNoteGenerator{note: "Strong start to the week."}
-	uc := usecase.NewGetWeeklyNoteUseCase(drafts, usecase.NewWeeklyNoteUsecase(gen))
+	uc := usecase.NewGetWeeklyNoteUseCase(drafts, usecase.NewWeeklyNoteUsecase(gen), grantedConsentRepo("u1"))
 
 	out, err := uc.Execute(context.Background(), usecase.GetWeeklyNoteInput{UserID: "u1", Date: monday})
 	if err != nil {
@@ -159,5 +159,32 @@ func TestGetWeeklyNote_CacheWriteFailureStillReturnsTheGeneratedNote(t *testing.
 	}
 	if !out.Found || out.Note != "Strong start to the week." {
 		t.Errorf("out = %+v, want the generated note returned despite the cache write failing", out)
+	}
+}
+
+func TestGetWeeklyNote_WithoutAIConsent_ReturnsEmptyNoteWithoutCallingLLM(t *testing.T) {
+	drafts := &fakeDraftRepo{}
+	monday := time.Date(2026, time.May, 4, 0, 0, 0, 0, time.UTC)
+	mondayTraining := trainingDay(activity.Strength, activity.IntensityM, activity.ImpactL, false)
+	mondayTraining.Weekday = "monday"
+	seedDraft(t, drafts, "u1", monday, goal.ConsistencyWellbeing, [7]usecase.DayPlan{
+		mondayTraining,
+		restDay(), restDay(), restDay(), restDay(), restDay(), restDay(),
+	})
+
+	gen := &fakeWeeklyNoteGenerator{note: "Strong start to the week."}
+	// No consent seeded for "u1" at all — GetAll returns an empty map, so
+	// IsGranted reads as false, same as an explicit decline.
+	uc := usecase.NewGetWeeklyNoteUseCase(drafts, usecase.NewWeeklyNoteUsecase(gen), &fakeConsentRepo{})
+
+	out, err := uc.Execute(context.Background(), usecase.GetWeeklyNoteInput{UserID: "u1", Date: monday})
+	if err != nil {
+		t.Fatalf("Execute returned error: %v", err)
+	}
+	if !out.Found || out.Note != "" {
+		t.Errorf("out = %+v, want Found=true Note=\"\" without ai_processing consent", out)
+	}
+	if gen.calls != 0 {
+		t.Errorf("generator calls = %d, want 0 — must not call the LLM without consent", gen.calls)
 	}
 }

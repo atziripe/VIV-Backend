@@ -48,6 +48,17 @@ type onboardingRequest struct {
 	// ever reaches the usecase.
 	Activities []string `json:"activities"`
 	GoalID     string   `json:"goal_id"`
+
+	Consents onboardingConsents `json:"consents"`
+}
+
+// onboardingConsents captures the two consent toggles shown on the
+// onboarding consent screen in one request, alongside the profile itself —
+// see CompleteOnboardingInput.HealthDataConsent's doc comment for why this
+// is required rather than a separate call.
+type onboardingConsents struct {
+	HealthDataProcessing bool `json:"health_data_processing"`
+	AIProcessing         bool `json:"ai_processing"`
 }
 
 type onboardingResponse struct {
@@ -146,14 +157,18 @@ func (h *OnboardingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		Activities: req.Activities,
 		GoalID:     req.GoalID,
+
+		HealthDataConsent:   req.Consents.HealthDataProcessing,
+		AIProcessingConsent: req.Consents.AIProcessing,
 	}
 
 	out, err := h.UC.Execute(ctx, in)
 	if err != nil {
 		var invalidActivity usecase.InvalidActivityError
 		var invalidGoal usecase.InvalidGoalError
+		var consentRequired usecase.ConsentRequiredError
 		switch {
-		case errors.As(err, &invalidActivity), errors.As(err, &invalidGoal):
+		case errors.As(err, &invalidActivity), errors.As(err, &invalidGoal), errors.As(err, &consentRequired):
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		default:
 			log.Printf("[onboarding] complete onboarding error: %v", err)

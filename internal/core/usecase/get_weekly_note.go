@@ -6,6 +6,8 @@ import (
 	"log"
 	"strings"
 	"time"
+
+	"viv/internal/core/domain"
 )
 
 // ============================================================================
@@ -30,12 +32,13 @@ type GetWeeklyNoteOutput struct {
 }
 
 type GetWeeklyNoteUseCase struct {
-	Drafts WeeklyPlanDraftRepository
-	Notes  *WeeklyNoteUsecase
+	Drafts   WeeklyPlanDraftRepository
+	Notes    *WeeklyNoteUsecase
+	Consents ConsentChecker
 }
 
-func NewGetWeeklyNoteUseCase(drafts WeeklyPlanDraftRepository, notes *WeeklyNoteUsecase) *GetWeeklyNoteUseCase {
-	return &GetWeeklyNoteUseCase{Drafts: drafts, Notes: notes}
+func NewGetWeeklyNoteUseCase(drafts WeeklyPlanDraftRepository, notes *WeeklyNoteUsecase, consents ConsentChecker) *GetWeeklyNoteUseCase {
+	return &GetWeeklyNoteUseCase{Drafts: drafts, Notes: notes, Consents: consents}
 }
 
 func (uc *GetWeeklyNoteUseCase) Execute(ctx context.Context, in GetWeeklyNoteInput) (GetWeeklyNoteOutput, error) {
@@ -56,6 +59,20 @@ func (uc *GetWeeklyNoteUseCase) Execute(ctx context.Context, in GetWeeklyNoteInp
 	dateKey := date.Format("2006-01-02")
 	if cached, ok := draft.Notes[dateKey]; ok {
 		return GetWeeklyNoteOutput{Found: true, Note: cached}, nil
+	}
+
+	// The note is pure generated copy with no fallback content of its own
+	// (unlike meal-copy polish, which falls back to the raw template name)
+	// — without ai_processing consent, there's simply no note today rather
+	// than an LLM call the user opted out of. Never cached: a later grant
+	// should produce a real note on the very next request, not keep
+	// serving "" forever.
+	granted, err := uc.Consents.IsGranted(ctx, userID, domain.ConsentAIProcessing)
+	if err != nil {
+		return GetWeeklyNoteOutput{}, fmt.Errorf("get weekly note: checking consent: %w", err)
+	}
+	if !granted {
+		return GetWeeklyNoteOutput{Found: true, Note: ""}, nil
 	}
 
 	note, err := uc.Notes.Execute(ctx, *draft, date)

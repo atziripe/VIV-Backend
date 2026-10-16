@@ -102,6 +102,7 @@ func main() {
 	fsSessionLogRepo := repository.NewFirestoreSessionLogRepository(fsClient)
 	fsNutritionPlanRepo := repository.NewFirestoreNutritionPlanRepository(fsClient)
 	fsRecoveryActionRepo := repository.NewFirestoreRecoveryActionRepository(fsClient)
+	fsConsentRepo := repository.NewFirestoreConsentRepository(fsClient)
 
 	// Neon (secondary — dual-write target)
 	// If DATABASE_URL is missing or Neon is unreachable, the app falls back to
@@ -119,6 +120,7 @@ func main() {
 		sessionLogRepo      usecase.SessionLogRepository      = fsSessionLogRepo
 		nutritionPlanRepo   usecase.NutritionPlanRepository   = fsNutritionPlanRepo
 		recoveryActionRepo  usecase.RecoveryActionRepository  = fsRecoveryActionRepo
+		consentRepo         usecase.ConsentStore              = fsConsentRepo
 
 		// accountAnonymizer stays nil in Firestore-only mode — DeleteAccountUseCase
 		// treats that as "no Neon anonymized snapshot taken", not an error.
@@ -143,6 +145,7 @@ func main() {
 			sessionLogRepo = repository.NewDualSessionLogRepository(fsSessionLogRepo, repository.NewNeonSessionLogRepository(neonPool))
 			nutritionPlanRepo = repository.NewDualNutritionPlanRepository(fsNutritionPlanRepo, repository.NewNeonNutritionPlanRepository(neonPool))
 			recoveryActionRepo = repository.NewDualRecoveryActionRepository(fsRecoveryActionRepo, repository.NewNeonRecoveryActionRepository(neonPool))
+			consentRepo = repository.NewDualConsentRepository(fsConsentRepo, repository.NewNeonConsentRepository(neonPool))
 			accountAnonymizer = repository.NewNeonAccountAnonymizer(neonPool)
 		}
 	} else {
@@ -200,8 +203,8 @@ func main() {
 	// bounded ingredient/template space means hit rate climbs fast anyway.
 	copyGen := openai.NewCopyGenerator(oaClient)
 	copyCache := mealgen.NewInMemoryCopyCache()
-	copyEnricher := mealgen.NewAsyncCopyEnricher(copyGen, copyCache, planRepo)
-	nutritionPlanCopyEnricher := mealgen.NewAsyncNutritionPlanCopyEnricher(copyGen, copyCache, nutritionPlanRepo)
+	copyEnricher := mealgen.NewAsyncCopyEnricher(copyGen, copyCache, planRepo, consentRepo)
+	nutritionPlanCopyEnricher := mealgen.NewAsyncNutritionPlanCopyEnricher(copyGen, copyCache, nutritionPlanRepo, consentRepo)
 
 	// ========= Usecases =========
 	createCheckinUC := usecase.NewCreateCheckinUseCase(checkinRepo, userRepo, "v1")
@@ -277,7 +280,7 @@ func main() {
 	// reachable via GET /training/weekly-plan/note.
 	weeklyNoteGen := openai.NewWeeklyNoteGenerator(oaClient)
 	weeklyNoteUC := usecase.NewWeeklyNoteUsecase(weeklyNoteGen)
-	getWeeklyNoteUC := usecase.NewGetWeeklyNoteUseCase(weeklyPlanDraftRepo, weeklyNoteUC)
+	getWeeklyNoteUC := usecase.NewGetWeeklyNoteUseCase(weeklyPlanDraftRepo, weeklyNoteUC, consentRepo)
 
 	// Manual day-slot edit (design doc §9) — wired here since it needs
 	// weeklyContentSelector (VIV-112) to re-hydrate the edited day's
@@ -297,7 +300,7 @@ func main() {
 	// POST /onboarding returns without waiting on the LLM scheduling call.
 	// Built here, after weeklyPlanRunner exists, since it needs it as a
 	// collaborator.
-	onboardingUC := usecase.NewCompleteOnboardingUseCase(userRepo, planJobsRepo, weeklyPlanRunner)
+	onboardingUC := usecase.NewCompleteOnboardingUseCase(userRepo, planJobsRepo, weeklyPlanRunner, consentRepo)
 
 	// Daily check-in (VIV-103/106/107): scores the day's answers, then
 	// either generates a fresh week (no plan covers today yet) or adapts
@@ -356,12 +359,16 @@ func main() {
 	authAccountDeleter := repository.NewFirebaseAuthAccountDeleter(authClient)
 	deleteAccountUC := usecase.NewDeleteAccountUseCase(accountDataStore, accountAnonymizer, authAccountDeleter)
 
+	getConsentsUC := usecase.NewGetConsentsUseCase(consentRepo)
+	setConsentUC := usecase.NewSetConsentUseCase(consentRepo, deleteAccountUC)
+
 	// ========= Handlers =========
 	onboardingHandler := httpadapter.NewOnboardingHandler(onboardingUC)
 	checkinHandler := httpadapter.NewCheckinHandler(createCheckinUC, latestCheckinUC, statusCheckinUC)
 	lifestyleHandler := httpadapter.NewLifestyleHandler(reportLifestyleUC, listLifestyleUC)
 	meHandler := httpadapter.NewMeHandler(getMeUC, updateProfileUC, deleteAccountUC)
 	homeHandler := httpadapter.NewHomeHandler(getHomeTimelineUC)
+	consentHandler := httpadapter.NewConsentHandler(getConsentsUC, setConsentUC)
 	plansHandler := httpadapter.NewPlansHandler(getCurrentPlanUC, getByIDUC, getByWeekStartUC, statusUC, phaseFeedbackUC)
 	trainingHandler := httpadapter.NewTrainingHandler(startTrainingUC, statusTrainingUC, trainingEngine, resumeTrainingUC, completeDayUC, saveArrangementUC)
 	weeklyPlanHandler := httpadapter.NewWeeklyPlanHandler(startWeeklyPlanUC, statusWeeklyPlanUC, currentWeeklyPlanUC, weeklyPlanDayUC, getWeeklyNoteUC, editDaySlotUC)
@@ -404,6 +411,9 @@ func main() {
 	api.Get("/me", meHandler.GetMe)
 	api.Patch("/me", meHandler.UpdateProfile)
 	api.Delete("/me", meHandler.DeleteAccount)
+
+	api.Get("/me/consents", consentHandler.GetConsents)
+	api.Post("/me/consents", consentHandler.SetConsent)
 
 	api.Get("/home/today", homeHandler.GetToday)
 

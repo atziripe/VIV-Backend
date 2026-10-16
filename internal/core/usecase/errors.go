@@ -91,6 +91,34 @@ func errSessionLogging(format string, args ...any) error {
 	return SessionLoggingValidationError{Message: fmt.Sprintf(format, args...)}
 }
 
+// -------- consent --------
+type InvalidConsentPurposeError struct {
+	Purpose string
+}
+
+func (e InvalidConsentPurposeError) Error() string {
+	return "unrecognized consent purpose: " + e.Purpose
+}
+
+func ErrInvalidConsentPurpose(purpose string) error {
+	return InvalidConsentPurposeError{Purpose: purpose}
+}
+
+// ConsentRequiredError means the request can't proceed without a consent
+// this codebase treats as non-negotiable for the operation attempted (e.g.
+// completing onboarding without granting health_data_processing).
+type ConsentRequiredError struct {
+	Purpose string
+}
+
+func (e ConsentRequiredError) Error() string {
+	return "consent required: " + e.Purpose
+}
+
+func ErrConsentRequired(purpose string) error {
+	return ConsentRequiredError{Purpose: purpose}
+}
+
 // -------- check ins --------
 type CheckinLockedError struct {
 	NextAvailableAt time.Time

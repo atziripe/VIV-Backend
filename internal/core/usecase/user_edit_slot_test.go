@@ -31,7 +31,7 @@ func TestUserEditSlot_ClearsCachedWeeklyNotes(t *testing.T) {
 	})
 
 	gen := &fakeWeeklyNoteGenerator{note: "Strong start to the week."}
-	noteUC := usecase.NewGetWeeklyNoteUseCase(drafts, usecase.NewWeeklyNoteUsecase(gen))
+	noteUC := usecase.NewGetWeeklyNoteUseCase(drafts, usecase.NewWeeklyNoteUsecase(gen), grantedConsentRepo("u1"))
 
 	// Prime the cache for monday.
 	if _, err := noteUC.Execute(context.Background(), usecase.GetWeeklyNoteInput{UserID: "u1", Date: monday}); err != nil {

@@ -540,3 +540,51 @@ func (r *DualWeeklyPlanDraftRepository) SetNote(ctx context.Context, userID, dra
 	}
 	return nil
 }
+
+// ============================================================
+// ConsentRepository dual-write
+// ============================================================
+
+var (
+	_ usecase.ConsentRepository = (*DualConsentRepository)(nil)
+	_ usecase.ConsentChecker    = (*DualConsentRepository)(nil)
+)
+
+// DualConsentRepository treats Firestore as fatal, not best-effort, unlike
+// every other Dual* type in this file — a consent record is the thing that
+// has to exist to demonstrate consent was given at all (GDPR Art. 7.1), so
+// "the write silently failed but we told the caller it succeeded" is a
+// categorically worse failure mode here than for a weekly note or a
+// recovery action. Neon stays best-effort, matching this codebase's
+// Firestore-primary convention everywhere else.
+type DualConsentRepository struct {
+	primary   usecase.ConsentRepository
+	secondary usecase.ConsentRepository
+}
+
+func NewDualConsentRepository(primary, secondary usecase.ConsentRepository) *DualConsentRepository {
+	return &DualConsentRepository{primary: primary, secondary: secondary}
+}
+
+func (r *DualConsentRepository) Grant(ctx context.Context, userID string, purpose domain.ConsentPurpose, granted bool, policyVersion string) error {
+	if err := r.primary.Grant(ctx, userID, purpose, granted, policyVersion); err != nil {
+		return err
+	}
+	if err := r.secondary.Grant(ctx, userID, purpose, granted, policyVersion); err != nil {
+		slog.Error("dual-write: neon consent grant failed", "user_id", userID, "purpose", purpose, "err", err)
+	}
+	return nil
+}
+
+func (r *DualConsentRepository) GetAll(ctx context.Context, userID string) (map[domain.ConsentPurpose]domain.Consent, error) {
+	return r.primary.GetAll(ctx, userID)
+}
+
+func (r *DualConsentRepository) IsGranted(ctx context.Context, userID string, purpose domain.ConsentPurpose) (bool, error) {
+	all, err := r.GetAll(ctx, userID)
+	if err != nil {
+		return false, err
+	}
+	c, ok := all[purpose]
+	return ok && c.Granted, nil
+}
