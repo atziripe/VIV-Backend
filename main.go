@@ -359,6 +359,14 @@ func main() {
 	authAccountDeleter := repository.NewFirebaseAuthAccountDeleter(authClient)
 	deleteAccountUC := usecase.NewDeleteAccountUseCase(accountDataStore, accountAnonymizer, authAccountDeleter)
 
+	// DELETE /me's 30-day grace period — see ScheduleAccountDeletionUseCase/
+	// RunPendingAccountDeletionsUseCase's doc comments. The sweep queries
+	// fsUserRepo (not userRepo) directly: ListPendingDeletions is a
+	// Firestore-only query, same as every other read of domain.User.
+	scheduleDeletionUC := usecase.NewScheduleAccountDeletionUseCase(userRepo)
+	cancelDeletionUC := usecase.NewCancelAccountDeletionUseCase(userRepo)
+	runPendingDeletionsUC := usecase.NewRunPendingAccountDeletionsUseCase(fsUserRepo, deleteAccountUC)
+
 	exportUserDataUC := usecase.NewExportUserDataUseCase(userRepo, consentRepo, lifestyleRepo, nutritionPlanRepo, weeklyPlanDraftRepo, planRepo)
 
 	getConsentsUC := usecase.NewGetConsentsUseCase(consentRepo)
@@ -368,7 +376,7 @@ func main() {
 	onboardingHandler := httpadapter.NewOnboardingHandler(onboardingUC)
 	checkinHandler := httpadapter.NewCheckinHandler(createCheckinUC, latestCheckinUC, statusCheckinUC)
 	lifestyleHandler := httpadapter.NewLifestyleHandler(reportLifestyleUC, listLifestyleUC)
-	meHandler := httpadapter.NewMeHandler(getMeUC, updateProfileUC, deleteAccountUC)
+	meHandler := httpadapter.NewMeHandler(getMeUC, updateProfileUC, scheduleDeletionUC, cancelDeletionUC)
 	homeHandler := httpadapter.NewHomeHandler(getHomeTimelineUC)
 	consentHandler := httpadapter.NewConsentHandler(getConsentsUC, setConsentUC)
 	exportHandler := httpadapter.NewExportHandler(exportUserDataUC)
@@ -414,6 +422,7 @@ func main() {
 	api.Get("/me", meHandler.GetMe)
 	api.Patch("/me", meHandler.UpdateProfile)
 	api.Delete("/me", meHandler.DeleteAccount)
+	api.Post("/me/cancel-deletion", meHandler.CancelDeletion)
 
 	api.Get("/me/consents", consentHandler.GetConsents)
 	api.Post("/me/consents", consentHandler.SetConsent)
@@ -505,6 +514,16 @@ func main() {
 			if localHour == 9 {
 				trainingReminderUC.ExecuteForTimezone(ctx, timezone, tokens)
 			}
+		}
+	})
+
+	// Account-deletion sweep: finishes off every DELETE /me whose 30-day
+	// grace period (ScheduleAccountDeletionUseCase) has elapsed. Once a
+	// day is plenty — this isn't time-sensitive down to the hour.
+	c.AddFunc("0 4 * * *", func() {
+		log.Println("[scheduler] running account-deletion sweep")
+		if err := runPendingDeletionsUC.Execute(context.Background()); err != nil {
+			log.Printf("[scheduler] account-deletion sweep error: %v", err)
 		}
 	})
 

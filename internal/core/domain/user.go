@@ -67,4 +67,11 @@ type User struct {
 	LastActivePlanID     *string
 	CreatedAt            time.Time
 	UpdatedAt            time.Time
+
+	// PendingDeletionAt is set by ScheduleAccountDeletionUseCase (DELETE
+	// /me) and cleared by CancelAccountDeletionUseCase — nil means no
+	// deletion is scheduled. The account stays fully usable while this is
+	// set; RunPendingAccountDeletionsUseCase's daily sweep is what actually
+	// deletes the account once this timestamp passes.
+	PendingDeletionAt *time.Time
 }

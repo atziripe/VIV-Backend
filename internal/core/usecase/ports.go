@@ -63,6 +63,15 @@ type ConsentStore interface {
 	ConsentChecker
 }
 
+// PendingDeletionLister finds every user whose scheduled account deletion
+// (see ScheduleAccountDeletionUseCase) is due — the read side
+// RunPendingAccountDeletionsUseCase's daily sweep queries. Firestore-only:
+// it's the sole read path for domain.User (DualUserRepository.GetByID never
+// reads Neon), so it's also the only store worth querying here.
+type PendingDeletionLister interface {
+	ListPendingDeletions(ctx context.Context, before time.Time) ([]*domain.User, error)
+}
+
 type CheckinRepository interface {
 	Create(ctx context.Context, c *domain.Checkin) error
 	GetByID(ctx context.Context, userID string, id string) (*domain.Checkin, error)

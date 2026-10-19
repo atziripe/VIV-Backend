@@ -23,11 +23,14 @@ type SetConsentInput struct {
 type SetConsentOutput struct {
 	// AccountDeleted is true when this call revoked
 	// ConsentHealthDataProcessing — which this usecase treats as "the user
-	// no longer wants VIV processing their data at all" and routes
-	// straight into the same account-deletion flow DELETE /me uses (see
-	// AccountDeleter's doc comment on why there's no middle ground). The
-	// caller's account and all their data are gone by the time this
-	// returns true.
+	// no longer wants VIV processing their data at all" and deletes the
+	// account immediately via DeleteAccountUseCase (see AccountDeleter's
+	// doc comment on why there's no middle ground). Deliberately NOT routed
+	// through ScheduleAccountDeletionUseCase's 30-day grace period like
+	// DELETE /me: a revoked required consent would otherwise leave the
+	// account live for 30 more days with no legal basis to keep processing
+	// its data. The caller's account and all their data are gone by the
+	// time this returns true.
 	AccountDeleted bool
 }
 
@@ -42,8 +45,8 @@ type AccountDeleter interface {
 // functioning "keep the account but stop processing health data" state
 // (everything from onboarding onward depends on it), so rather than offer
 // a revoke that leaves the account in a broken, half-consented limbo, it
-// deletes the account outright — same outcome as calling DELETE /me
-// directly, just reachable from the consent screen too.
+// deletes the account outright and immediately — see AccountDeleted's doc
+// comment for why this intentionally skips DELETE /me's grace period.
 type SetConsentUseCase struct {
 	Consents ConsentRepository
 	Deleter  AccountDeleter

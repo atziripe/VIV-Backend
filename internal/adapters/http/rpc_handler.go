@@ -151,6 +151,8 @@ func isAllowedRoute(method, path string) bool {
 		return true
 	case method == "DELETE" && path == "/me":
 		return true
+	case method == "POST" && path == "/me/cancel-deletion":
+		return true
 
 	case method == "GET" && path == "/home/today":
 		return true

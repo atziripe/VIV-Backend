@@ -12,13 +12,14 @@ import (
 )
 
 type MeHandler struct {
-	UC              *usecase.GetCurrentUserUseCase
-	UpdateProfUC    *usecase.UpdateProfileUseCase
-	DeleteAccountUC *usecase.DeleteAccountUseCase
+	UC                 *usecase.GetCurrentUserUseCase
+	UpdateProfUC       *usecase.UpdateProfileUseCase
+	ScheduleDeletionUC *usecase.ScheduleAccountDeletionUseCase
+	CancelDeletionUC   *usecase.CancelAccountDeletionUseCase
 }
 
-func NewMeHandler(uc *usecase.GetCurrentUserUseCase, updateProfUC *usecase.UpdateProfileUseCase, deleteAccountUC *usecase.DeleteAccountUseCase) *MeHandler {
-	return &MeHandler{UC: uc, UpdateProfUC: updateProfUC, DeleteAccountUC: deleteAccountUC}
+func NewMeHandler(uc *usecase.GetCurrentUserUseCase, updateProfUC *usecase.UpdateProfileUseCase, scheduleDeletionUC *usecase.ScheduleAccountDeletionUseCase, cancelDeletionUC *usecase.CancelAccountDeletionUseCase) *MeHandler {
+	return &MeHandler{UC: uc, UpdateProfUC: updateProfUC, ScheduleDeletionUC: scheduleDeletionUC, CancelDeletionUC: cancelDeletionUC}
 }
 
 // Lo que devolvemos al frontend (puedes ajustar campos)
@@ -81,6 +82,11 @@ type meResponse struct {
 
 	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"updated_at"`
+
+	// PendingDeletionAt lets any screen show the "account scheduled for
+	// deletion" banner with a cancel option, not just the response right
+	// after DELETE /me — see domain.User.PendingDeletionAt.
+	PendingDeletionAt *string `json:"pending_deletion_at,omitempty"`
 }
 
 func (h *MeHandler) GetMe(w http.ResponseWriter, r *http.Request) {
@@ -124,6 +130,11 @@ func toMeResponse(u *domain.User) meResponse {
 
 	createdStr := u.CreatedAt.UTC().Format(time.RFC3339)
 	updatedStr := u.UpdatedAt.UTC().Format(time.RFC3339)
+	var pendingDeletionStr *string
+	if u.PendingDeletionAt != nil {
+		s := u.PendingDeletionAt.UTC().Format(time.RFC3339)
+		pendingDeletionStr = &s
+	}
 	onboardingInt := 0
 	if u.OnboardingCompleted {
 		onboardingInt = 1
@@ -185,6 +196,8 @@ func toMeResponse(u *domain.User) meResponse {
 
 		CreatedAt: createdStr,
 		UpdatedAt: updatedStr,
+
+		PendingDeletionAt: pendingDeletionStr,
 	}
 }
 
@@ -377,9 +390,21 @@ func (h *MeHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(resp)
 }
 
-// DeleteAccount permanently deletes the caller's account and all of their
-// data (App Store guideline 5.1.1v) — see usecase.DeleteAccountUseCase for
-// what "all of their data" means and why anonymized/aggregate data is kept.
+// scheduleDeletionResponse tells the client when the account will actually
+// be deleted, so it can render the grace-period countdown + cancel option
+// right away without a second GET /me round-trip.
+type scheduleDeletionResponse struct {
+	PendingDeletionAt string `json:"pending_deletion_at"`
+	GracePeriodDays   int    `json:"grace_period_days"`
+}
+
+// DeleteAccount schedules the caller's account for deletion
+// usecase.AccountDeletionGracePeriod from now (App Store guideline
+// 5.1.1v) rather than deleting it on the spot — the account stays fully
+// usable and the request is cancellable via CancelDeletion until then. See
+// usecase.RunPendingAccountDeletionsUseCase for what actually deletes it
+// once the grace period elapses, and usecase.DeleteAccountUseCase for what
+// "all of their data" means and why anonymized/aggregate data is kept.
 func (h *MeHandler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -389,9 +414,46 @@ func (h *MeHandler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.DeleteAccountUC.Execute(ctx, userID); err != nil {
+	user, err := h.ScheduleDeletionUC.Execute(ctx, userID)
+	if err != nil {
+		var notFound usecase.UserNotFoundError
+		if errors.As(err, &notFound) {
+			http.Error(w, "user not found", http.StatusNotFound)
+			return
+		}
 		log.Printf("[delete-account] execute error: %v", err)
-		http.Error(w, "failed to delete account", http.StatusInternalServerError)
+		http.Error(w, "failed to schedule account deletion", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(scheduleDeletionResponse{
+		PendingDeletionAt: user.PendingDeletionAt.UTC().Format(time.RFC3339),
+		GracePeriodDays:   int(usecase.AccountDeletionGracePeriod / (24 * time.Hour)),
+	})
+}
+
+// CancelDeletion reverses a pending DeleteAccount request — see
+// usecase.CancelAccountDeletionUseCase. Idempotent: calling it with nothing
+// pending just returns the user's current (unchanged) state.
+func (h *MeHandler) CancelDeletion(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	userID, ok := UserIDFromContext(ctx)
+	if !ok || userID == "" {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if _, err := h.CancelDeletionUC.Execute(ctx, userID); err != nil {
+		var notFound usecase.UserNotFoundError
+		if errors.As(err, &notFound) {
+			http.Error(w, "user not found", http.StatusNotFound)
+			return
+		}
+		log.Printf("[cancel-deletion] execute error: %v", err)
+		http.Error(w, "failed to cancel account deletion", http.StatusInternalServerError)
 		return
 	}
 
