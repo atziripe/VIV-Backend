@@ -119,6 +119,19 @@ func ErrConsentRequired(purpose string) error {
 	return ConsentRequiredError{Purpose: purpose}
 }
 
+// -------- ineligibility --------
+type InvalidIneligibilityReasonError struct {
+	Reason string
+}
+
+func (e InvalidIneligibilityReasonError) Error() string {
+	return "unrecognized ineligibility reason: " + e.Reason
+}
+
+func ErrInvalidIneligibilityReason(reason string) error {
+	return InvalidIneligibilityReasonError{Reason: reason}
+}
+
 // -------- minimum age --------
 type InvalidDOBError struct {
 	DOB string

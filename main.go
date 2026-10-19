@@ -126,6 +126,13 @@ func main() {
 		// accountAnonymizer stays nil in Firestore-only mode — DeleteAccountUseCase
 		// treats that as "no Neon anonymized snapshot taken", not an error.
 		accountAnonymizer usecase.AccountAnonymizer
+
+		// ineligibilityEventRecorder stays nil in Firestore-only mode —
+		// ReportIneligibilityUseCase treats that as "skip the statistic",
+		// same convention as accountAnonymizer above. There's no
+		// Firestore equivalent by design (see IneligibilityEventRecorder's
+		// doc comment).
+		ineligibilityEventRecorder usecase.IneligibilityEventRecorder
 	)
 
 	if dbURL := os.Getenv("DATABASE_URL"); dbURL != "" {
@@ -148,6 +155,7 @@ func main() {
 			recoveryActionRepo = repository.NewDualRecoveryActionRepository(fsRecoveryActionRepo, repository.NewNeonRecoveryActionRepository(neonPool))
 			consentRepo = repository.NewDualConsentRepository(fsConsentRepo, repository.NewNeonConsentRepository(neonPool))
 			accountAnonymizer = repository.NewNeonAccountAnonymizer(neonPool)
+			ineligibilityEventRecorder = repository.NewNeonIneligibilityEventRecorder(neonPool)
 		}
 	} else {
 		slog.Warn("DATABASE_URL not set — running Firestore-only (no dual-write)")
@@ -383,6 +391,11 @@ func main() {
 
 	exportUserDataUC := usecase.NewExportUserDataUseCase(userRepo, consentRepo, lifestyleRepo, nutritionPlanRepo, weeklyPlanDraftRepo, planRepo)
 
+	// Pre-onboarding eligibility gate ("Which describes you right now?") —
+	// deletes the account outright, not through the 30-day grace period
+	// (see ReportIneligibilityUseCase's doc comment).
+	reportIneligibilityUC := usecase.NewReportIneligibilityUseCase(ineligibilityEventRecorder, deleteAccountUC)
+
 	getConsentsUC := usecase.NewGetConsentsUseCase(consentRepo)
 	setConsentUC := usecase.NewSetConsentUseCase(consentRepo, deleteAccountUC)
 
@@ -394,6 +407,7 @@ func main() {
 	homeHandler := httpadapter.NewHomeHandler(getHomeTimelineUC)
 	consentHandler := httpadapter.NewConsentHandler(getConsentsUC, setConsentUC)
 	exportHandler := httpadapter.NewExportHandler(exportUserDataUC)
+	ineligibilityHandler := httpadapter.NewIneligibilityHandler(reportIneligibilityUC)
 	plansHandler := httpadapter.NewPlansHandler(getCurrentPlanUC, getByIDUC, getByWeekStartUC, statusUC, phaseFeedbackUC)
 	trainingHandler := httpadapter.NewTrainingHandler(startTrainingUC, statusTrainingUC, trainingEngine, resumeTrainingUC, completeDayUC, saveArrangementUC)
 	weeklyPlanHandler := httpadapter.NewWeeklyPlanHandler(startWeeklyPlanUC, statusWeeklyPlanUC, currentWeeklyPlanUC, weeklyPlanDayUC, getWeeklyNoteUC, editDaySlotUC)
@@ -421,6 +435,7 @@ func main() {
 	api := chi.NewRouter()
 
 	api.Post("/onboarding", onboardingHandler.ServeHTTP)
+	api.Post("/onboarding/ineligibility", ineligibilityHandler.Report)
 
 	// VIV-103/106/107 daily check-in — distinct from the older /checkins
 	// (plural) weekly check-in below.

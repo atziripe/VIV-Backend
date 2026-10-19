@@ -166,6 +166,8 @@ func isAllowedRoute(method, path string) bool {
 
 	case method == "POST" && path == "/onboarding":
 		return true
+	case method == "POST" && path == "/onboarding/ineligibility":
+		return true
 
 	case method == "POST" && path == "/checkin":
 		return true
@@ -832,6 +834,27 @@ func selectSubBody(path string, body map[string]any) any {
 			if s, ok := raw.(string); ok {
 				if t := strings.TrimSpace(s); t != "" {
 					out["date"] = t
+				}
+			}
+		}
+		return out
+
+	case "/onboarding/ineligibility":
+		// body: { "ineligibility": { "reason": "pregnant_or_postpartum" } }
+		v, ok := body["ineligibility"]
+		if !ok || v == nil {
+			return map[string]any{}
+		}
+		m, ok := v.(map[string]any)
+		if !ok {
+			return map[string]any{}
+		}
+
+		out := map[string]any{}
+		if raw, exists := m["reason"]; exists {
+			if s, ok := raw.(string); ok {
+				if t := strings.TrimSpace(s); t != "" {
+					out["reason"] = t
 				}
 			}
 		}

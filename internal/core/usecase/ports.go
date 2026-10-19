@@ -98,6 +98,15 @@ type UserContactLookup interface {
 	GetContact(ctx context.Context, userID string) (email, name string, err error)
 }
 
+// IneligibilityEventRecorder records a single pre-onboarding eligibility
+// rejection as a pure statistic — reason and timestamp only, no user
+// reference of any kind (see ReportIneligibilityUseCase). Deliberately
+// Neon-only: there's no per-user document to dual-write against, and
+// nothing here needs Firestore at all.
+type IneligibilityEventRecorder interface {
+	RecordIneligibility(ctx context.Context, reason domain.IneligibilityReason) error
+}
+
 type CheckinRepository interface {
 	Create(ctx context.Context, c *domain.Checkin) error
 	GetByID(ctx context.Context, userID string, id string) (*domain.Checkin, error)
