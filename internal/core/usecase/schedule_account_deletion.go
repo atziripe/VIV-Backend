@@ -37,6 +37,7 @@ func (uc *ScheduleAccountDeletionUseCase) Execute(ctx context.Context, userID st
 
 	deletionAt := time.Now().UTC().Add(AccountDeletionGracePeriod)
 	user.PendingDeletionAt = &deletionAt
+	user.PendingDeletionReason = domain.PendingDeletionUserRequested
 
 	if err := uc.Users.Save(ctx, user); err != nil {
 		return nil, err

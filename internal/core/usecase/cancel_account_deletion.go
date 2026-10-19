@@ -32,6 +32,7 @@ func (uc *CancelAccountDeletionUseCase) Execute(ctx context.Context, userID stri
 	}
 
 	user.PendingDeletionAt = nil
+	user.PendingDeletionReason = ""
 	if err := uc.Users.Save(ctx, user); err != nil {
 		return nil, err
 	}

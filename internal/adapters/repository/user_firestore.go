@@ -16,6 +16,7 @@ import (
 // Asegura en compilación que cumple la interfaz UserRepository
 var _ usecase.UserRepository = (*FirestoreUserRepository)(nil)
 var _ usecase.PendingDeletionLister = (*FirestoreUserRepository)(nil)
+var _ usecase.InactivityLister = (*FirestoreUserRepository)(nil)
 
 type FirestoreUserRepository struct {
 	client *firestore.Client
@@ -75,6 +76,41 @@ func (r *FirestoreUserRepository) ListPendingDeletions(ctx context.Context, befo
 			return nil, err
 		}
 		u.ID = doc.Ref.ID
+		results = append(results, &u)
+	}
+
+	return results, nil
+}
+
+// ListInactiveSince returns every user whose LastActiveAt is at or before
+// cutoff — see RunInactivitySweepUseCase's doc comment. Filters out users
+// who already have a deletion pending in application code rather than a
+// second Firestore equality filter, to avoid needing a composite index for
+// what's otherwise a single-field inequality query.
+func (r *FirestoreUserRepository) ListInactiveSince(ctx context.Context, cutoff time.Time) ([]*domain.User, error) {
+	iter := r.client.Collection("users").
+		Where("LastActiveAt", "<=", cutoff).
+		Documents(ctx)
+
+	var results []*domain.User
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		var u domain.User
+		if err := doc.DataTo(&u); err != nil {
+			return nil, err
+		}
+		u.ID = doc.Ref.ID
+
+		if u.PendingDeletionAt != nil {
+			continue
+		}
 		results = append(results, &u)
 	}
 

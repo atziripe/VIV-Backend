@@ -1,6 +1,7 @@
 package http
 
 import (
+	"log"
 	"net/http"
 	"time"
 
@@ -8,7 +9,11 @@ import (
 	"viv/internal/core/usecase"
 )
 
-func EnsureUserMiddleware(userRepo usecase.UserRepository) func(http.Handler) http.Handler {
+// EnsureUserMiddleware also doubles as the one place that observes every
+// authenticated request for an existing user — recordActivity stamps
+// User.LastActiveAt from here (see RecordUserActivityUseCase) rather than
+// needing its own route/polling.
+func EnsureUserMiddleware(userRepo usecase.UserRepository, recordActivity *usecase.RecordUserActivityUseCase) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			uid, ok := UserIDFromContext(r.Context())
@@ -32,6 +37,7 @@ func EnsureUserMiddleware(userRepo usecase.UserRepository) func(http.Handler) ht
 					OnboardingCompleted: false,
 					CreatedAt:           now,
 					UpdatedAt:           now,
+					LastActiveAt:        &now,
 				}
 
 				// Importante: Create debe ser idempotente (si ya existe, no truena)
@@ -39,6 +45,9 @@ func EnsureUserMiddleware(userRepo usecase.UserRepository) func(http.Handler) ht
 					http.Error(w, "failed to create user", http.StatusInternalServerError)
 					return
 				}
+			} else if err := recordActivity.Execute(r.Context(), u); err != nil {
+				// Non-fatal: activity tracking must never block the actual request.
+				log.Printf("[ensure-user] failed to record activity for user=%s: %v", uid, err)
 			}
 
 			next.ServeHTTP(w, r)

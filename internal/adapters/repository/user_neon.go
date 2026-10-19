@@ -68,14 +68,16 @@ func (r *NeonUserRepository) Save(ctx context.Context, user *domain.User) error 
 	// 1. Upsert identity — domain.User.ID is the Firebase UID
 	var internalID string
 	err = tx.QueryRow(ctx, `
-		INSERT INTO users (firebase_uid, name, created_at, updated_at, pending_deletion_at)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO users (firebase_uid, name, created_at, updated_at, pending_deletion_at, last_active_at, pending_deletion_reason)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		ON CONFLICT (firebase_uid) DO UPDATE
-		  SET name                = EXCLUDED.name,
-		      updated_at          = EXCLUDED.updated_at,
-		      pending_deletion_at = EXCLUDED.pending_deletion_at
+		  SET name                    = EXCLUDED.name,
+		      updated_at              = EXCLUDED.updated_at,
+		      pending_deletion_at     = EXCLUDED.pending_deletion_at,
+		      last_active_at          = EXCLUDED.last_active_at,
+		      pending_deletion_reason = EXCLUDED.pending_deletion_reason
 		RETURNING id
-	`, user.ID, user.Name, user.CreatedAt, user.UpdatedAt, user.PendingDeletionAt).Scan(&internalID)
+	`, user.ID, user.Name, user.CreatedAt, user.UpdatedAt, user.PendingDeletionAt, user.LastActiveAt, nullableString(string(user.PendingDeletionReason))).Scan(&internalID)
 	if err != nil {
 		return err
 	}

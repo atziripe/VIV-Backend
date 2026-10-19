@@ -15,6 +15,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"google.golang.org/api/option"
 
+	"viv/internal/adapters/email"
 	httpadapter "viv/internal/adapters/http"
 	"viv/internal/adapters/llm/openai"
 	"viv/internal/adapters/mealgen"
@@ -366,6 +367,19 @@ func main() {
 	scheduleDeletionUC := usecase.NewScheduleAccountDeletionUseCase(userRepo)
 	cancelDeletionUC := usecase.NewCancelAccountDeletionUseCase(userRepo)
 	runPendingDeletionsUC := usecase.NewRunPendingAccountDeletionsUseCase(fsUserRepo, deleteAccountUC)
+	recordActivityUC := usecase.NewRecordUserActivityUseCase(userRepo)
+
+	// 2-year-inactivity sweep — "are you still there?" email via Brevo,
+	// then the same 30-day grace period as a user-requested deletion (see
+	// RunInactivitySweepUseCase). BrevoAPIKey empty just means every send
+	// fails, is logged, and gets retried next week — it never silently
+	// skips the notice/deletion flow.
+	if cfg.BrevoAPIKey == "" {
+		log.Println("[startup] BREVO_API_KEY not set — inactivity re-engagement emails will fail until it's configured")
+	}
+	reEngagementSender := email.NewBrevoReEngagementEmailSender(cfg.BrevoAPIKey, cfg.BrevoInactivityTemplateID)
+	userContactLookup := repository.NewFirebaseUserContactLookup(authClient)
+	runInactivitySweepUC := usecase.NewRunInactivitySweepUseCase(fsUserRepo, userContactLookup, reEngagementSender, userRepo)
 
 	exportUserDataUC := usecase.NewExportUserDataUseCase(userRepo, consentRepo, lifestyleRepo, nutritionPlanRepo, weeklyPlanDraftRepo, planRepo)
 
@@ -473,7 +487,7 @@ func main() {
 	protected := chi.NewRouter()
 	protected.Use(httpadapter.AppCheckMiddleware(cfg.FirebaseProjectNumber, cfg.AppCheckEnforce))
 	protected.Use(httpadapter.FirebaseAuthMiddleware(authClient))
-	protected.Use(httpadapter.EnsureUserMiddleware(userRepo))
+	protected.Use(httpadapter.EnsureUserMiddleware(userRepo, recordActivityUC))
 
 	rpcHandler := httpadapter.NewRPCHandler(api)
 	protected.Post("/rpc", rpcHandler.Handle)
@@ -524,6 +538,17 @@ func main() {
 		log.Println("[scheduler] running account-deletion sweep")
 		if err := runPendingDeletionsUC.Execute(context.Background()); err != nil {
 			log.Printf("[scheduler] account-deletion sweep error: %v", err)
+		}
+	})
+
+	// Inactivity sweep: finds users with 2 years of no activity, emails
+	// them via Brevo, and starts their 30-day notice window. Weekly, not
+	// daily — this is a years-long threshold, there's no need to check it
+	// every day.
+	c.AddFunc("0 5 * * 1", func() {
+		log.Println("[scheduler] running inactivity sweep")
+		if err := runInactivitySweepUC.Execute(context.Background()); err != nil {
+			log.Printf("[scheduler] inactivity sweep error: %v", err)
 		}
 	})
 

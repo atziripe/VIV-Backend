@@ -72,6 +72,32 @@ type PendingDeletionLister interface {
 	ListPendingDeletions(ctx context.Context, before time.Time) ([]*domain.User, error)
 }
 
+// InactivityLister finds every user whose User.LastActiveAt is at or
+// before a cutoff — the candidates RunInactivitySweepUseCase's weekly
+// sweep considers for a re-engagement email. Implementations should leave
+// out users who already have a deletion pending (either reason) — this
+// package filters defensively too, but there's no need to re-notify
+// someone already mid-notice-window.
+type InactivityLister interface {
+	ListInactiveSince(ctx context.Context, cutoff time.Time) ([]*domain.User, error)
+}
+
+// ReEngagementEmailSender sends the "are you still there?" email that
+// starts an inactivity-triggered deletion's notice window — see
+// RunInactivitySweepUseCase. The copy/template lives wherever the provider
+// manages it (e.g. a Brevo dashboard template); this port only ever passes
+// the recipient.
+type ReEngagementEmailSender interface {
+	SendReEngagementEmail(ctx context.Context, email, name string) error
+}
+
+// UserContactLookup resolves a user's email/display name from Firebase
+// Auth — domain.User itself has no email field; Firebase Auth is the
+// source of truth for identity, same as FirebaseAuthAccountDeleter.
+type UserContactLookup interface {
+	GetContact(ctx context.Context, userID string) (email, name string, err error)
+}
+
 type CheckinRepository interface {
 	Create(ctx context.Context, c *domain.Checkin) error
 	GetByID(ctx context.Context, userID string, id string) (*domain.Checkin, error)
