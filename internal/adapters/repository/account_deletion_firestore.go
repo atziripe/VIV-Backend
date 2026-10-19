@@ -19,6 +19,12 @@ var _ usecase.AccountDataStore = (*FirestoreAccountDataStore)(nil)
 // deletion must sweep every one of these: Firestore never
 // cascade-deletes subcollections when their parent document is
 // deleted, unlike Neon's foreign keys.
+//
+// "consents" is deliberately NOT here: it's an append-only legal audit
+// trail (GDPR Art. 7.1 — demonstrating consent was given, not just
+// asserting it) and must survive account deletion indefinitely, unlike
+// everything else a user can produce. See NeonAccountAnonymizer's doc
+// comment for the Neon-side equivalent of this carve-out.
 var userSubcollections = []string{
 	"checkins",
 	"plans",
@@ -30,7 +36,6 @@ var userSubcollections = []string{
 	"nutrition_plan",
 	"recovery_actions",
 	"weekly_plan_drafts",
-	"consents",
 }
 
 // FirestoreAccountDataStore implements the "hard delete everything"

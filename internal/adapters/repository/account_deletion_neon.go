@@ -28,7 +28,11 @@ func NewNeonAccountAnonymizer(pool *pgxpool.Pool) *NeonAccountAnonymizer {
 // deleted_account_profiles_anon — which has no user_id/firebase_uid column,
 // so the snapshot can never be traced back to them — then deletes the
 // users row. Every other Neon table referencing it cascades via its own
-// ON DELETE CASCADE foreign key, so nothing else needs to be touched here.
+// ON DELETE CASCADE foreign key, so nothing else needs to be touched here —
+// except consents, which has no FK into users at all (see migration 015):
+// those rows are an append-only legal audit trail that must survive this
+// delete, so they're deliberately left in place, now just carrying a
+// user_id that no longer resolves to a live user.
 // Both steps run in one transaction: either the snapshot is captured and
 // the row is gone, or neither happens.
 func (r *NeonAccountAnonymizer) AnonymizeAndDeleteUser(ctx context.Context, userID string) error {

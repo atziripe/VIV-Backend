@@ -1,0 +1,11 @@
+-- Consent records are an append-only legal audit trail (GDPR Art. 7.1)
+-- and must be retained indefinitely, even after the user who granted
+-- them deletes their account — unlike every other Neon table tied to a
+-- user, which is meant to disappear via ON DELETE CASCADE.
+--
+-- Dropping the foreign key (rather than switching to ON DELETE SET NULL)
+-- keeps each row's original user_id value intact as a historical
+-- reference instead of nulling it out, while still letting
+-- NeonAccountAnonymizer's `DELETE FROM users` succeed without cascading
+-- into this table.
+ALTER TABLE consents DROP CONSTRAINT consents_user_id_fkey;
