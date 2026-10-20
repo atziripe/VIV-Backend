@@ -87,12 +87,12 @@ func main() {
 	defer fsClient.Close()
 
 	// ========= Repositories =========
-	// Firestore — still the source of truth for entities not yet cut over
-	// to Neon (User, legacy Plan, PlanJobs, Consent). See the Audit Map
-	// for the full per-entity Firestore→Neon cutover plan/status.
+	// Firestore — still the source of truth for Consent (Phase 3), plus
+	// fsUserRepo kept alive below for the two crons that still read
+	// Firestore-only lister interfaces (ListPendingDeletions/
+	// ListInactiveSince — also Phase 3). See the Audit Map for the full
+	// per-entity Firestore→Neon cutover plan/status.
 	fsUserRepo := repository.NewFirestoreUserRepository(fsClient)
-	fsPlanRepo := repository.NewFirestorePlanRepository(fsClient)
-	fsPlanJobsRepo := repository.NewFirestorePlanJobsRepository(fsClient)
 	fsConsentRepo := repository.NewFirestoreConsentRepository(fsClient)
 
 	// Neon is mandatory now, not an optional dual-write target. Phase 1 of
@@ -125,11 +125,17 @@ func main() {
 		recoveryActionRepo  usecase.RecoveryActionRepository  = repository.NewNeonRecoveryActionRepository(neonPool)
 	)
 
+	// Phase 2 cutover — User, legacy Plan, and PlanJobs are Neon-only now
+	// too (data parity verified via a fresh error-free backfill run).
+	// fsUserRepo stays alive above only for the two crons that still need
+	// a Firestore-only lister interface (see that comment) — this
+	// userRepo is the one EnsureUserMiddleware and everything else uses.
+	userRepo := usecase.UserRepository(repository.NewNeonUserRepository(neonPool))
+	planRepo := usecase.PlanRepository(repository.NewNeonPlanRepository(neonPool))
+	planJobsRepo := usecase.PlanJobsRepository(repository.NewNeonPlanJobsRepository(neonPool))
+
 	// Not yet cut over — still Firestore-primary (fatal), Neon-secondary
-	// (best-effort) dual-write, unchanged from before Phase 1.
-	userRepo := usecase.UserRepository(repository.NewDualUserRepository(fsUserRepo, repository.NewNeonUserRepository(neonPool)))
-	planRepo := usecase.PlanRepository(repository.NewDualPlanRepository(fsPlanRepo, repository.NewNeonPlanRepository(neonPool)))
-	planJobsRepo := usecase.PlanJobsRepository(repository.NewDualPlanJobsRepository(fsPlanJobsRepo, repository.NewNeonPlanJobsRepository(neonPool)))
+	// (best-effort) dual-write (Phase 3).
 	consentRepo := usecase.ConsentStore(repository.NewDualConsentRepository(fsConsentRepo, repository.NewNeonConsentRepository(neonPool)))
 	accountAnonymizer := usecase.AccountAnonymizer(repository.NewNeonAccountAnonymizer(neonPool))
 	ineligibilityEventRecorder := usecase.IneligibilityEventRecorder(repository.NewNeonIneligibilityEventRecorder(neonPool))
