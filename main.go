@@ -87,12 +87,9 @@ func main() {
 	defer fsClient.Close()
 
 	// ========= Repositories =========
-	// Firestore — still the source of truth for Consent (Phase 3), plus
-	// fsUserRepo kept alive below for the two crons that still read
-	// Firestore-only lister interfaces (ListPendingDeletions/
-	// ListInactiveSince — also Phase 3). See the Audit Map for the full
-	// per-entity Firestore→Neon cutover plan/status.
-	fsUserRepo := repository.NewFirestoreUserRepository(fsClient)
+	// Firestore — still the source of truth for Consent only (Phase 3).
+	// See the Audit Map for the full per-entity Firestore→Neon cutover
+	// plan/status.
 	fsConsentRepo := repository.NewFirestoreConsentRepository(fsClient)
 
 	// Neon is mandatory now, not an optional dual-write target. Phase 1 of
@@ -127,10 +124,12 @@ func main() {
 
 	// Phase 2 cutover — User, legacy Plan, and PlanJobs are Neon-only now
 	// too (data parity verified via a fresh error-free backfill run).
-	// fsUserRepo stays alive above only for the two crons that still need
-	// a Firestore-only lister interface (see that comment) — this
-	// userRepo is the one EnsureUserMiddleware and everything else uses.
-	userRepo := usecase.UserRepository(repository.NewNeonUserRepository(neonPool))
+	// neonUserRepo is kept as its concrete type alongside the userRepo
+	// interface variable because it also satisfies PendingDeletionLister/
+	// InactivityLister (used by the two crons below) — usecase.UserRepository
+	// itself doesn't expose those methods.
+	neonUserRepo := repository.NewNeonUserRepository(neonPool)
+	userRepo := usecase.UserRepository(neonUserRepo)
 	planRepo := usecase.PlanRepository(repository.NewNeonPlanRepository(neonPool))
 	planJobsRepo := usecase.PlanJobsRepository(repository.NewNeonPlanJobsRepository(neonPool))
 
@@ -377,12 +376,12 @@ func main() {
 	exchangeAppleCodeUC := usecase.NewExchangeAppleAuthorizationCodeUseCase(userRepo, appleExchanger)
 
 	// DELETE /me's 30-day grace period — see ScheduleAccountDeletionUseCase/
-	// RunPendingAccountDeletionsUseCase's doc comments. The sweep queries
-	// fsUserRepo (not userRepo) directly: ListPendingDeletions is a
-	// Firestore-only query, same as every other read of domain.User.
+	// RunPendingAccountDeletionsUseCase's doc comments. ListPendingDeletions
+	// is Neon-only now (Phase 2/3 of the Firestore→Neon cutover), hence
+	// neonUserRepo rather than the userRepo interface variable.
 	scheduleDeletionUC := usecase.NewScheduleAccountDeletionUseCase(userRepo)
 	cancelDeletionUC := usecase.NewCancelAccountDeletionUseCase(userRepo)
-	runPendingDeletionsUC := usecase.NewRunPendingAccountDeletionsUseCase(fsUserRepo, deleteAccountUC)
+	runPendingDeletionsUC := usecase.NewRunPendingAccountDeletionsUseCase(neonUserRepo, deleteAccountUC)
 	recordActivityUC := usecase.NewRecordUserActivityUseCase(userRepo)
 
 	// 2-year-inactivity sweep — "are you still there?" email via Brevo,
@@ -395,7 +394,7 @@ func main() {
 	}
 	reEngagementSender := email.NewBrevoReEngagementEmailSender(cfg.BrevoAPIKey, cfg.BrevoInactivityTemplateID)
 	userContactLookup := repository.NewFirebaseUserContactLookup(authClient)
-	runInactivitySweepUC := usecase.NewRunInactivitySweepUseCase(fsUserRepo, userContactLookup, reEngagementSender, userRepo)
+	runInactivitySweepUC := usecase.NewRunInactivitySweepUseCase(neonUserRepo, userContactLookup, reEngagementSender, userRepo)
 
 	exportUserDataUC := usecase.NewExportUserDataUseCase(userRepo, consentRepo, lifestyleRepo, dailyCheckinRepo, sessionLogRepo, recoveryActionRepo, nutritionPlanRepo, weeklyPlanDraftRepo, planRepo)
 

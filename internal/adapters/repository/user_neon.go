@@ -15,6 +15,8 @@ import (
 )
 
 var _ usecase.UserRepository = (*NeonUserRepository)(nil)
+var _ usecase.PendingDeletionLister = (*NeonUserRepository)(nil)
+var _ usecase.InactivityLister = (*NeonUserRepository)(nil)
 
 type NeonUserRepository struct {
 	pool *pgxpool.Pool
@@ -24,27 +26,32 @@ func NewNeonUserRepository(pool *pgxpool.Pool) *NeonUserRepository {
 	return &NeonUserRepository{pool: pool}
 }
 
+// userSelectFromJoin is shared by every query that returns one or more
+// domain.User rows via scanUser — GetByID, ListPendingDeletions, and
+// ListInactiveSince all select exactly these columns in exactly this
+// order, differing only in their WHERE clause.
+const userSelectFromJoin = `
+	SELECT
+		u.firebase_uid, u.name, u.created_at, u.updated_at,
+		u.apple_refresh_token, u.pending_deletion_at, u.last_active_at, u.pending_deletion_reason,
+		p.dob, p.height_cm, p.weight_kg,
+		p.daily_activity_level, p.training_often, p.training_duration,
+		p.training_time, p.training_type, p.training_goals, p.priority,
+		p.has_active_injury, p.training_paused, p.last_injury_reported_at,
+		p.diet_restrictions, p.diet_protein_resources, p.digestion_conditions,
+		p.eating_style, p.meals_per_day, p.meals_timing_stability,
+		p.sleep_window, p.sleep_continuity, p.recovery_after_sleep,
+		p.lingering_marker, p.stress_level, p.stress_reactivity,
+		p.onboarding_completed, p.user_catalog, p.goal_id, p.last_active_plan_id,
+		c.cycle_day, c.cycle_duration, c.cycle_phase, c.cycle_type,
+		c.cycle_anchor_at, c.period_duration, c.cycle_updated_at, c.cycle_estimation_disabled
+	FROM users u
+	LEFT JOIN user_profiles p ON p.user_id = u.id
+	LEFT JOIN user_cycles   c ON c.user_id = u.id
+`
+
 func (r *NeonUserRepository) GetByID(ctx context.Context, firebaseUID string) (*domain.User, error) {
-	row := r.pool.QueryRow(ctx, `
-		SELECT
-			u.firebase_uid, u.name, u.created_at, u.updated_at,
-			u.apple_refresh_token, u.pending_deletion_at, u.last_active_at, u.pending_deletion_reason,
-			p.dob, p.height_cm, p.weight_kg,
-			p.daily_activity_level, p.training_often, p.training_duration,
-			p.training_time, p.training_type, p.training_goals, p.priority,
-			p.has_active_injury, p.training_paused, p.last_injury_reported_at,
-			p.diet_restrictions, p.diet_protein_resources, p.digestion_conditions,
-			p.eating_style, p.meals_per_day, p.meals_timing_stability,
-			p.sleep_window, p.sleep_continuity, p.recovery_after_sleep,
-			p.lingering_marker, p.stress_level, p.stress_reactivity,
-			p.onboarding_completed, p.user_catalog, p.goal_id, p.last_active_plan_id,
-			c.cycle_day, c.cycle_duration, c.cycle_phase, c.cycle_type,
-			c.cycle_anchor_at, c.period_duration, c.cycle_updated_at, c.cycle_estimation_disabled
-		FROM users u
-		LEFT JOIN user_profiles p ON p.user_id = u.id
-		LEFT JOIN user_cycles   c ON c.user_id = u.id
-		WHERE u.firebase_uid = $1
-	`, firebaseUID)
+	row := r.pool.QueryRow(ctx, userSelectFromJoin+`WHERE u.firebase_uid = $1`, firebaseUID)
 
 	u, err := scanUser(row)
 	if err != nil {
@@ -54,6 +61,51 @@ func (r *NeonUserRepository) GetByID(ctx context.Context, firebaseUID string) (*
 		return nil, err
 	}
 	return u, nil
+}
+
+// ListPendingDeletions returns every user whose scheduled account deletion
+// is due — mirrors FirestoreUserRepository.ListPendingDeletions, which this
+// replaces for RunPendingAccountDeletionsUseCase now that User is Neon-only
+// (Phase 2 of the Firestore→Neon cutover).
+func (r *NeonUserRepository) ListPendingDeletions(ctx context.Context, before time.Time) ([]*domain.User, error) {
+	rows, err := r.pool.Query(ctx, userSelectFromJoin+`WHERE u.pending_deletion_at <= $1`, before)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []*domain.User
+	for rows.Next() {
+		u, err := scanUser(rows)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, u)
+	}
+	return results, rows.Err()
+}
+
+// ListInactiveSince returns every user whose LastActiveAt is at or before
+// cutoff and who doesn't already have a deletion pending — mirrors
+// FirestoreUserRepository.ListInactiveSince (see that doc comment), done
+// here as a plain SQL predicate instead of a post-filter in application
+// code.
+func (r *NeonUserRepository) ListInactiveSince(ctx context.Context, cutoff time.Time) ([]*domain.User, error) {
+	rows, err := r.pool.Query(ctx, userSelectFromJoin+`WHERE u.last_active_at <= $1 AND u.pending_deletion_at IS NULL`, cutoff)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []*domain.User
+	for rows.Next() {
+		u, err := scanUser(rows)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, u)
+	}
+	return results, rows.Err()
 }
 
 func (r *NeonUserRepository) Save(ctx context.Context, user *domain.User) error {
