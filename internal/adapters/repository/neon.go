@@ -25,10 +25,16 @@ func NewNeonPool(ctx context.Context, databaseURL string) (*pgxpool.Pool, error)
 	// names and caches prepared statements server-side, so two
 	// connections that land on the same recycled backend can collide on
 	// the same statement name ("prepared statement ... already exists").
-	// QueryExecModeExec still uses the extended protocol (correct
-	// parameter typing) but never names or caches the statement — the
-	// mode pgx's own docs recommend for a transaction-mode pooler.
-	cfg.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeExec
+	//
+	// QueryExecModeExec avoids naming/caching the statement, but it also
+	// skips the Describe round trip — so pgx no longer learns the real
+	// column type (e.g. jsonb) and falls back to inferring it purely
+	// from the Go argument's type, sending a []byte as bytea instead of
+	// json/jsonb ("invalid input syntax for type json"). DescribeExec
+	// still describes each query (so parameter types are correct) while
+	// never using a named/cached statement — the mode pgx recommends for
+	// a transaction-mode pooler like PgBouncer.
+	cfg.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeDescribeExec
 
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
