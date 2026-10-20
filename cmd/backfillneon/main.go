@@ -89,11 +89,12 @@ func main() {
   session_logs       %d
   nutrition_plans    %d
   recovery_actions   %d
+  consents           %d
   errors             %d`,
 		report.Users, report.Checkins, report.Plans, report.DeviceTokens,
 		report.LifestyleChanges, report.WeeklyPlanDrafts, report.ExercisePins,
 		report.DailyCheckins, report.SessionLogs, report.NutritionPlans,
-		report.RecoveryActions, len(report.Errors))
+		report.RecoveryActions, report.Consents, len(report.Errors))
 
 	for _, e := range report.Errors {
 		log.Printf("backfillneon: ERROR: %s", e)

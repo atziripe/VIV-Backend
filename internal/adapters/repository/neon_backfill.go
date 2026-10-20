@@ -39,6 +39,12 @@ import (
 // job list, and NeonPlanJobsRepository has no method that preserves an
 // arbitrary historical status (CreateQueuedLinked always writes "queued").
 // Not a gap worth a special-case insert for data nothing downstream needs.
+//
+// consents IS backfilled (via NeonConsentRepository.CreateHistorical,
+// which preserves each event's original created_at) — unlike plan_jobs,
+// this is exactly the kind of historical record GDPR Art. 7.1 requires
+// being able to produce, so losing anything before the dual-write went
+// live for this entity is not an acceptable gap.
 // ============================================================================
 
 // BackfillReport tallies how many rows were written (or, in dry-run mode,
@@ -56,6 +62,7 @@ type BackfillReport struct {
 	SessionLogs      int
 	NutritionPlans   int
 	RecoveryActions  int
+	Consents         int
 	Errors           []string
 }
 
@@ -73,6 +80,7 @@ func RunNeonBackfill(ctx context.Context, fsClient *firestore.Client, pool *pgxp
 	neonNutrition := NewNeonNutritionPlanRepository(pool)
 	neonRecovery := NewNeonRecoveryActionRepository(pool)
 	neonDeviceTokens := NewNeonDeviceTokenRepository(pool)
+	neonConsents := NewNeonConsentRepository(pool)
 
 	// device_tokens is a top-level collection keyed by user ID, not nested
 	// under users/{uid} like everything else — handled once, outside the
@@ -135,6 +143,7 @@ func RunNeonBackfill(ctx context.Context, fsClient *firestore.Client, pool *pgxp
 		backfillSessionLogs(ctx, fsClient, neonSessionLogs, u.ID, dryRun, &report)
 		backfillNutritionPlan(ctx, fsClient, neonNutrition, u.ID, dryRun, &report)
 		backfillRecoveryActions(ctx, fsClient, neonRecovery, u.ID, dryRun, &report)
+		backfillConsents(ctx, fsClient, neonConsents, u.ID, dryRun, &report)
 	}
 
 	return report, nil
@@ -467,6 +476,31 @@ func backfillRecoveryActions(ctx context.Context, fsClient *firestore.Client, ne
 		}
 		if err := neon.Upsert(ctx, a); err != nil {
 			report.Errors = append(report.Errors, fmt.Sprintf("recovery_actions user=%s doc=%s: write: %v", userID, doc.Ref.ID, err))
+		}
+	}
+}
+
+// -------------------- consents --------------------
+
+func backfillConsents(ctx context.Context, fsClient *firestore.Client, neon *NeonConsentRepository, userID string, dryRun bool, report *BackfillReport) {
+	docs, err := fsClient.Collection("users").Doc(userID).Collection("consents").Documents(ctx).GetAll()
+	if err != nil {
+		report.Errors = append(report.Errors, fmt.Sprintf("consents user=%s: list: %v", userID, err))
+		return
+	}
+	for _, doc := range docs {
+		var d consentDoc
+		if err := doc.DataTo(&d); err != nil {
+			report.Errors = append(report.Errors, fmt.Sprintf("consents user=%s doc=%s: decode: %v", userID, doc.Ref.ID, err))
+			continue
+		}
+		report.Consents++
+		if dryRun {
+			continue
+		}
+
+		if err := neon.CreateHistorical(ctx, userID, domain.ConsentPurpose(d.Purpose), d.Granted, d.PolicyVersion, d.CreatedAt); err != nil {
+			report.Errors = append(report.Errors, fmt.Sprintf("consents user=%s doc=%s: write: %v", userID, doc.Ref.ID, err))
 		}
 	}
 }
