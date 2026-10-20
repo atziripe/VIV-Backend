@@ -27,35 +27,35 @@ func generateTestKeyPEM(t *testing.T) string {
 	return string(pem.EncodeToMemory(block))
 }
 
-func TestNewTokenRevoker_ValidKey(t *testing.T) {
+func TestNewClient_ValidKey(t *testing.T) {
 	keyPEM := generateTestKeyPEM(t)
-	revoker, err := NewTokenRevoker("TEAM123", "KEY456", "com.example.app", keyPEM)
+	client, err := NewClient("TEAM123", "KEY456", "com.example.app", keyPEM)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if revoker == nil {
-		t.Fatal("expected non-nil revoker")
+	if client == nil {
+		t.Fatal("expected non-nil client")
 	}
 }
 
-func TestNewTokenRevoker_MalformedPEM(t *testing.T) {
-	_, err := NewTokenRevoker("TEAM123", "KEY456", "com.example.app", "not a pem block")
+func TestNewClient_MalformedPEM(t *testing.T) {
+	_, err := NewClient("TEAM123", "KEY456", "com.example.app", "not a pem block")
 	if err == nil {
 		t.Fatal("expected error for malformed PEM")
 	}
 }
 
-func TestNewTokenRevoker_UnparseablePEMBody(t *testing.T) {
+func TestNewClient_UnparseablePEMBody(t *testing.T) {
 	block := &pem.Block{Type: "PRIVATE KEY", Bytes: []byte("not real key bytes")}
 	keyPEM := string(pem.EncodeToMemory(block))
 
-	_, err := NewTokenRevoker("TEAM123", "KEY456", "com.example.app", keyPEM)
+	_, err := NewClient("TEAM123", "KEY456", "com.example.app", keyPEM)
 	if err == nil {
 		t.Fatal("expected error for a PEM block that isn't a parseable PKCS8 key")
 	}
 }
 
-func TestNewTokenRevoker_NonECKey(t *testing.T) {
+func TestNewClient_NonECKey(t *testing.T) {
 	rsaKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		t.Fatalf("generating RSA test key: %v", err)
@@ -67,7 +67,7 @@ func TestNewTokenRevoker_NonECKey(t *testing.T) {
 	block := &pem.Block{Type: "PRIVATE KEY", Bytes: der}
 	keyPEM := string(pem.EncodeToMemory(block))
 
-	_, err = NewTokenRevoker("TEAM123", "KEY456", "com.example.app", keyPEM)
+	_, err = NewClient("TEAM123", "KEY456", "com.example.app", keyPEM)
 	if err == nil {
 		t.Fatal("expected error for a valid but non-EC (RSA) key")
 	}
@@ -75,12 +75,12 @@ func TestNewTokenRevoker_NonECKey(t *testing.T) {
 
 func TestClientSecret_ProducesValidJWS(t *testing.T) {
 	keyPEM := generateTestKeyPEM(t)
-	revoker, err := NewTokenRevoker("TEAM123", "KEY456", "com.example.app", keyPEM)
+	client, err := NewClient("TEAM123", "KEY456", "com.example.app", keyPEM)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	token, err := revoker.clientSecret()
+	token, err := client.clientSecret()
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

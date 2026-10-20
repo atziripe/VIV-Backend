@@ -48,6 +48,16 @@ type AppleTokenRevoker interface {
 	RevokeRefreshToken(ctx context.Context, refreshToken string) error
 }
 
+// AppleCodeExchanger exchanges a Sign in with Apple authorization_code
+// (single-use, ~5 minute lifetime, issued fresh on every login) for a
+// refresh_token. This requires Apple's signed client_secret, which in turn
+// requires the "Sign in with Apple" private key — that key can never live
+// in the client app, so the exchange has to happen here. See
+// ExchangeAppleAuthorizationCodeUseCase and apple.Client.
+type AppleCodeExchanger interface {
+	ExchangeAuthorizationCode(ctx context.Context, authorizationCode string) (refreshToken string, err error)
+}
+
 // ConsentRepository stores consent grant/revoke events — append-only, see
 // domain.Consent's doc comment. GetAll resolves the *current* state per
 // purpose (each purpose's most recent record), not the raw history.

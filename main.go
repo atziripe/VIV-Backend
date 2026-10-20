@@ -368,27 +368,35 @@ func main() {
 	accountDataStore := repository.NewFirestoreAccountDataStore(fsClient)
 	authAccountDeleter := repository.NewFirebaseAuthAccountDeleter(authClient)
 
-	// Sign in with Apple token revocation — part of the same App Store
-	// requirement above. All four APPLE_* env vars must be set together;
-	// a partial set is treated the same as none (revocation skipped,
-	// logged once here) rather than failing in a half-configured way.
-	var appleRevoker usecase.AppleTokenRevoker
+	// Sign in with Apple: token exchange (POST /me/apple-credentials) and
+	// revocation (part of account deletion) — both the same App Store
+	// requirement, both served by one apple.Client. All four APPLE_* env
+	// vars must be set together; a partial set is treated the same as
+	// none (both disabled, logged once here) rather than failing in a
+	// half-configured way. Left as nil interfaces (not a nil *apple.Client
+	// wrapped in one) when unconfigured, so the nil-checks below and in
+	// DeleteAccountUseCase/ExchangeAppleAuthorizationCodeUseCase work.
+	var (
+		appleRevoker   usecase.AppleTokenRevoker
+		appleExchanger usecase.AppleCodeExchanger
+	)
 	switch {
 	case cfg.AppleTeamID == "" && cfg.AppleKeyID == "" && cfg.AppleClientID == "" && cfg.ApplePrivateKey == "":
-		log.Println("[startup] APPLE_* credentials not set — Sign in with Apple token revocation on account deletion is disabled")
+		log.Println("[startup] APPLE_* credentials not set — Sign in with Apple token exchange/revocation is disabled")
 	case cfg.AppleTeamID == "" || cfg.AppleKeyID == "" || cfg.AppleClientID == "" || cfg.ApplePrivateKey == "":
-		log.Println("[startup] APPLE_* credentials only partially set — Sign in with Apple token revocation on account deletion is disabled")
+		log.Println("[startup] APPLE_* credentials only partially set — Sign in with Apple token exchange/revocation is disabled")
 	default:
-		revoker, err := apple.NewTokenRevoker(cfg.AppleTeamID, cfg.AppleKeyID, cfg.AppleClientID, cfg.ApplePrivateKey)
+		appleClient, err := apple.NewClient(cfg.AppleTeamID, cfg.AppleKeyID, cfg.AppleClientID, cfg.ApplePrivateKey)
 		if err != nil {
-			log.Printf("[startup] failed to configure Apple token revoker, disabling it: %v", err)
+			log.Printf("[startup] failed to configure Apple client, disabling it: %v", err)
 		} else {
-			appleRevoker = revoker
+			appleRevoker = appleClient
+			appleExchanger = appleClient
 		}
 	}
 
 	deleteAccountUC := usecase.NewDeleteAccountUseCase(accountDataStore, accountAnonymizer, authAccountDeleter, userRepo, appleRevoker)
-	setAppleRefreshTokenUC := usecase.NewSetAppleRefreshTokenUseCase(userRepo)
+	exchangeAppleCodeUC := usecase.NewExchangeAppleAuthorizationCodeUseCase(userRepo, appleExchanger)
 
 	// DELETE /me's 30-day grace period — see ScheduleAccountDeletionUseCase/
 	// RunPendingAccountDeletionsUseCase's doc comments. The sweep queries
@@ -430,7 +438,7 @@ func main() {
 	consentHandler := httpadapter.NewConsentHandler(getConsentsUC, setConsentUC)
 	exportHandler := httpadapter.NewExportHandler(exportUserDataUC)
 	ineligibilityHandler := httpadapter.NewIneligibilityHandler(reportIneligibilityUC)
-	appleHandler := httpadapter.NewAppleHandler(setAppleRefreshTokenUC)
+	appleHandler := httpadapter.NewAppleHandler(exchangeAppleCodeUC)
 	plansHandler := httpadapter.NewPlansHandler(getCurrentPlanUC, getByIDUC, getByWeekStartUC, statusUC, phaseFeedbackUC)
 	trainingHandler := httpadapter.NewTrainingHandler(startTrainingUC, statusTrainingUC, trainingEngine, resumeTrainingUC, completeDayUC, saveArrangementUC)
 	weeklyPlanHandler := httpadapter.NewWeeklyPlanHandler(startWeeklyPlanUC, statusWeeklyPlanUC, currentWeeklyPlanUC, weeklyPlanDayUC, getWeeklyNoteUC, editDaySlotUC)

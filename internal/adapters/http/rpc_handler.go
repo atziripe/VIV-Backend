@@ -842,7 +842,7 @@ func selectSubBody(path string, body map[string]any) any {
 		return out
 
 	case "/me/apple-credentials":
-		// body: { "apple": { "refresh_token": "..." } }
+		// body: { "apple": { "authorization_code": "..." } }
 		v, ok := body["apple"]
 		if !ok || v == nil {
 			return map[string]any{}
@@ -853,10 +853,10 @@ func selectSubBody(path string, body map[string]any) any {
 		}
 
 		out := map[string]any{}
-		if raw, exists := m["refresh_token"]; exists {
+		if raw, exists := m["authorization_code"]; exists {
 			if s, ok := raw.(string); ok {
 				if t := strings.TrimSpace(s); t != "" {
-					out["refresh_token"] = t
+					out["authorization_code"] = t
 				}
 			}
 		}
