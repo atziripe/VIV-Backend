@@ -13,19 +13,8 @@ import (
 // (see AccountAnonymizer) — everything that could identify the person
 // does not.
 type DeleteAccountUseCase struct {
-	// NeonData is required: Neon is the source of truth for every entity
-	// this deletes/anonymizes now (Phase 2/3 of the Firestore→Neon
-	// cutover), so a failure here must stop before Auth is touched —
-	// same reasoning the Firestore side used to have, just swapped.
-	NeonData AccountAnonymizer
-
-	// FirestoreData is optional and best-effort — nil, or a failure, just
-	// means legacy Firestore documents from before the cutover are left
-	// behind uncleaned rather than blocking deletion; nothing reads from
-	// or writes to Firestore for this user's data anymore.
-	FirestoreData AccountDataStore
-
-	Auth AuthAccountDeleter // required
+	NeonData AccountAnonymizer  // required — Neon is the source of truth
+	Auth     AuthAccountDeleter // required
 
 	// Users/AppleRevoker are optional together — nil means "don't bother
 	// with Apple revocation" (e.g. Apple Developer credentials aren't
@@ -36,8 +25,8 @@ type DeleteAccountUseCase struct {
 	AppleRevoker AppleTokenRevoker
 }
 
-func NewDeleteAccountUseCase(firestoreData AccountDataStore, neonData AccountAnonymizer, auth AuthAccountDeleter, users UserRepository, appleRevoker AppleTokenRevoker) *DeleteAccountUseCase {
-	return &DeleteAccountUseCase{FirestoreData: firestoreData, NeonData: neonData, Auth: auth, Users: users, AppleRevoker: appleRevoker}
+func NewDeleteAccountUseCase(neonData AccountAnonymizer, auth AuthAccountDeleter, users UserRepository, appleRevoker AppleTokenRevoker) *DeleteAccountUseCase {
+	return &DeleteAccountUseCase{NeonData: neonData, Auth: auth, Users: users, AppleRevoker: appleRevoker}
 }
 
 // Execute deletes userID's account and all of their identifying data.
@@ -51,16 +40,10 @@ func NewDeleteAccountUseCase(firestoreData AccountDataStore, neonData AccountAno
 //     fails, Execute returns the error WITHOUT touching the auth
 //     account, so the caller is still logged in and can simply retry
 //     the whole request, rather than being left half-deleted with no
-//     way back in to try again. Neon is the source of truth for every
-//     entity this touches now (Phase 2/3 of the Firestore→Neon
-//     cutover), so this plays the role Firestore used to play here.
-//  3. Firestore: delete every legacy subcollection, the standalone
-//     device_tokens document, and the user document itself —
-//     best-effort now. Nothing writes to Firestore for this user's
-//     data anymore, so this step only cleans up documents left over
-//     from before the cutover; a failure (or FirestoreData being nil)
-//     just leaves those behind rather than blocking deletion.
-//  4. Auth: delete the Firebase Auth user last, only once every trace
+//     way back in to try again. Neon is the sole source of truth for
+//     every entity this touches (Firestore was removed entirely in
+//     Phase 4 of the Firestore→Neon cutover).
+//  3. Auth: delete the Firebase Auth user last, only once every trace
 //     of their data is confirmed gone from Neon. Deleting this first —
 //     or Neon failing after this already ran — would leave orphaned
 //     PII with no account left that could ever request its own
@@ -72,12 +55,6 @@ func (uc *DeleteAccountUseCase) Execute(ctx context.Context, userID string) erro
 
 	if err := uc.NeonData.AnonymizeAndDeleteUser(ctx, userID); err != nil {
 		return fmt.Errorf("delete account: anonymizing/deleting neon data: %w", err)
-	}
-
-	if uc.FirestoreData != nil {
-		if err := uc.FirestoreData.DeleteAllUserData(ctx, userID); err != nil {
-			log.Printf("[delete_account] firestore cleanup failed, continuing: user=%s err=%v", userID, err)
-		}
 	}
 
 	if err := uc.Auth.DeleteUser(ctx, userID); err != nil {

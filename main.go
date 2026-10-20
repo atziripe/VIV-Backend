@@ -79,18 +79,12 @@ func main() {
 		log.Fatalf("failed to init firebase auth client: %v", err)
 	}
 
-	// Firestore client
-	fsClient, err := app.Firestore(ctx)
-	if err != nil {
-		log.Fatalf("failed to init firestore client: %v", err)
-	}
-	defer fsClient.Close()
-
 	// ========= Repositories =========
-	// Firestore — still the source of truth for Consent only (Phase 3).
-	// See the Audit Map for the full per-entity Firestore→Neon cutover
-	// plan/status.
-	fsConsentRepo := repository.NewFirestoreConsentRepository(fsClient)
+	// Phase 4 of the Firestore→Neon cutover removed Firestore entirely —
+	// Firebase is now used only for Auth (authClient above) and push
+	// notifications (FCMRepository below, which rides on the same *fb.App
+	// but never touches Firestore). See the Audit Map for the full
+	// per-entity cutover history.
 
 	// Neon is mandatory now, not an optional dual-write target. Phase 1 of
 	// the Firestore→Neon cutover (checkins/device tokens/lifestyle
@@ -133,11 +127,8 @@ func main() {
 	planRepo := usecase.PlanRepository(repository.NewNeonPlanRepository(neonPool))
 	planJobsRepo := usecase.PlanJobsRepository(repository.NewNeonPlanJobsRepository(neonPool))
 
-	// Phase 3 cutover — Neon-primary (fatal), Firestore-secondary
-	// (best-effort) dual-write, now that a consents backfill confirmed
-	// data parity. Still dual rather than Neon-only: Firestore keeps
-	// getting a mirrored copy until Phase 4 removes it entirely.
-	consentRepo := usecase.ConsentStore(repository.NewDualConsentRepository(repository.NewNeonConsentRepository(neonPool), fsConsentRepo))
+	// Phase 4 cutover — Neon-only, no Firestore involved at all anymore.
+	consentRepo := usecase.ConsentStore(repository.NewNeonConsentRepository(neonPool))
 	accountAnonymizer := usecase.AccountAnonymizer(repository.NewNeonAccountAnonymizer(neonPool))
 	ineligibilityEventRecorder := usecase.IneligibilityEventRecorder(repository.NewNeonIneligibilityEventRecorder(neonPool))
 
@@ -223,7 +214,7 @@ func main() {
 	// ========= New Weekly Plan Pipeline (VIV-106..113) =========
 	// Deliberately isolated from the old Training Pipeline above — its own
 	// content directory, its own taxonomy, its own async job flow, reusing
-	// only what's genuinely shared (fsClient, oaClient, cyclePhaseLookup,
+	// only what's genuinely shared (oaClient, cyclePhaseLookup,
 	// planJobsRepo/PlanJob's queued/running/done/failed shape).
 	weeklySessionLib, err := corecontent.LoadSessionLibrary("internal/content/training_v2/sessions")
 	if err != nil {
@@ -344,7 +335,6 @@ func main() {
 
 	// App Store account-deletion requirement (guideline 5.1.1v) — see
 	// usecase.DeleteAccountUseCase's doc comment for the deletion ordering.
-	accountDataStore := repository.NewFirestoreAccountDataStore(fsClient)
 	authAccountDeleter := repository.NewFirebaseAuthAccountDeleter(authClient)
 
 	// Sign in with Apple: token exchange (POST /me/apple-credentials) and
@@ -374,7 +364,7 @@ func main() {
 		}
 	}
 
-	deleteAccountUC := usecase.NewDeleteAccountUseCase(accountDataStore, accountAnonymizer, authAccountDeleter, userRepo, appleRevoker)
+	deleteAccountUC := usecase.NewDeleteAccountUseCase(accountAnonymizer, authAccountDeleter, userRepo, appleRevoker)
 	exchangeAppleCodeUC := usecase.NewExchangeAppleAuthorizationCodeUseCase(userRepo, appleExchanger)
 
 	// DELETE /me's 30-day grace period — see ScheduleAccountDeletionUseCase/

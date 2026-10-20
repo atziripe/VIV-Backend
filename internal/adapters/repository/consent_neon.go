@@ -10,7 +10,10 @@ import (
 	"viv/internal/core/usecase"
 )
 
-var _ usecase.ConsentRepository = (*NeonConsentRepository)(nil)
+var (
+	_ usecase.ConsentRepository = (*NeonConsentRepository)(nil)
+	_ usecase.ConsentChecker    = (*NeonConsentRepository)(nil)
+)
 
 type NeonConsentRepository struct {
 	pool *pgxpool.Pool
@@ -84,4 +87,13 @@ func (r *NeonConsentRepository) GetAll(ctx context.Context, userID string) (map[
 		result[c.Purpose] = c
 	}
 	return result, rows.Err()
+}
+
+func (r *NeonConsentRepository) IsGranted(ctx context.Context, userID string, purpose domain.ConsentPurpose) (bool, error) {
+	all, err := r.GetAll(ctx, userID)
+	if err != nil {
+		return false, err
+	}
+	c, ok := all[purpose]
+	return ok && c.Granted, nil
 }
