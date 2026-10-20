@@ -51,7 +51,7 @@ func (r *NeonPlanRepository) Create(ctx context.Context, p *domain.Plan) error {
 	// critical for ML queries ("what phase was she in when this plan was generated?")
 	var (
 		cycleDay      *int
-		cycleDuration *string
+		cycleDuration *int
 		cyclePhase    *string
 		cycleType     *string
 		cycleAnchorAt *time.Time
