@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getsentry/sentry-go"
+
 	"viv/internal/core/usecase"
 )
 
@@ -66,6 +68,11 @@ func (h *NutritionHandler) GetPlan(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Printf("[nutrition.plan] error: %+v\n", err)
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -105,6 +112,11 @@ func (h *NutritionHandler) SaveMealSelection(w http.ResponseWriter, r *http.Requ
 		})
 		if err != nil {
 			log.Printf("[nutrition.meal-selection] error: %+v\n", err)
+			if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+				hub.Scope().SetTag("endpoint", r.URL.Path)
+				hub.Scope().SetTag("method", r.Method)
+				hub.CaptureException(err)
+			}
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -122,6 +134,11 @@ func (h *NutritionHandler) SaveMealSelection(w http.ResponseWriter, r *http.Requ
 	})
 	if err != nil {
 		log.Printf("[nutrition.meal-selection] error: %+v\n", err)
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -171,6 +188,11 @@ func (h *NutritionHandler) SubmitOnboarding(w http.ResponseWriter, r *http.Reque
 	})
 	if err != nil {
 		log.Printf("[nutrition.onboarding] error: %+v\n", err)
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

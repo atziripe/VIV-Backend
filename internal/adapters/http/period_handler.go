@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getsentry/sentry-go"
+
 	"viv/internal/core/usecase"
 )
 
@@ -85,6 +87,11 @@ func (h *PeriodHandler) LogStart(w http.ResponseWriter, r *http.Request) {
 	out, err := h.LogPeriodStartUC.Execute(ctx, in)
 	if err != nil {
 		log.Printf("[period.log-start] error user=%s err=%v", userID, err)
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

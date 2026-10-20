@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"log/slog"
 	stdhttp "net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -42,13 +44,36 @@ import (
 func main() {
 
 	// ====== Sentry initialization ======
+	// TracesSampleRate defaults to 0.2 (20% of requests get a performance
+	// trace) rather than 0, so the Performance tab in Sentry actually has
+	// data without needing a code change — tune via SENTRY_TRACES_SAMPLE_RATE.
+	// Release comes from SENTRY_RELEASE (e.g. the deploy's git SHA) so
+	// Sentry can tell "did this error start after a specific deploy"
+	// instead of lumping every version together; left empty if unset,
+	// which Sentry tolerates (events just go untagged by release).
+	tracesSampleRate := 0.2
+	if v := os.Getenv("SENTRY_TRACES_SAMPLE_RATE"); v != "" {
+		if parsed, err := strconv.ParseFloat(v, 64); err == nil {
+			tracesSampleRate = parsed
+		} else {
+			log.Printf("[startup] invalid SENTRY_TRACES_SAMPLE_RATE %q, using default %.2f", v, tracesSampleRate)
+		}
+	}
 	err_sentry := sentry.Init(sentry.ClientOptions{
-		Dsn:         os.Getenv("SENTRY_DSN"),
-		Environment: os.Getenv("APP_ENV"),
+		Dsn:              os.Getenv("SENTRY_DSN"),
+		Environment:      os.Getenv("APP_ENV"),
+		Release:          os.Getenv("SENTRY_RELEASE"),
+		AttachStacktrace: true,
+		TracesSampleRate: tracesSampleRate,
 	})
 	if err_sentry != nil {
 		log.Printf("sentry init failed: %v", err_sentry)
 	}
+	// log.Fatal below calls os.Exit, which skips every deferred call —
+	// including this one — so a startup crash needs its own flush (see
+	// the fatal() helper at the bottom of this file) rather than relying
+	// on this defer, which only covers a clean return from main().
+	defer sentry.Flush(2 * time.Second)
 
 	sentryHandler := sentryhttp.New(sentryhttp.Options{
 		Repanic:         true,
@@ -58,7 +83,7 @@ func main() {
 	// ========= Config load =========
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatalf("failed to load config: %v", err)
+		fatal("failed to load config: %v", err)
 	}
 
 	// ========= Context de app + graceful shutdown =========
@@ -70,13 +95,13 @@ func main() {
 	log.Printf("GOOGLE_APPLICATION_CREDENTIALS=%q", cfg.FirebaseCredentialsFile)
 	app, err := initFirebaseApp(ctx, cfg)
 	if err != nil {
-		log.Fatalf("failed to init firebase app: %v", err)
+		fatal("failed to init firebase app: %v", err)
 	}
 
 	// Auth client
 	authClient, err := app.Auth(ctx)
 	if err != nil {
-		log.Fatalf("failed to init firebase auth client: %v", err)
+		fatal("failed to init firebase auth client: %v", err)
 	}
 
 	// ========= Repositories =========
@@ -95,11 +120,11 @@ func main() {
 	// of the silent "Firestore-only mode" degradation this used to have.
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
-		log.Fatal("DATABASE_URL is required — Firestore-only mode was retired in Phase 1 of the Firestore→Neon cutover")
+		fatal("DATABASE_URL is required — Firestore-only mode was retired in Phase 1 of the Firestore→Neon cutover")
 	}
 	neonPool, err := repository.NewNeonPool(ctx, dbURL)
 	if err != nil {
-		log.Fatalf("neon: failed to connect: %v", err)
+		fatal("neon: failed to connect: %v", err)
 	}
 	slog.Info("neon: connected")
 
@@ -135,7 +160,7 @@ func main() {
 	fcmRepo := repository.NewFCMRepository(app)
 
 	if cfg.OpenAIAPIKey == "" {
-		log.Fatal("OPENAI_API_KEY is not set")
+		fatal("OPENAI_API_KEY is not set")
 	}
 
 	oaClient := openai.NewOpenAIClient(cfg.OpenAIAPIKey, "gpt-4.1-mini")
@@ -143,7 +168,7 @@ func main() {
 	// ========= Training Pipeline =========
 	trainingLib, err := coretraining.LoadLibrary("internal/content/training")
 	if err != nil {
-		log.Fatalf("failed to load training library: %v", err)
+		fatal("failed to load training library: %v", err)
 	}
 	log.Printf("training library loaded: %d sessions", trainingLib.SessionCount())
 
@@ -164,13 +189,13 @@ func main() {
 	// free-form LLM generation does.
 	nutritionIngredients, err := corenutrition.LoadIngredientLibrary("internal/content/nutrition")
 	if err != nil {
-		log.Fatalf("failed to load nutrition ingredient library: %v", err)
+		fatal("failed to load nutrition ingredient library: %v", err)
 	}
 	log.Printf("nutrition ingredient library loaded: %d ingredients", nutritionIngredients.Count())
 
 	nutritionTemplates, err := corenutrition.LoadMealTemplateLibrary("internal/content/nutrition")
 	if err != nil {
-		log.Fatalf("failed to load nutrition template library: %v", err)
+		fatal("failed to load nutrition template library: %v", err)
 	}
 	log.Printf("nutrition template library loaded: %d templates", nutritionTemplates.Count())
 
@@ -218,15 +243,15 @@ func main() {
 	// planJobsRepo/PlanJob's queued/running/done/failed shape).
 	weeklySessionLib, err := corecontent.LoadSessionLibrary("internal/content/training_v2/sessions")
 	if err != nil {
-		log.Fatalf("failed to load weekly-plan session library: %v", err)
+		fatal("failed to load weekly-plan session library: %v", err)
 	}
 	weeklyExerciseLib, err := corecontent.LoadExerciseLibrary("internal/content/training_v2/exercises")
 	if err != nil {
-		log.Fatalf("failed to load weekly-plan exercise library: %v", err)
+		fatal("failed to load weekly-plan exercise library: %v", err)
 	}
 	weeklyMesocycleWarmupCooldownLib, err := corecontent.LoadMesocycleWarmupCooldownLibrary("internal/content/training_v2/mesocycle_warmup_cooldown")
 	if err != nil {
-		log.Fatalf("failed to load mesocycle warmup/cooldown library: %v", err)
+		fatal("failed to load mesocycle warmup/cooldown library: %v", err)
 	}
 	log.Printf("weekly-plan content loaded: session library + exercise library + mesocycle warmup/cooldown library")
 
@@ -513,11 +538,17 @@ func main() {
 	r.Mount("/", protected)
 
 	// ==================== Schedulers ==============================
-	c := cron.New(cron.WithLocation(time.UTC))
+	// cron.Recover (via WithChain) catches a panic inside any job below
+	// and reports it through sentryCronLogger instead of crashing the
+	// whole process — robfig/cron doesn't recover panics on its own, and
+	// a panic in a goroutine with nothing above it to catch one takes
+	// the entire server down, HTTP included.
+	c := cron.New(cron.WithLocation(time.UTC), cron.WithChain(cron.Recover(sentryCronLogger{})))
 	c.AddFunc("0 15 * * 0", func() {
 		log.Println("[scheduler] running sunday checkin")
 		if err := sundayCheckinUC.Execute(context.Background()); err != nil {
 			log.Printf("[scheduler] error: %v", err)
+			captureSchedulerError("sunday_checkin", err)
 		}
 	})
 
@@ -528,6 +559,7 @@ func main() {
 		tokensByTimezone, err := trainingReminderUC.DeviceToken.GetAllActiveByTimezone(ctx)
 		if err != nil {
 			log.Printf("[scheduler] error getting tokens: %v", err)
+			captureSchedulerError("training_reminder", err)
 			return
 		}
 
@@ -537,6 +569,7 @@ func main() {
 			loc, err := time.LoadLocation(timezone)
 			if err != nil {
 				log.Printf("[scheduler] invalid timezone %s: %v", timezone, err)
+				captureSchedulerError("training_reminder", err)
 				continue
 			}
 			localHour := time.Now().In(loc).Hour()
@@ -554,6 +587,7 @@ func main() {
 		log.Println("[scheduler] running account-deletion sweep")
 		if err := runPendingDeletionsUC.Execute(context.Background()); err != nil {
 			log.Printf("[scheduler] account-deletion sweep error: %v", err)
+			captureSchedulerError("account_deletion_sweep", err)
 		}
 	})
 
@@ -565,6 +599,7 @@ func main() {
 		log.Println("[scheduler] running inactivity sweep")
 		if err := runInactivitySweepUC.Execute(context.Background()); err != nil {
 			log.Printf("[scheduler] inactivity sweep error: %v", err)
+			captureSchedulerError("inactivity_sweep", err)
 		}
 	})
 
@@ -588,7 +623,7 @@ func main() {
 	go func() {
 		log.Printf("VIV backend listening on :%s", port)
 		if err := srv.ListenAndServe(); err != nil && err != stdhttp.ErrServerClosed {
-			log.Fatalf("http server error: %v", err)
+			fatal("http server error: %v", err)
 		}
 	}()
 
@@ -603,6 +638,44 @@ func main() {
 	} else {
 		log.Println("server stopped cleanly")
 	}
+}
+
+// captureSchedulerError reports a cron job's own returned error to
+// Sentry, tagged by job name — distinct from sentryCronLogger below,
+// which only ever sees a panic, not a normal error return.
+func captureSchedulerError(job string, err error) {
+	sentry.WithScope(func(scope *sentry.Scope) {
+		scope.SetTag("scheduler_job", job)
+		sentry.CaptureException(err)
+	})
+}
+
+// sentryCronLogger adapts cron.Recover's panic reporting to Sentry —
+// without this, cron.DefaultLogger would just print the panic to
+// stdout, exactly the kind of "silently stopped running" failure
+// monitoring is supposed to catch.
+type sentryCronLogger struct{}
+
+func (sentryCronLogger) Info(msg string, keysAndValues ...any) {
+	log.Printf("[scheduler] %s %v", msg, keysAndValues)
+}
+
+func (sentryCronLogger) Error(err error, msg string, keysAndValues ...any) {
+	log.Printf("[scheduler] ERROR %s: %v %v", msg, err, keysAndValues)
+	sentry.CaptureException(err)
+}
+
+// fatal reports msg to Sentry and flushes before exiting — log.Fatal's
+// os.Exit skips every deferred call, so without this a startup crash
+// (bad config, Neon/Firebase unreachable, a missing content library)
+// would only ever show up in stdout logs, never in Sentry, making a
+// crash-looping deploy invisible to the one tool meant to page on it.
+func fatal(format string, args ...any) {
+	msg := fmt.Sprintf(format, args...)
+	log.Print(msg)
+	sentry.CaptureMessage(msg)
+	sentry.Flush(2 * time.Second)
+	os.Exit(1)
 }
 
 func initFirebaseApp(ctx context.Context, cfg *config.Config) (*fb.App, error) {

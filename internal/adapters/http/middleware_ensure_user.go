@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/getsentry/sentry-go"
+
 	"viv/internal/core/domain"
 	"viv/internal/core/usecase"
 )
@@ -24,6 +26,12 @@ func EnsureUserMiddleware(userRepo usecase.UserRepository, recordActivity *useca
 
 			u, err := userRepo.GetByID(r.Context(), uid)
 			if err != nil {
+				log.Printf("[ensure-user] failed to load user=%s: %v", uid, err)
+				if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+					hub.Scope().SetTag("endpoint", r.URL.Path)
+					hub.Scope().SetTag("method", r.Method)
+					hub.CaptureException(err)
+				}
 				http.Error(w, "failed to load user", http.StatusInternalServerError)
 				return
 			}
@@ -42,6 +50,12 @@ func EnsureUserMiddleware(userRepo usecase.UserRepository, recordActivity *useca
 
 				// Importante: Create debe ser idempotente (si ya existe, no truena)
 				if err := userRepo.Save(r.Context(), newUser); err != nil {
+					log.Printf("[ensure-user] failed to create user=%s: %v", uid, err)
+					if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+						hub.Scope().SetTag("endpoint", r.URL.Path)
+						hub.Scope().SetTag("method", r.Method)
+						hub.CaptureException(err)
+					}
 					http.Error(w, "failed to create user", http.StatusInternalServerError)
 					return
 				}

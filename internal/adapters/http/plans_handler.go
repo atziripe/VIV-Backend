@@ -10,6 +10,7 @@ import (
 	"viv/internal/core/domain"
 	"viv/internal/core/usecase"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -104,6 +105,11 @@ func (h *PlansHandler) GenerateStatus(w http.ResponseWriter, r *http.Request) {
 	job, err := h.JobStatusUC.Execute(ctx, userID, jobID)
 	if err != nil {
 		log.Printf("[plans.generate.status] error: %+v\n", err)
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
 		http.Error(w, "failed to get job status", http.StatusInternalServerError)
 		return
 	}
@@ -150,6 +156,11 @@ func (h *PlansHandler) GetCurrent(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		log.Printf("[plans.current] error: %+v\n", err)
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
 		http.Error(w, "failed to get current plan", http.StatusInternalServerError)
 		return
 	}
@@ -195,6 +206,11 @@ func (h *PlansHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Printf("[plans.getByID] error: %+v\n", err)
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
 		http.Error(w, "failed to get plan", http.StatusInternalServerError)
 		return
 	}
@@ -245,6 +261,11 @@ func (h *PlansHandler) GetByWeekStart(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Printf("[plans.getByWeekStart] error: %+v\n", err)
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
 		http.Error(w, "failed to get plan", http.StatusInternalServerError)
 		return
 	}
@@ -359,6 +380,11 @@ func (h *PlansHandler) SavePhaseFeedback(w http.ResponseWriter, r *http.Request)
 	})
 	if err != nil {
 		log.Printf("[plans.phase-feedback] error: %+v\n", err)
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

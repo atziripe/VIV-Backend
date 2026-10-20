@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/getsentry/sentry-go"
+
 	"viv/internal/core/domain"
 	"viv/internal/core/usecase"
 )
@@ -38,6 +40,11 @@ func (h *ConsentHandler) GetConsents(w http.ResponseWriter, r *http.Request) {
 	out, err := h.GetUC.Execute(ctx, usecase.GetConsentsInput{UserID: userID})
 	if err != nil {
 		log.Printf("[consents.get] error: %v", err)
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
 		http.Error(w, "failed to get consents", http.StatusInternalServerError)
 		return
 	}
@@ -96,6 +103,11 @@ func (h *ConsentHandler) SetConsent(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		log.Printf("[consents.set] error: %v", err)
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
 		http.Error(w, "failed to set consent", http.StatusInternalServerError)
 		return
 	}
