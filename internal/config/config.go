@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"strconv"
+	"strings"
 )
 
 type Config struct {
@@ -36,6 +37,26 @@ type Config struct {
 	// wiring for why that's treated as a real gap, not a soft no-op.
 	BrevoAPIKey               string
 	BrevoInactivityTemplateID int
+
+	// Apple* configure Sign in with Apple token revocation on account
+	// deletion (App Store guideline 5.1.1v — see
+	// apple.TokenRevoker/usecase.DeleteAccountUseCase). All four must be
+	// set together or revocation is skipped entirely (logged once at
+	// startup, see main.go) — a partial set is treated the same as none,
+	// never a half-working revoker.
+	//
+	// AppleTeamID: Apple Developer "Team ID".
+	// AppleKeyID: the Key ID of the "Sign in with Apple" private key.
+	// AppleClientID: the Services ID (or App ID) used as Sign in with
+	// Apple's client_id — not the Key ID.
+	// ApplePrivateKey: the contents of the AuthKey_<KeyID>.p8 file. Most
+	// deployment platforms can't carry real newlines in an env var value,
+	// so a literal `\n` is accepted and converted to a real newline before
+	// use (same convention as Firebase's credentials JSON elsewhere).
+	AppleTeamID     string
+	AppleKeyID      string
+	AppleClientID   string
+	ApplePrivateKey string
 }
 
 func Load() (*Config, error) {
@@ -49,6 +70,11 @@ func Load() (*Config, error) {
 
 		BrevoAPIKey:               os.Getenv("BREVO_API_KEY"),
 		BrevoInactivityTemplateID: getEnvInt("BREVO_INACTIVITY_TEMPLATE_ID", 0),
+
+		AppleTeamID:     os.Getenv("APPLE_TEAM_ID"),
+		AppleKeyID:      os.Getenv("APPLE_KEY_ID"),
+		AppleClientID:   os.Getenv("APPLE_CLIENT_ID"),
+		ApplePrivateKey: strings.ReplaceAll(os.Getenv("APPLE_PRIVATE_KEY"), `\n`, "\n"),
 	}
 	// podrías validar aquí que ProjectID no esté vacío, etc.
 	return cfg, nil

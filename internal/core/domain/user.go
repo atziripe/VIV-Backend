@@ -84,4 +84,15 @@ type User struct {
 	// client-side and is never observed here). RunInactivitySweepUseCase's
 	// weekly sweep is what reads it.
 	LastActiveAt *time.Time
+
+	// AppleRefreshToken is submitted once, via POST /me/apple-credentials,
+	// right after the client completes Sign in with Apple — Apple only
+	// issues it on a user's first authorization, so the client is
+	// responsible for capturing and sending it then. Empty for anyone who
+	// never used Sign in with Apple (or on Android). DeleteAccountUseCase
+	// reads it to revoke the grant with Apple (App Store guideline 5.1.1v)
+	// as part of account deletion — never exposed back to any client, and
+	// deliberately not mirrored to Neon (see AppleTokenRevoker's doc
+	// comment).
+	AppleRefreshToken string
 }

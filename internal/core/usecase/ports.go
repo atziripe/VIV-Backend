@@ -38,6 +38,16 @@ type AuthAccountDeleter interface {
 	DeleteUser(ctx context.Context, userID string) error
 }
 
+// AppleTokenRevoker revokes a Sign in with Apple refresh token against
+// Apple's own servers (App Store guideline 5.1.1v: revoking the Firebase
+// Auth account is not enough — Firebase never had Apple's refresh token to
+// revoke it with). Optional and best-effort from DeleteAccountUseCase's
+// point of view: most users didn't use Sign in with Apple at all, and a
+// transient failure here must never block the rest of account deletion.
+type AppleTokenRevoker interface {
+	RevokeRefreshToken(ctx context.Context, refreshToken string) error
+}
+
 // ConsentRepository stores consent grant/revoke events — append-only, see
 // domain.Consent's doc comment. GetAll resolves the *current* state per
 // purpose (each purpose's most recent record), not the raw history.

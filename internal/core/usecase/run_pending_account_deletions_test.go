@@ -47,7 +47,7 @@ func TestRunPendingAccountDeletions_DeletesEveryDueUser(t *testing.T) {
 	lister := &fakePendingDeletionLister{due: due}
 	dataStore := &fakeAccountDataStore{}
 	authDeleter := &fakeAuthAccountDeleter{}
-	deleteAccountUC := usecase.NewDeleteAccountUseCase(dataStore, nil, authDeleter)
+	deleteAccountUC := usecase.NewDeleteAccountUseCase(dataStore, nil, authDeleter, nil, nil)
 
 	uc := usecase.NewRunPendingAccountDeletionsUseCase(lister, deleteAccountUC)
 	if err := uc.Execute(context.Background()); err != nil {
@@ -65,7 +65,7 @@ func TestRunPendingAccountDeletions_OneFailureDoesNotBlockTheRest(t *testing.T) 
 	lister := &fakePendingDeletionLister{due: due}
 	authDeleter := &fakeAuthAccountDeleter{}
 	failingStore := &conditionalFailStore{failFor: "bad"}
-	deleteAccountUC := usecase.NewDeleteAccountUseCase(failingStore, nil, authDeleter)
+	deleteAccountUC := usecase.NewDeleteAccountUseCase(failingStore, nil, authDeleter, nil, nil)
 
 	uc := usecase.NewRunPendingAccountDeletionsUseCase(lister, deleteAccountUC)
 	if err := uc.Execute(context.Background()); err != nil {
@@ -90,7 +90,7 @@ func (f *conditionalFailStore) DeleteAllUserData(_ context.Context, userID strin
 
 func TestRunPendingAccountDeletions_ListerErrorPropagates(t *testing.T) {
 	lister := &fakePendingDeletionLister{err: errors.New("boom")}
-	deleteAccountUC := usecase.NewDeleteAccountUseCase(&fakeAccountDataStore{}, nil, &fakeAuthAccountDeleter{})
+	deleteAccountUC := usecase.NewDeleteAccountUseCase(&fakeAccountDataStore{}, nil, &fakeAuthAccountDeleter{}, nil, nil)
 
 	uc := usecase.NewRunPendingAccountDeletionsUseCase(lister, deleteAccountUC)
 	if err := uc.Execute(context.Background()); err == nil {

@@ -15,6 +15,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"google.golang.org/api/option"
 
+	"viv/internal/adapters/apple"
 	"viv/internal/adapters/email"
 	httpadapter "viv/internal/adapters/http"
 	"viv/internal/adapters/llm/openai"
@@ -366,7 +367,28 @@ func main() {
 	// usecase.DeleteAccountUseCase's doc comment for the deletion ordering.
 	accountDataStore := repository.NewFirestoreAccountDataStore(fsClient)
 	authAccountDeleter := repository.NewFirebaseAuthAccountDeleter(authClient)
-	deleteAccountUC := usecase.NewDeleteAccountUseCase(accountDataStore, accountAnonymizer, authAccountDeleter)
+
+	// Sign in with Apple token revocation — part of the same App Store
+	// requirement above. All four APPLE_* env vars must be set together;
+	// a partial set is treated the same as none (revocation skipped,
+	// logged once here) rather than failing in a half-configured way.
+	var appleRevoker usecase.AppleTokenRevoker
+	switch {
+	case cfg.AppleTeamID == "" && cfg.AppleKeyID == "" && cfg.AppleClientID == "" && cfg.ApplePrivateKey == "":
+		log.Println("[startup] APPLE_* credentials not set — Sign in with Apple token revocation on account deletion is disabled")
+	case cfg.AppleTeamID == "" || cfg.AppleKeyID == "" || cfg.AppleClientID == "" || cfg.ApplePrivateKey == "":
+		log.Println("[startup] APPLE_* credentials only partially set — Sign in with Apple token revocation on account deletion is disabled")
+	default:
+		revoker, err := apple.NewTokenRevoker(cfg.AppleTeamID, cfg.AppleKeyID, cfg.AppleClientID, cfg.ApplePrivateKey)
+		if err != nil {
+			log.Printf("[startup] failed to configure Apple token revoker, disabling it: %v", err)
+		} else {
+			appleRevoker = revoker
+		}
+	}
+
+	deleteAccountUC := usecase.NewDeleteAccountUseCase(accountDataStore, accountAnonymizer, authAccountDeleter, userRepo, appleRevoker)
+	setAppleRefreshTokenUC := usecase.NewSetAppleRefreshTokenUseCase(userRepo)
 
 	// DELETE /me's 30-day grace period — see ScheduleAccountDeletionUseCase/
 	// RunPendingAccountDeletionsUseCase's doc comments. The sweep queries
@@ -408,6 +430,7 @@ func main() {
 	consentHandler := httpadapter.NewConsentHandler(getConsentsUC, setConsentUC)
 	exportHandler := httpadapter.NewExportHandler(exportUserDataUC)
 	ineligibilityHandler := httpadapter.NewIneligibilityHandler(reportIneligibilityUC)
+	appleHandler := httpadapter.NewAppleHandler(setAppleRefreshTokenUC)
 	plansHandler := httpadapter.NewPlansHandler(getCurrentPlanUC, getByIDUC, getByWeekStartUC, statusUC, phaseFeedbackUC)
 	trainingHandler := httpadapter.NewTrainingHandler(startTrainingUC, statusTrainingUC, trainingEngine, resumeTrainingUC, completeDayUC, saveArrangementUC)
 	weeklyPlanHandler := httpadapter.NewWeeklyPlanHandler(startWeeklyPlanUC, statusWeeklyPlanUC, currentWeeklyPlanUC, weeklyPlanDayUC, getWeeklyNoteUC, editDaySlotUC)
@@ -452,6 +475,7 @@ func main() {
 	api.Patch("/me", meHandler.UpdateProfile)
 	api.Delete("/me", meHandler.DeleteAccount)
 	api.Post("/me/cancel-deletion", meHandler.CancelDeletion)
+	api.Post("/me/apple-credentials", appleHandler.SetCredentials)
 
 	api.Get("/me/consents", consentHandler.GetConsents)
 	api.Post("/me/consents", consentHandler.SetConsent)

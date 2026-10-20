@@ -153,6 +153,8 @@ func isAllowedRoute(method, path string) bool {
 		return true
 	case method == "POST" && path == "/me/cancel-deletion":
 		return true
+	case method == "POST" && path == "/me/apple-credentials":
+		return true
 
 	case method == "GET" && path == "/home/today":
 		return true
@@ -834,6 +836,27 @@ func selectSubBody(path string, body map[string]any) any {
 			if s, ok := raw.(string); ok {
 				if t := strings.TrimSpace(s); t != "" {
 					out["date"] = t
+				}
+			}
+		}
+		return out
+
+	case "/me/apple-credentials":
+		// body: { "apple": { "refresh_token": "..." } }
+		v, ok := body["apple"]
+		if !ok || v == nil {
+			return map[string]any{}
+		}
+		m, ok := v.(map[string]any)
+		if !ok {
+			return map[string]any{}
+		}
+
+		out := map[string]any{}
+		if raw, exists := m["refresh_token"]; exists {
+			if s, ok := raw.(string); ok {
+				if t := strings.TrimSpace(s); t != "" {
+					out["refresh_token"] = t
 				}
 			}
 		}
