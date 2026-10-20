@@ -457,22 +457,6 @@ func main() {
 		_, _ = w.Write([]byte(`{"status":"ok"}`))
 	})
 
-	// TEMPORARY — remove once Sentry delivery is confirmed. Forces one
-	// real event through the whole pipe (hub from sentryhttp's context →
-	// CaptureException → Flush) without needing to wait for real prod
-	// traffic to fail on its own.
-	r.Get("/debug/sentry-test", func(w stdhttp.ResponseWriter, r *stdhttp.Request) {
-		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
-			hub.Scope().SetTag("endpoint", r.URL.Path)
-			hub.CaptureException(fmt.Errorf("sentry-test: manual delivery check"))
-		} else {
-			sentry.CaptureException(fmt.Errorf("sentry-test: manual delivery check (no hub in context)"))
-		}
-		sentry.Flush(2 * time.Second)
-		w.WriteHeader(stdhttp.StatusOK)
-		_, _ = w.Write([]byte(`{"status":"sent, check sentry in a few seconds"}`))
-	})
-
 	api := chi.NewRouter()
 
 	api.Post("/onboarding", onboardingHandler.ServeHTTP)
