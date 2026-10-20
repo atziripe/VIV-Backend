@@ -133,9 +133,11 @@ func main() {
 	planRepo := usecase.PlanRepository(repository.NewNeonPlanRepository(neonPool))
 	planJobsRepo := usecase.PlanJobsRepository(repository.NewNeonPlanJobsRepository(neonPool))
 
-	// Not yet cut over — still Firestore-primary (fatal), Neon-secondary
-	// (best-effort) dual-write (Phase 3).
-	consentRepo := usecase.ConsentStore(repository.NewDualConsentRepository(fsConsentRepo, repository.NewNeonConsentRepository(neonPool)))
+	// Phase 3 cutover — Neon-primary (fatal), Firestore-secondary
+	// (best-effort) dual-write, now that a consents backfill confirmed
+	// data parity. Still dual rather than Neon-only: Firestore keeps
+	// getting a mirrored copy until Phase 4 removes it entirely.
+	consentRepo := usecase.ConsentStore(repository.NewDualConsentRepository(repository.NewNeonConsentRepository(neonPool), fsConsentRepo))
 	accountAnonymizer := usecase.AccountAnonymizer(repository.NewNeonAccountAnonymizer(neonPool))
 	ineligibilityEventRecorder := usecase.IneligibilityEventRecorder(repository.NewNeonIneligibilityEventRecorder(neonPool))
 

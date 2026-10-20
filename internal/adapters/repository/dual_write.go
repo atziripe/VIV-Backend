@@ -562,13 +562,18 @@ var (
 	_ usecase.ConsentChecker    = (*DualConsentRepository)(nil)
 )
 
-// DualConsentRepository treats Firestore as fatal, not best-effort, unlike
-// every other Dual* type in this file — a consent record is the thing that
-// has to exist to demonstrate consent was given at all (GDPR Art. 7.1), so
-// "the write silently failed but we told the caller it succeeded" is a
-// categorically worse failure mode here than for a weekly note or a
-// recovery action. Neon stays best-effort, matching this codebase's
-// Firestore-primary convention everywhere else.
+// DualConsentRepository treats its primary as fatal, not best-effort,
+// unlike every other Dual* type in this file — a consent record is the
+// thing that has to exist to demonstrate consent was given at all (GDPR
+// Art. 7.1), so "the write silently failed but we told the caller it
+// succeeded" is a categorically worse failure mode here than for a weekly
+// note or a recovery action.
+//
+// Neon is wired as primary (fatal) and Firestore as secondary
+// (best-effort) — Phase 3 of the Firestore→Neon cutover inverted this
+// once a consents backfill closed the gap RunNeonBackfill had never
+// covered (historical consent events written before the dual-write went
+// live). See main.go's wiring.
 type DualConsentRepository struct {
 	primary   usecase.ConsentRepository
 	secondary usecase.ConsentRepository
@@ -583,7 +588,7 @@ func (r *DualConsentRepository) Grant(ctx context.Context, userID string, purpos
 		return err
 	}
 	if err := r.secondary.Grant(ctx, userID, purpose, granted, policyVersion); err != nil {
-		slog.Error("dual-write: neon consent grant failed", "user_id", userID, "purpose", purpose, "err", err)
+		slog.Error("dual-write: secondary consent grant failed", "user_id", userID, "purpose", purpose, "err", err)
 	}
 	return nil
 }
