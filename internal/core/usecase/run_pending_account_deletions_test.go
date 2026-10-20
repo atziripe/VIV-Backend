@@ -47,7 +47,7 @@ func TestRunPendingAccountDeletions_DeletesEveryDueUser(t *testing.T) {
 	lister := &fakePendingDeletionLister{due: due}
 	dataStore := &fakeAccountDataStore{}
 	authDeleter := &fakeAuthAccountDeleter{}
-	deleteAccountUC := usecase.NewDeleteAccountUseCase(dataStore, nil, authDeleter, nil, nil)
+	deleteAccountUC := usecase.NewDeleteAccountUseCase(dataStore, &fakeAccountAnonymizer{}, authDeleter, nil, nil)
 
 	uc := usecase.NewRunPendingAccountDeletionsUseCase(lister, deleteAccountUC)
 	if err := uc.Execute(context.Background()); err != nil {
@@ -64,8 +64,11 @@ func TestRunPendingAccountDeletions_OneFailureDoesNotBlockTheRest(t *testing.T) 
 	due := []*domain.User{{ID: "bad", PendingDeletionAt: &past}, {ID: "good", PendingDeletionAt: &past}}
 	lister := &fakePendingDeletionLister{due: due}
 	authDeleter := &fakeAuthAccountDeleter{}
-	failingStore := &conditionalFailStore{failFor: "bad"}
-	deleteAccountUC := usecase.NewDeleteAccountUseCase(failingStore, nil, authDeleter, nil, nil)
+	// Neon is the fatal step now (Phase 3 of the Firestore→Neon cutover
+	// inverted this), so the failure that must not block "good" is
+	// simulated there, not on the Firestore side.
+	failingAnonymizer := &fakeAccountAnonymizer{failFor: "bad"}
+	deleteAccountUC := usecase.NewDeleteAccountUseCase(&fakeAccountDataStore{}, failingAnonymizer, authDeleter, nil, nil)
 
 	uc := usecase.NewRunPendingAccountDeletionsUseCase(lister, deleteAccountUC)
 	if err := uc.Execute(context.Background()); err != nil {
@@ -77,20 +80,9 @@ func TestRunPendingAccountDeletions_OneFailureDoesNotBlockTheRest(t *testing.T) 
 	}
 }
 
-type conditionalFailStore struct {
-	failFor string
-}
-
-func (f *conditionalFailStore) DeleteAllUserData(_ context.Context, userID string) error {
-	if userID == f.failFor {
-		return errors.New("boom")
-	}
-	return nil
-}
-
 func TestRunPendingAccountDeletions_ListerErrorPropagates(t *testing.T) {
 	lister := &fakePendingDeletionLister{err: errors.New("boom")}
-	deleteAccountUC := usecase.NewDeleteAccountUseCase(&fakeAccountDataStore{}, nil, &fakeAuthAccountDeleter{}, nil, nil)
+	deleteAccountUC := usecase.NewDeleteAccountUseCase(&fakeAccountDataStore{}, &fakeAccountAnonymizer{}, &fakeAuthAccountDeleter{}, nil, nil)
 
 	uc := usecase.NewRunPendingAccountDeletionsUseCase(lister, deleteAccountUC)
 	if err := uc.Execute(context.Background()); err == nil {
