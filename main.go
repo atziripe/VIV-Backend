@@ -87,80 +87,52 @@ func main() {
 	defer fsClient.Close()
 
 	// ========= Repositories =========
-	// Firestore (primary — source of truth during migration)
+	// Firestore — still the source of truth for entities not yet cut over
+	// to Neon (User, legacy Plan, PlanJobs, Consent). See the Audit Map
+	// for the full per-entity Firestore→Neon cutover plan/status.
 	fsUserRepo := repository.NewFirestoreUserRepository(fsClient)
-	fsCheckinRepo := repository.NewFirestoreCheckinRepository(fsClient)
-	fsLifestyleRepo := repository.NewFirestoreLifestyleChangeRepository(fsClient)
 	fsPlanRepo := repository.NewFirestorePlanRepository(fsClient)
 	fsPlanJobsRepo := repository.NewFirestorePlanJobsRepository(fsClient)
-	fsDeviceTokenRepo := repository.NewFirestoreDeviceTokenRepository(fsClient)
-
-	// New weekly-plan pipeline (VIV-106..113) — Firestore primary, same
-	// dual-write treatment as the block above now that each has a Neon
-	// counterpart.
-	fsWeeklyPlanDraftRepo := repository.NewFirestoreWeeklyPlanDraftRepository(fsClient)
-	fsExercisePinRepo := repository.NewFirestoreExercisePinRepository(fsClient)
-	fsDailyCheckinRepo := repository.NewFirestoreDailyCheckinRepository(fsClient)
-	fsSessionLogRepo := repository.NewFirestoreSessionLogRepository(fsClient)
-	fsNutritionPlanRepo := repository.NewFirestoreNutritionPlanRepository(fsClient)
-	fsRecoveryActionRepo := repository.NewFirestoreRecoveryActionRepository(fsClient)
 	fsConsentRepo := repository.NewFirestoreConsentRepository(fsClient)
 
-	// Neon (secondary — dual-write target)
-	// If DATABASE_URL is missing or Neon is unreachable, the app falls back to
-	// Firestore-only mode and logs a warning. No crash, no downtime.
+	// Neon is mandatory now, not an optional dual-write target. Phase 1 of
+	// the Firestore→Neon cutover (checkins/device tokens/lifestyle
+	// changes/weekly plan drafts/exercise pins/daily check-ins/session
+	// logs/nutrition plans/recovery actions — see the Audit Map) made
+	// those 9 entities Neon-only: there is no Firestore fallback for them
+	// anymore, so a missing/unreachable Neon is fatal at startup instead
+	// of the silent "Firestore-only mode" degradation this used to have.
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		log.Fatal("DATABASE_URL is required — Firestore-only mode was retired in Phase 1 of the Firestore→Neon cutover")
+	}
+	neonPool, err := repository.NewNeonPool(ctx, dbURL)
+	if err != nil {
+		log.Fatalf("neon: failed to connect: %v", err)
+	}
+	slog.Info("neon: connected")
+
+	// Phase 1 cutover — Neon-only, no Firestore involved for these at all.
 	var (
-		userRepo            usecase.UserRepository            = fsUserRepo
-		checkinRepo         usecase.CheckinRepository         = fsCheckinRepo
-		planRepo            usecase.PlanRepository            = fsPlanRepo
-		planJobsRepo        usecase.PlanJobsRepository        = fsPlanJobsRepo
-		deviceTokenRepo     usecase.DeviceTokenRepository     = fsDeviceTokenRepo
-		lifestyleRepo       usecase.LifestyleChangeRepository = fsLifestyleRepo
-		weeklyPlanDraftRepo usecase.WeeklyPlanDraftRepository = fsWeeklyPlanDraftRepo
-		exercisePinRepo     usecase.ExercisePinRepository     = fsExercisePinRepo
-		dailyCheckinRepo    usecase.DailyCheckinRepository    = fsDailyCheckinRepo
-		sessionLogRepo      usecase.SessionLogRepository      = fsSessionLogRepo
-		nutritionPlanRepo   usecase.NutritionPlanRepository   = fsNutritionPlanRepo
-		recoveryActionRepo  usecase.RecoveryActionRepository  = fsRecoveryActionRepo
-		consentRepo         usecase.ConsentStore              = fsConsentRepo
-
-		// accountAnonymizer stays nil in Firestore-only mode — DeleteAccountUseCase
-		// treats that as "no Neon anonymized snapshot taken", not an error.
-		accountAnonymizer usecase.AccountAnonymizer
-
-		// ineligibilityEventRecorder stays nil in Firestore-only mode —
-		// ReportIneligibilityUseCase treats that as "skip the statistic",
-		// same convention as accountAnonymizer above. There's no
-		// Firestore equivalent by design (see IneligibilityEventRecorder's
-		// doc comment).
-		ineligibilityEventRecorder usecase.IneligibilityEventRecorder
+		checkinRepo         usecase.CheckinRepository         = repository.NewNeonCheckinRepository(neonPool)
+		deviceTokenRepo     usecase.DeviceTokenRepository     = repository.NewNeonDeviceTokenRepository(neonPool)
+		lifestyleRepo       usecase.LifestyleChangeRepository = repository.NewNeonLifestyleChangeRepository(neonPool)
+		weeklyPlanDraftRepo usecase.WeeklyPlanDraftRepository = repository.NewNeonWeeklyPlanDraftRepository(neonPool)
+		exercisePinRepo     usecase.ExercisePinRepository     = repository.NewNeonExercisePinRepository(neonPool)
+		dailyCheckinRepo    usecase.DailyCheckinRepository    = repository.NewNeonDailyCheckinRepository(neonPool)
+		sessionLogRepo      usecase.SessionLogRepository      = repository.NewNeonSessionLogRepository(neonPool)
+		nutritionPlanRepo   usecase.NutritionPlanRepository   = repository.NewNeonNutritionPlanRepository(neonPool)
+		recoveryActionRepo  usecase.RecoveryActionRepository  = repository.NewNeonRecoveryActionRepository(neonPool)
 	)
 
-	if dbURL := os.Getenv("DATABASE_URL"); dbURL != "" {
-		neonPool, err := repository.NewNeonPool(ctx, dbURL)
-		if err != nil {
-			slog.Error("neon: failed to connect, running Firestore-only", "err", err)
-		} else {
-			slog.Info("neon: connected — dual-write enabled")
-			userRepo = repository.NewDualUserRepository(fsUserRepo, repository.NewNeonUserRepository(neonPool))
-			checkinRepo = repository.NewDualCheckinRepository(fsCheckinRepo, repository.NewNeonCheckinRepository(neonPool))
-			planRepo = repository.NewDualPlanRepository(fsPlanRepo, repository.NewNeonPlanRepository(neonPool))
-			planJobsRepo = repository.NewDualPlanJobsRepository(fsPlanJobsRepo, repository.NewNeonPlanJobsRepository(neonPool))
-			deviceTokenRepo = repository.NewDualDeviceTokenRepository(fsDeviceTokenRepo, repository.NewNeonDeviceTokenRepository(neonPool))
-			lifestyleRepo = repository.NewDualLifestyleChangeRepository(fsLifestyleRepo, repository.NewNeonLifestyleChangeRepository(neonPool))
-			weeklyPlanDraftRepo = repository.NewDualWeeklyPlanDraftRepository(fsWeeklyPlanDraftRepo, repository.NewNeonWeeklyPlanDraftRepository(neonPool))
-			exercisePinRepo = repository.NewDualExercisePinRepository(fsExercisePinRepo, repository.NewNeonExercisePinRepository(neonPool))
-			dailyCheckinRepo = repository.NewDualDailyCheckinRepository(fsDailyCheckinRepo, repository.NewNeonDailyCheckinRepository(neonPool))
-			sessionLogRepo = repository.NewDualSessionLogRepository(fsSessionLogRepo, repository.NewNeonSessionLogRepository(neonPool))
-			nutritionPlanRepo = repository.NewDualNutritionPlanRepository(fsNutritionPlanRepo, repository.NewNeonNutritionPlanRepository(neonPool))
-			recoveryActionRepo = repository.NewDualRecoveryActionRepository(fsRecoveryActionRepo, repository.NewNeonRecoveryActionRepository(neonPool))
-			consentRepo = repository.NewDualConsentRepository(fsConsentRepo, repository.NewNeonConsentRepository(neonPool))
-			accountAnonymizer = repository.NewNeonAccountAnonymizer(neonPool)
-			ineligibilityEventRecorder = repository.NewNeonIneligibilityEventRecorder(neonPool)
-		}
-	} else {
-		slog.Warn("DATABASE_URL not set — running Firestore-only (no dual-write)")
-	}
+	// Not yet cut over — still Firestore-primary (fatal), Neon-secondary
+	// (best-effort) dual-write, unchanged from before Phase 1.
+	userRepo := usecase.UserRepository(repository.NewDualUserRepository(fsUserRepo, repository.NewNeonUserRepository(neonPool)))
+	planRepo := usecase.PlanRepository(repository.NewDualPlanRepository(fsPlanRepo, repository.NewNeonPlanRepository(neonPool)))
+	planJobsRepo := usecase.PlanJobsRepository(repository.NewDualPlanJobsRepository(fsPlanJobsRepo, repository.NewNeonPlanJobsRepository(neonPool)))
+	consentRepo := usecase.ConsentStore(repository.NewDualConsentRepository(fsConsentRepo, repository.NewNeonConsentRepository(neonPool)))
+	accountAnonymizer := usecase.AccountAnonymizer(repository.NewNeonAccountAnonymizer(neonPool))
+	ineligibilityEventRecorder := usecase.IneligibilityEventRecorder(repository.NewNeonIneligibilityEventRecorder(neonPool))
 
 	fcmRepo := repository.NewFCMRepository(app)
 
