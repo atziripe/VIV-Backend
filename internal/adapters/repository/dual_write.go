@@ -321,6 +321,10 @@ func (r *DualRecoveryActionRepository) GetByDate(ctx context.Context, userID str
 	return r.primary.GetByDate(ctx, userID, date)
 }
 
+func (r *DualRecoveryActionRepository) ListByUser(ctx context.Context, userID string, limit int) ([]*domain.RecoveryAction, error) {
+	return r.primary.ListByUser(ctx, userID, limit)
+}
+
 // ============================================================
 // LifestyleChangeRepository dual-write
 // ============================================================
@@ -393,6 +397,10 @@ func (r *DualDailyCheckinRepository) GetByDate(ctx context.Context, userID strin
 	return r.primary.GetByDate(ctx, userID, date)
 }
 
+func (r *DualDailyCheckinRepository) ListByUser(ctx context.Context, userID string, limit int) ([]*domain.DailyCheckin, error) {
+	return r.primary.ListByUser(ctx, userID, limit)
+}
+
 // ============================================================
 // SessionLogRepository dual-write
 // ============================================================
@@ -420,6 +428,10 @@ func (r *DualSessionLogRepository) Upsert(ctx context.Context, log *domain.Sessi
 		slog.Error("dual-write: neon session_log upsert failed", "user_id", log.UserID, "err", err)
 	}
 	return nil
+}
+
+func (r *DualSessionLogRepository) ListByUser(ctx context.Context, userID string, limit int) ([]*domain.SessionLog, error) {
+	return r.primary.ListByUser(ctx, userID, limit)
 }
 
 // ============================================================

@@ -151,6 +151,10 @@ func isAllowedRoute(method, path string) bool {
 		return true
 	case method == "DELETE" && path == "/me":
 		return true
+	case method == "POST" && path == "/me/cancel-deletion":
+		return true
+	case method == "POST" && path == "/me/apple-credentials":
+		return true
 
 	case method == "GET" && path == "/home/today":
 		return true
@@ -159,8 +163,12 @@ func isAllowedRoute(method, path string) bool {
 		return true
 	case method == "POST" && path == "/me/consents":
 		return true
+	case method == "GET" && path == "/me/export":
+		return true
 
 	case method == "POST" && path == "/onboarding":
+		return true
+	case method == "POST" && path == "/onboarding/ineligibility":
 		return true
 
 	case method == "POST" && path == "/checkin":
@@ -828,6 +836,48 @@ func selectSubBody(path string, body map[string]any) any {
 			if s, ok := raw.(string); ok {
 				if t := strings.TrimSpace(s); t != "" {
 					out["date"] = t
+				}
+			}
+		}
+		return out
+
+	case "/me/apple-credentials":
+		// body: { "apple": { "authorization_code": "..." } }
+		v, ok := body["apple"]
+		if !ok || v == nil {
+			return map[string]any{}
+		}
+		m, ok := v.(map[string]any)
+		if !ok {
+			return map[string]any{}
+		}
+
+		out := map[string]any{}
+		if raw, exists := m["authorization_code"]; exists {
+			if s, ok := raw.(string); ok {
+				if t := strings.TrimSpace(s); t != "" {
+					out["authorization_code"] = t
+				}
+			}
+		}
+		return out
+
+	case "/onboarding/ineligibility":
+		// body: { "ineligibility": { "reason": "pregnant_or_postpartum" } }
+		v, ok := body["ineligibility"]
+		if !ok || v == nil {
+			return map[string]any{}
+		}
+		m, ok := v.(map[string]any)
+		if !ok {
+			return map[string]any{}
+		}
+
+		out := map[string]any{}
+		if raw, exists := m["reason"]; exists {
+			if s, ok := raw.(string); ok {
+				if t := strings.TrimSpace(s); t != "" {
+					out["reason"] = t
 				}
 			}
 		}

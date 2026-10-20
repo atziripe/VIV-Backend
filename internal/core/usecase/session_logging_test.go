@@ -3,6 +3,7 @@ package usecase_test
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -46,6 +47,19 @@ func (f *fakeSessionLogRepo) Upsert(_ context.Context, log *domain.SessionLog) e
 	cp := *log
 	f.logs[f.key(log.UserID, log.Date)] = &cp
 	return nil
+}
+
+func (f *fakeSessionLogRepo) ListByUser(_ context.Context, userID string, limit int) ([]*domain.SessionLog, error) {
+	var results []*domain.SessionLog
+	for key, l := range f.logs {
+		if strings.HasPrefix(key, userID+"|") {
+			results = append(results, l)
+		}
+	}
+	if len(results) > limit {
+		results = results[:limit]
+	}
+	return results, nil
 }
 
 // seedLoggableDay seeds a draft with a single mesocycle-pinned (Strength)

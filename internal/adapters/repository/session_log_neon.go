@@ -93,3 +93,53 @@ func (r *NeonSessionLogRepository) GetByDate(ctx context.Context, userID string,
 		UpdatedAt:    updatedAt,
 	}, nil
 }
+
+// ListByUser returns every session log the user ever has, newest first —
+// see usecase.SessionLogRepository.ListByUser's doc comment. Not read by
+// DualSessionLogRepository today (reads go to Firestore), but kept in
+// parity so a future Neon-backed read path has it available.
+func (r *NeonSessionLogRepository) ListByUser(ctx context.Context, userID string, limit int) ([]*domain.SessionLog, error) {
+	rows, err := r.pool.Query(ctx, `
+		SELECT sl.date, sl.activity_type, sl.status, sl.started_at, sl.ended_at, sl.sets, sl.feedback, sl.updated_at
+		FROM session_logs sl
+		JOIN users u ON u.id = sl.user_id
+		WHERE u.firebase_uid = $1
+		ORDER BY sl.date DESC
+		LIMIT $2
+	`, userID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []*domain.SessionLog
+	for rows.Next() {
+		var date time.Time
+		var activityType, status, feedback string
+		var startedAt time.Time
+		var endedAt *time.Time
+		var setsJSON []byte
+		var updatedAt time.Time
+		if err := rows.Scan(&date, &activityType, &status, &startedAt, &endedAt, &setsJSON, &feedback, &updatedAt); err != nil {
+			return nil, err
+		}
+
+		var sets []domain.SetLog
+		if err := json.Unmarshal(setsJSON, &sets); err != nil {
+			return nil, err
+		}
+
+		results = append(results, &domain.SessionLog{
+			UserID:       userID,
+			Date:         date,
+			ActivityType: activityType,
+			Status:       domain.SessionLogStatus(status),
+			StartedAt:    startedAt,
+			EndedAt:      endedAt,
+			Sets:         sets,
+			Feedback:     domain.SessionFeedback(feedback),
+			UpdatedAt:    updatedAt,
+		})
+	}
+	return results, rows.Err()
+}

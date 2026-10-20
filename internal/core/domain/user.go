@@ -67,4 +67,32 @@ type User struct {
 	LastActivePlanID     *string
 	CreatedAt            time.Time
 	UpdatedAt            time.Time
+
+	// PendingDeletionAt is set by ScheduleAccountDeletionUseCase (DELETE
+	// /me) or RunInactivitySweepUseCase, and cleared by
+	// CancelAccountDeletionUseCase (or automatically by
+	// RecordUserActivityUseCase, for an inactivity-triggered one) — nil
+	// means no deletion is scheduled. The account stays fully usable while
+	// this is set; RunPendingAccountDeletionsUseCase's daily sweep is what
+	// actually deletes the account once this timestamp passes.
+	PendingDeletionAt     *time.Time
+	PendingDeletionReason PendingDeletionReason
+
+	// LastActiveAt is stamped by RecordUserActivityUseCase on at most one
+	// authenticated request per UTC calendar day — the closest proxy this
+	// backend has to "last login" (Firebase Auth sign-in itself happens
+	// client-side and is never observed here). RunInactivitySweepUseCase's
+	// weekly sweep is what reads it.
+	LastActiveAt *time.Time
+
+	// AppleRefreshToken is submitted once, via POST /me/apple-credentials,
+	// right after the client completes Sign in with Apple — Apple only
+	// issues it on a user's first authorization, so the client is
+	// responsible for capturing and sending it then. Empty for anyone who
+	// never used Sign in with Apple (or on Android). DeleteAccountUseCase
+	// reads it to revoke the grant with Apple (App Store guideline 5.1.1v)
+	// as part of account deletion — never exposed back to any client, and
+	// deliberately not mirrored to Neon (see AppleTokenRevoker's doc
+	// comment).
+	AppleRefreshToken string
 }

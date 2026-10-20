@@ -15,6 +15,8 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"google.golang.org/api/option"
 
+	"viv/internal/adapters/apple"
+	"viv/internal/adapters/email"
 	httpadapter "viv/internal/adapters/http"
 	"viv/internal/adapters/llm/openai"
 	"viv/internal/adapters/mealgen"
@@ -85,72 +87,52 @@ func main() {
 	defer fsClient.Close()
 
 	// ========= Repositories =========
-	// Firestore (primary — source of truth during migration)
+	// Firestore — still the source of truth for entities not yet cut over
+	// to Neon (User, legacy Plan, PlanJobs, Consent). See the Audit Map
+	// for the full per-entity Firestore→Neon cutover plan/status.
 	fsUserRepo := repository.NewFirestoreUserRepository(fsClient)
-	fsCheckinRepo := repository.NewFirestoreCheckinRepository(fsClient)
-	fsLifestyleRepo := repository.NewFirestoreLifestyleChangeRepository(fsClient)
 	fsPlanRepo := repository.NewFirestorePlanRepository(fsClient)
 	fsPlanJobsRepo := repository.NewFirestorePlanJobsRepository(fsClient)
-	fsDeviceTokenRepo := repository.NewFirestoreDeviceTokenRepository(fsClient)
-
-	// New weekly-plan pipeline (VIV-106..113) — Firestore primary, same
-	// dual-write treatment as the block above now that each has a Neon
-	// counterpart.
-	fsWeeklyPlanDraftRepo := repository.NewFirestoreWeeklyPlanDraftRepository(fsClient)
-	fsExercisePinRepo := repository.NewFirestoreExercisePinRepository(fsClient)
-	fsDailyCheckinRepo := repository.NewFirestoreDailyCheckinRepository(fsClient)
-	fsSessionLogRepo := repository.NewFirestoreSessionLogRepository(fsClient)
-	fsNutritionPlanRepo := repository.NewFirestoreNutritionPlanRepository(fsClient)
-	fsRecoveryActionRepo := repository.NewFirestoreRecoveryActionRepository(fsClient)
 	fsConsentRepo := repository.NewFirestoreConsentRepository(fsClient)
 
-	// Neon (secondary — dual-write target)
-	// If DATABASE_URL is missing or Neon is unreachable, the app falls back to
-	// Firestore-only mode and logs a warning. No crash, no downtime.
-	var (
-		userRepo            usecase.UserRepository            = fsUserRepo
-		checkinRepo         usecase.CheckinRepository         = fsCheckinRepo
-		planRepo            usecase.PlanRepository            = fsPlanRepo
-		planJobsRepo        usecase.PlanJobsRepository        = fsPlanJobsRepo
-		deviceTokenRepo     usecase.DeviceTokenRepository     = fsDeviceTokenRepo
-		lifestyleRepo       usecase.LifestyleChangeRepository = fsLifestyleRepo
-		weeklyPlanDraftRepo usecase.WeeklyPlanDraftRepository = fsWeeklyPlanDraftRepo
-		exercisePinRepo     usecase.ExercisePinRepository     = fsExercisePinRepo
-		dailyCheckinRepo    usecase.DailyCheckinRepository    = fsDailyCheckinRepo
-		sessionLogRepo      usecase.SessionLogRepository      = fsSessionLogRepo
-		nutritionPlanRepo   usecase.NutritionPlanRepository   = fsNutritionPlanRepo
-		recoveryActionRepo  usecase.RecoveryActionRepository  = fsRecoveryActionRepo
-		consentRepo         usecase.ConsentStore              = fsConsentRepo
+	// Neon is mandatory now, not an optional dual-write target. Phase 1 of
+	// the Firestore→Neon cutover (checkins/device tokens/lifestyle
+	// changes/weekly plan drafts/exercise pins/daily check-ins/session
+	// logs/nutrition plans/recovery actions — see the Audit Map) made
+	// those 9 entities Neon-only: there is no Firestore fallback for them
+	// anymore, so a missing/unreachable Neon is fatal at startup instead
+	// of the silent "Firestore-only mode" degradation this used to have.
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		log.Fatal("DATABASE_URL is required — Firestore-only mode was retired in Phase 1 of the Firestore→Neon cutover")
+	}
+	neonPool, err := repository.NewNeonPool(ctx, dbURL)
+	if err != nil {
+		log.Fatalf("neon: failed to connect: %v", err)
+	}
+	slog.Info("neon: connected")
 
-		// accountAnonymizer stays nil in Firestore-only mode — DeleteAccountUseCase
-		// treats that as "no Neon anonymized snapshot taken", not an error.
-		accountAnonymizer usecase.AccountAnonymizer
+	// Phase 1 cutover — Neon-only, no Firestore involved for these at all.
+	var (
+		checkinRepo         usecase.CheckinRepository         = repository.NewNeonCheckinRepository(neonPool)
+		deviceTokenRepo     usecase.DeviceTokenRepository     = repository.NewNeonDeviceTokenRepository(neonPool)
+		lifestyleRepo       usecase.LifestyleChangeRepository = repository.NewNeonLifestyleChangeRepository(neonPool)
+		weeklyPlanDraftRepo usecase.WeeklyPlanDraftRepository = repository.NewNeonWeeklyPlanDraftRepository(neonPool)
+		exercisePinRepo     usecase.ExercisePinRepository     = repository.NewNeonExercisePinRepository(neonPool)
+		dailyCheckinRepo    usecase.DailyCheckinRepository    = repository.NewNeonDailyCheckinRepository(neonPool)
+		sessionLogRepo      usecase.SessionLogRepository      = repository.NewNeonSessionLogRepository(neonPool)
+		nutritionPlanRepo   usecase.NutritionPlanRepository   = repository.NewNeonNutritionPlanRepository(neonPool)
+		recoveryActionRepo  usecase.RecoveryActionRepository  = repository.NewNeonRecoveryActionRepository(neonPool)
 	)
 
-	if dbURL := os.Getenv("DATABASE_URL"); dbURL != "" {
-		neonPool, err := repository.NewNeonPool(ctx, dbURL)
-		if err != nil {
-			slog.Error("neon: failed to connect, running Firestore-only", "err", err)
-		} else {
-			slog.Info("neon: connected — dual-write enabled")
-			userRepo = repository.NewDualUserRepository(fsUserRepo, repository.NewNeonUserRepository(neonPool))
-			checkinRepo = repository.NewDualCheckinRepository(fsCheckinRepo, repository.NewNeonCheckinRepository(neonPool))
-			planRepo = repository.NewDualPlanRepository(fsPlanRepo, repository.NewNeonPlanRepository(neonPool))
-			planJobsRepo = repository.NewDualPlanJobsRepository(fsPlanJobsRepo, repository.NewNeonPlanJobsRepository(neonPool))
-			deviceTokenRepo = repository.NewDualDeviceTokenRepository(fsDeviceTokenRepo, repository.NewNeonDeviceTokenRepository(neonPool))
-			lifestyleRepo = repository.NewDualLifestyleChangeRepository(fsLifestyleRepo, repository.NewNeonLifestyleChangeRepository(neonPool))
-			weeklyPlanDraftRepo = repository.NewDualWeeklyPlanDraftRepository(fsWeeklyPlanDraftRepo, repository.NewNeonWeeklyPlanDraftRepository(neonPool))
-			exercisePinRepo = repository.NewDualExercisePinRepository(fsExercisePinRepo, repository.NewNeonExercisePinRepository(neonPool))
-			dailyCheckinRepo = repository.NewDualDailyCheckinRepository(fsDailyCheckinRepo, repository.NewNeonDailyCheckinRepository(neonPool))
-			sessionLogRepo = repository.NewDualSessionLogRepository(fsSessionLogRepo, repository.NewNeonSessionLogRepository(neonPool))
-			nutritionPlanRepo = repository.NewDualNutritionPlanRepository(fsNutritionPlanRepo, repository.NewNeonNutritionPlanRepository(neonPool))
-			recoveryActionRepo = repository.NewDualRecoveryActionRepository(fsRecoveryActionRepo, repository.NewNeonRecoveryActionRepository(neonPool))
-			consentRepo = repository.NewDualConsentRepository(fsConsentRepo, repository.NewNeonConsentRepository(neonPool))
-			accountAnonymizer = repository.NewNeonAccountAnonymizer(neonPool)
-		}
-	} else {
-		slog.Warn("DATABASE_URL not set — running Firestore-only (no dual-write)")
-	}
+	// Not yet cut over — still Firestore-primary (fatal), Neon-secondary
+	// (best-effort) dual-write, unchanged from before Phase 1.
+	userRepo := usecase.UserRepository(repository.NewDualUserRepository(fsUserRepo, repository.NewNeonUserRepository(neonPool)))
+	planRepo := usecase.PlanRepository(repository.NewDualPlanRepository(fsPlanRepo, repository.NewNeonPlanRepository(neonPool)))
+	planJobsRepo := usecase.PlanJobsRepository(repository.NewDualPlanJobsRepository(fsPlanJobsRepo, repository.NewNeonPlanJobsRepository(neonPool)))
+	consentRepo := usecase.ConsentStore(repository.NewDualConsentRepository(fsConsentRepo, repository.NewNeonConsentRepository(neonPool)))
+	accountAnonymizer := usecase.AccountAnonymizer(repository.NewNeonAccountAnonymizer(neonPool))
+	ineligibilityEventRecorder := usecase.IneligibilityEventRecorder(repository.NewNeonIneligibilityEventRecorder(neonPool))
 
 	fcmRepo := repository.NewFCMRepository(app)
 
@@ -357,7 +339,64 @@ func main() {
 	// usecase.DeleteAccountUseCase's doc comment for the deletion ordering.
 	accountDataStore := repository.NewFirestoreAccountDataStore(fsClient)
 	authAccountDeleter := repository.NewFirebaseAuthAccountDeleter(authClient)
-	deleteAccountUC := usecase.NewDeleteAccountUseCase(accountDataStore, accountAnonymizer, authAccountDeleter)
+
+	// Sign in with Apple: token exchange (POST /me/apple-credentials) and
+	// revocation (part of account deletion) — both the same App Store
+	// requirement, both served by one apple.Client. All four APPLE_* env
+	// vars must be set together; a partial set is treated the same as
+	// none (both disabled, logged once here) rather than failing in a
+	// half-configured way. Left as nil interfaces (not a nil *apple.Client
+	// wrapped in one) when unconfigured, so the nil-checks below and in
+	// DeleteAccountUseCase/ExchangeAppleAuthorizationCodeUseCase work.
+	var (
+		appleRevoker   usecase.AppleTokenRevoker
+		appleExchanger usecase.AppleCodeExchanger
+	)
+	switch {
+	case cfg.AppleTeamID == "" && cfg.AppleKeyID == "" && cfg.AppleClientID == "" && cfg.ApplePrivateKey == "":
+		log.Println("[startup] APPLE_* credentials not set — Sign in with Apple token exchange/revocation is disabled")
+	case cfg.AppleTeamID == "" || cfg.AppleKeyID == "" || cfg.AppleClientID == "" || cfg.ApplePrivateKey == "":
+		log.Println("[startup] APPLE_* credentials only partially set — Sign in with Apple token exchange/revocation is disabled")
+	default:
+		appleClient, err := apple.NewClient(cfg.AppleTeamID, cfg.AppleKeyID, cfg.AppleClientID, cfg.ApplePrivateKey)
+		if err != nil {
+			log.Printf("[startup] failed to configure Apple client, disabling it: %v", err)
+		} else {
+			appleRevoker = appleClient
+			appleExchanger = appleClient
+		}
+	}
+
+	deleteAccountUC := usecase.NewDeleteAccountUseCase(accountDataStore, accountAnonymizer, authAccountDeleter, userRepo, appleRevoker)
+	exchangeAppleCodeUC := usecase.NewExchangeAppleAuthorizationCodeUseCase(userRepo, appleExchanger)
+
+	// DELETE /me's 30-day grace period — see ScheduleAccountDeletionUseCase/
+	// RunPendingAccountDeletionsUseCase's doc comments. The sweep queries
+	// fsUserRepo (not userRepo) directly: ListPendingDeletions is a
+	// Firestore-only query, same as every other read of domain.User.
+	scheduleDeletionUC := usecase.NewScheduleAccountDeletionUseCase(userRepo)
+	cancelDeletionUC := usecase.NewCancelAccountDeletionUseCase(userRepo)
+	runPendingDeletionsUC := usecase.NewRunPendingAccountDeletionsUseCase(fsUserRepo, deleteAccountUC)
+	recordActivityUC := usecase.NewRecordUserActivityUseCase(userRepo)
+
+	// 2-year-inactivity sweep — "are you still there?" email via Brevo,
+	// then the same 30-day grace period as a user-requested deletion (see
+	// RunInactivitySweepUseCase). BrevoAPIKey empty just means every send
+	// fails, is logged, and gets retried next week — it never silently
+	// skips the notice/deletion flow.
+	if cfg.BrevoAPIKey == "" {
+		log.Println("[startup] BREVO_API_KEY not set — inactivity re-engagement emails will fail until it's configured")
+	}
+	reEngagementSender := email.NewBrevoReEngagementEmailSender(cfg.BrevoAPIKey, cfg.BrevoInactivityTemplateID)
+	userContactLookup := repository.NewFirebaseUserContactLookup(authClient)
+	runInactivitySweepUC := usecase.NewRunInactivitySweepUseCase(fsUserRepo, userContactLookup, reEngagementSender, userRepo)
+
+	exportUserDataUC := usecase.NewExportUserDataUseCase(userRepo, consentRepo, lifestyleRepo, dailyCheckinRepo, sessionLogRepo, recoveryActionRepo, nutritionPlanRepo, weeklyPlanDraftRepo, planRepo)
+
+	// Pre-onboarding eligibility gate ("Which describes you right now?") —
+	// deletes the account outright, not through the 30-day grace period
+	// (see ReportIneligibilityUseCase's doc comment).
+	reportIneligibilityUC := usecase.NewReportIneligibilityUseCase(ineligibilityEventRecorder, deleteAccountUC)
 
 	getConsentsUC := usecase.NewGetConsentsUseCase(consentRepo)
 	setConsentUC := usecase.NewSetConsentUseCase(consentRepo, deleteAccountUC)
@@ -366,9 +405,12 @@ func main() {
 	onboardingHandler := httpadapter.NewOnboardingHandler(onboardingUC)
 	checkinHandler := httpadapter.NewCheckinHandler(createCheckinUC, latestCheckinUC, statusCheckinUC)
 	lifestyleHandler := httpadapter.NewLifestyleHandler(reportLifestyleUC, listLifestyleUC)
-	meHandler := httpadapter.NewMeHandler(getMeUC, updateProfileUC, deleteAccountUC)
+	meHandler := httpadapter.NewMeHandler(getMeUC, updateProfileUC, scheduleDeletionUC, cancelDeletionUC)
 	homeHandler := httpadapter.NewHomeHandler(getHomeTimelineUC)
 	consentHandler := httpadapter.NewConsentHandler(getConsentsUC, setConsentUC)
+	exportHandler := httpadapter.NewExportHandler(exportUserDataUC)
+	ineligibilityHandler := httpadapter.NewIneligibilityHandler(reportIneligibilityUC)
+	appleHandler := httpadapter.NewAppleHandler(exchangeAppleCodeUC)
 	plansHandler := httpadapter.NewPlansHandler(getCurrentPlanUC, getByIDUC, getByWeekStartUC, statusUC, phaseFeedbackUC)
 	trainingHandler := httpadapter.NewTrainingHandler(startTrainingUC, statusTrainingUC, trainingEngine, resumeTrainingUC, completeDayUC, saveArrangementUC)
 	weeklyPlanHandler := httpadapter.NewWeeklyPlanHandler(startWeeklyPlanUC, statusWeeklyPlanUC, currentWeeklyPlanUC, weeklyPlanDayUC, getWeeklyNoteUC, editDaySlotUC)
@@ -396,6 +438,7 @@ func main() {
 	api := chi.NewRouter()
 
 	api.Post("/onboarding", onboardingHandler.ServeHTTP)
+	api.Post("/onboarding/ineligibility", ineligibilityHandler.Report)
 
 	// VIV-103/106/107 daily check-in — distinct from the older /checkins
 	// (plural) weekly check-in below.
@@ -411,9 +454,13 @@ func main() {
 	api.Get("/me", meHandler.GetMe)
 	api.Patch("/me", meHandler.UpdateProfile)
 	api.Delete("/me", meHandler.DeleteAccount)
+	api.Post("/me/cancel-deletion", meHandler.CancelDeletion)
+	api.Post("/me/apple-credentials", appleHandler.SetCredentials)
 
 	api.Get("/me/consents", consentHandler.GetConsents)
 	api.Post("/me/consents", consentHandler.SetConsent)
+
+	api.Get("/me/export", exportHandler.Export)
 
 	api.Get("/home/today", homeHandler.GetToday)
 
@@ -459,7 +506,7 @@ func main() {
 	protected := chi.NewRouter()
 	protected.Use(httpadapter.AppCheckMiddleware(cfg.FirebaseProjectNumber, cfg.AppCheckEnforce))
 	protected.Use(httpadapter.FirebaseAuthMiddleware(authClient))
-	protected.Use(httpadapter.EnsureUserMiddleware(userRepo))
+	protected.Use(httpadapter.EnsureUserMiddleware(userRepo, recordActivityUC))
 
 	rpcHandler := httpadapter.NewRPCHandler(api)
 	protected.Post("/rpc", rpcHandler.Handle)
@@ -500,6 +547,27 @@ func main() {
 			if localHour == 9 {
 				trainingReminderUC.ExecuteForTimezone(ctx, timezone, tokens)
 			}
+		}
+	})
+
+	// Account-deletion sweep: finishes off every DELETE /me whose 30-day
+	// grace period (ScheduleAccountDeletionUseCase) has elapsed. Once a
+	// day is plenty — this isn't time-sensitive down to the hour.
+	c.AddFunc("0 4 * * *", func() {
+		log.Println("[scheduler] running account-deletion sweep")
+		if err := runPendingDeletionsUC.Execute(context.Background()); err != nil {
+			log.Printf("[scheduler] account-deletion sweep error: %v", err)
+		}
+	})
+
+	// Inactivity sweep: finds users with 2 years of no activity, emails
+	// them via Brevo, and starts their 30-day notice window. Weekly, not
+	// daily — this is a years-long threshold, there's no need to check it
+	// every day.
+	c.AddFunc("0 5 * * 1", func() {
+		log.Println("[scheduler] running inactivity sweep")
+		if err := runInactivitySweepUC.Execute(context.Background()); err != nil {
+			log.Printf("[scheduler] inactivity sweep error: %v", err)
 		}
 	})
 

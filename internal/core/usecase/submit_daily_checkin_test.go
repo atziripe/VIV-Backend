@@ -2,6 +2,7 @@ package usecase_test
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -37,6 +38,19 @@ func (f *fakeDailyCheckinRepo) GetByDate(_ context.Context, userID string, date 
 		return nil, nil
 	}
 	return f.byKey[userID+"|"+date.Format("2006-01-02")], nil
+}
+
+func (f *fakeDailyCheckinRepo) ListByUser(_ context.Context, userID string, limit int) ([]*domain.DailyCheckin, error) {
+	var results []*domain.DailyCheckin
+	for key, c := range f.byKey {
+		if strings.HasPrefix(key, userID+"|") {
+			results = append(results, c)
+		}
+	}
+	if len(results) > limit {
+		results = results[:limit]
+	}
+	return results, nil
 }
 
 // spyDailyAdapter is a usecase.DailyAdapter fake that records every call

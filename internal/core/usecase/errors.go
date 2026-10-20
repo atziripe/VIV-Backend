@@ -119,6 +119,47 @@ func ErrConsentRequired(purpose string) error {
 	return ConsentRequiredError{Purpose: purpose}
 }
 
+// -------- ineligibility --------
+type InvalidIneligibilityReasonError struct {
+	Reason string
+}
+
+func (e InvalidIneligibilityReasonError) Error() string {
+	return "unrecognized ineligibility reason: " + e.Reason
+}
+
+func ErrInvalidIneligibilityReason(reason string) error {
+	return InvalidIneligibilityReasonError{Reason: reason}
+}
+
+// -------- minimum age --------
+type InvalidDOBError struct {
+	DOB string
+}
+
+func (e InvalidDOBError) Error() string {
+	return "invalid date of birth: " + e.DOB
+}
+
+func ErrInvalidDOB(dob string) error {
+	return InvalidDOBError{DOB: dob}
+}
+
+// UnderMinimumAgeError means the submitted dob computes to an age below
+// MinimumAge. Carries Age so the handler/client can show a precise
+// message without recomputing it.
+type UnderMinimumAgeError struct {
+	Age int
+}
+
+func (e UnderMinimumAgeError) Error() string {
+	return fmt.Sprintf("must be %d or older to use VIV", MinimumAge)
+}
+
+func ErrUnderMinimumAge(age int) error {
+	return UnderMinimumAgeError{Age: age}
+}
+
 // -------- check ins --------
 type CheckinLockedError struct {
 	NextAvailableAt time.Time

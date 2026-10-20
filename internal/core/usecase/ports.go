@@ -38,6 +38,26 @@ type AuthAccountDeleter interface {
 	DeleteUser(ctx context.Context, userID string) error
 }
 
+// AppleTokenRevoker revokes a Sign in with Apple refresh token against
+// Apple's own servers (App Store guideline 5.1.1v: revoking the Firebase
+// Auth account is not enough — Firebase never had Apple's refresh token to
+// revoke it with). Optional and best-effort from DeleteAccountUseCase's
+// point of view: most users didn't use Sign in with Apple at all, and a
+// transient failure here must never block the rest of account deletion.
+type AppleTokenRevoker interface {
+	RevokeRefreshToken(ctx context.Context, refreshToken string) error
+}
+
+// AppleCodeExchanger exchanges a Sign in with Apple authorization_code
+// (single-use, ~5 minute lifetime, issued fresh on every login) for a
+// refresh_token. This requires Apple's signed client_secret, which in turn
+// requires the "Sign in with Apple" private key — that key can never live
+// in the client app, so the exchange has to happen here. See
+// ExchangeAppleAuthorizationCodeUseCase and apple.Client.
+type AppleCodeExchanger interface {
+	ExchangeAuthorizationCode(ctx context.Context, authorizationCode string) (refreshToken string, err error)
+}
+
 // ConsentRepository stores consent grant/revoke events — append-only, see
 // domain.Consent's doc comment. GetAll resolves the *current* state per
 // purpose (each purpose's most recent record), not the raw history.
@@ -61,6 +81,50 @@ type ConsentChecker interface {
 type ConsentStore interface {
 	ConsentRepository
 	ConsentChecker
+}
+
+// PendingDeletionLister finds every user whose scheduled account deletion
+// (see ScheduleAccountDeletionUseCase) is due — the read side
+// RunPendingAccountDeletionsUseCase's daily sweep queries. Firestore-only:
+// it's the sole read path for domain.User (DualUserRepository.GetByID never
+// reads Neon), so it's also the only store worth querying here.
+type PendingDeletionLister interface {
+	ListPendingDeletions(ctx context.Context, before time.Time) ([]*domain.User, error)
+}
+
+// InactivityLister finds every user whose User.LastActiveAt is at or
+// before a cutoff — the candidates RunInactivitySweepUseCase's weekly
+// sweep considers for a re-engagement email. Implementations should leave
+// out users who already have a deletion pending (either reason) — this
+// package filters defensively too, but there's no need to re-notify
+// someone already mid-notice-window.
+type InactivityLister interface {
+	ListInactiveSince(ctx context.Context, cutoff time.Time) ([]*domain.User, error)
+}
+
+// ReEngagementEmailSender sends the "are you still there?" email that
+// starts an inactivity-triggered deletion's notice window — see
+// RunInactivitySweepUseCase. The copy/template lives wherever the provider
+// manages it (e.g. a Brevo dashboard template); this port only ever passes
+// the recipient.
+type ReEngagementEmailSender interface {
+	SendReEngagementEmail(ctx context.Context, email, name string) error
+}
+
+// UserContactLookup resolves a user's email/display name from Firebase
+// Auth — domain.User itself has no email field; Firebase Auth is the
+// source of truth for identity, same as FirebaseAuthAccountDeleter.
+type UserContactLookup interface {
+	GetContact(ctx context.Context, userID string) (email, name string, err error)
+}
+
+// IneligibilityEventRecorder records a single pre-onboarding eligibility
+// rejection as a pure statistic — reason and timestamp only, no user
+// reference of any kind (see ReportIneligibilityUseCase). Deliberately
+// Neon-only: there's no per-user document to dual-write against, and
+// nothing here needs Firestore at all.
+type IneligibilityEventRecorder interface {
+	RecordIneligibility(ctx context.Context, reason domain.IneligibilityReason) error
 }
 
 type CheckinRepository interface {
@@ -132,6 +196,12 @@ type NutritionPlanCopyEnricher interface {
 type RecoveryActionRepository interface {
 	Upsert(ctx context.Context, a *domain.RecoveryAction) error
 	GetByDate(ctx context.Context, userID string, date time.Time) (*domain.RecoveryAction, error)
+
+	// ListByUser returns every recovery action the user ever logged,
+	// newest first, capped at limit — used by ExportUserDataUseCase for
+	// full data-portability history (GDPR Art. 20), not by any product
+	// feature.
+	ListByUser(ctx context.Context, userID string, limit int) ([]*domain.RecoveryAction, error)
 }
 
 type PlanGenerator interface {

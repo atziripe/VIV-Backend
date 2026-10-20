@@ -58,6 +58,11 @@ type DailyCheckinRepository interface {
 	// modifier (see get_recovery_card.go) to look at the prior night's
 	// answer.
 	GetByDate(ctx context.Context, userID string, date time.Time) (*domain.DailyCheckin, error)
+
+	// ListByUser returns every check-in the user ever submitted, newest
+	// first, capped at limit — used by ExportUserDataUseCase for full
+	// data-portability history (GDPR Art. 20), not by any product feature.
+	ListByUser(ctx context.Context, userID string, limit int) ([]*domain.DailyCheckin, error)
 }
 
 type SubmitDailyCheckinInput struct {

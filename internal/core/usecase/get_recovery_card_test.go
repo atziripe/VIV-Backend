@@ -2,6 +2,7 @@ package usecase_test
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -31,6 +32,19 @@ func (f *fakeRecoveryActionRepo) GetByDate(_ context.Context, userID string, dat
 		return nil, nil
 	}
 	return f.byKey[userID+"|"+date.Format("2006-01-02")], nil
+}
+
+func (f *fakeRecoveryActionRepo) ListByUser(_ context.Context, userID string, limit int) ([]*domain.RecoveryAction, error) {
+	var results []*domain.RecoveryAction
+	for key, a := range f.byKey {
+		if strings.HasPrefix(key, userID+"|") {
+			results = append(results, a)
+		}
+	}
+	if len(results) > limit {
+		results = results[:limit]
+	}
+	return results, nil
 }
 
 func TestGetRecoveryCard_TrainingDay(t *testing.T) {

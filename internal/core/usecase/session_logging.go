@@ -25,6 +25,11 @@ type SessionLogRepository interface {
 	// Upsert creates or replaces the log for (log.UserID, log.Date) —
 	// idempotent by construction, same convention as DailyCheckinRepository.
 	Upsert(ctx context.Context, log *domain.SessionLog) error
+
+	// ListByUser returns every session log the user ever has, newest
+	// first, capped at limit — used by ExportUserDataUseCase for full
+	// data-portability history (GDPR Art. 20), not by any product feature.
+	ListByUser(ctx context.Context, userID string, limit int) ([]*domain.SessionLog, error)
 }
 
 // loggableDayExercises is the shared precondition every session-logging

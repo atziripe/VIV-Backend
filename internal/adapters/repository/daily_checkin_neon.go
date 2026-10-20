@@ -90,3 +90,50 @@ func (r *NeonDailyCheckinRepository) GetByDate(ctx context.Context, userID strin
 		SubmittedAt: submittedAt,
 	}, nil
 }
+
+// ListByUser returns every daily check-in the user ever submitted, newest
+// first — see usecase.DailyCheckinRepository.ListByUser's doc comment.
+// Not read by DualDailyCheckinRepository today (reads go to Firestore),
+// but kept in parity so a future Neon-backed read path has it available.
+func (r *NeonDailyCheckinRepository) ListByUser(ctx context.Context, userID string, limit int) ([]*domain.DailyCheckin, error) {
+	rows, err := r.pool.Query(ctx, `
+		SELECT dc.date, dc.sleep, dc.body, dc.demand, dc.need,
+		       dc.recovery_capacity, dc.life_bandwidth, dc.build_readiness, dc.submitted_at
+		FROM daily_checkins dc
+		JOIN users u ON u.id = dc.user_id
+		WHERE u.firebase_uid = $1
+		ORDER BY dc.date DESC
+		LIMIT $2
+	`, userID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []*domain.DailyCheckin
+	for rows.Next() {
+		var date time.Time
+		var sleep, body, demand, need, recovery, bandwidth, build string
+		var submittedAt time.Time
+		if err := rows.Scan(&date, &sleep, &body, &demand, &need, &recovery, &bandwidth, &build, &submittedAt); err != nil {
+			return nil, err
+		}
+		results = append(results, &domain.DailyCheckin{
+			UserID: userID,
+			Date:   date,
+			Answers: checkin.DailyCheckin{
+				Sleep:  checkin.SleepAnswer(sleep),
+				Body:   checkin.BodyAnswer(body),
+				Demand: checkin.DemandAnswer(demand),
+				Need:   checkin.NeedAnswer(need),
+			},
+			Readiness: checkin.ReadinessDimensions{
+				RecoveryCapacity: checkin.RecoveryCapacity(recovery),
+				LifeBandwidth:    checkin.LifeBandwidth(bandwidth),
+				BuildReadiness:   checkin.BuildReadiness(build),
+			},
+			SubmittedAt: submittedAt,
+		})
+	}
+	return results, rows.Err()
+}
