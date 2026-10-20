@@ -100,12 +100,12 @@ func (r *NeonPlanJobsRepository) MarkRunning(ctx context.Context, userID, jobID 
 
 func (r *NeonPlanJobsRepository) MarkDone(ctx context.Context, userID, jobID, planID string) error {
 	_, err := r.pool.Exec(ctx, `
-		UPDATE plan_jobs SET status = $1, error = NULL, updated_at = NOW()
+		UPDATE plan_jobs SET status = $1, error = NULL, plan_id = $2, updated_at = NOW()
 		FROM users
 		WHERE plan_jobs.user_id = users.id
-		  AND users.firebase_uid = $2
-		  AND plan_jobs.firestore_id = $3
-	`, string(domain.PlanJobDone), userID, jobID)
+		  AND users.firebase_uid = $3
+		  AND plan_jobs.firestore_id = $4
+	`, string(domain.PlanJobDone), nullableString(planID), userID, jobID)
 	return err
 }
 
@@ -128,7 +128,7 @@ func (r *NeonPlanJobsRepository) GetByID(ctx context.Context, userID, jobID stri
 	row := r.pool.QueryRow(ctx, `
 		SELECT
 			pj.firestore_id, u.firebase_uid,
-			pj.status, pj.error,
+			pj.status, pj.error, pj.plan_id,
 			ch.firestore_id as checkin_firestore_id,
 			pj.created_at, pj.updated_at
 		FROM plan_jobs pj
@@ -140,12 +140,13 @@ func (r *NeonPlanJobsRepository) GetByID(ctx context.Context, userID, jobID stri
 	var (
 		job        domain.PlanJob
 		errMsg     *string
+		planID     *string
 		checkinFID *string
 	)
 
 	err := row.Scan(
 		&job.ID, &job.UserID,
-		&job.Status, &errMsg,
+		&job.Status, &errMsg, &planID,
 		&checkinFID,
 		&job.CreatedAt, &job.UpdatedAt,
 	)
@@ -158,6 +159,9 @@ func (r *NeonPlanJobsRepository) GetByID(ctx context.Context, userID, jobID stri
 
 	if errMsg != nil {
 		job.Error = *errMsg
+	}
+	if planID != nil {
+		job.PlanID = *planID
 	}
 	if checkinFID != nil {
 		job.CheckinID = *checkinFID

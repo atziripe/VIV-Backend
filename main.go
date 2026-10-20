@@ -79,21 +79,12 @@ func main() {
 		log.Fatalf("failed to init firebase auth client: %v", err)
 	}
 
-	// Firestore client
-	fsClient, err := app.Firestore(ctx)
-	if err != nil {
-		log.Fatalf("failed to init firestore client: %v", err)
-	}
-	defer fsClient.Close()
-
 	// ========= Repositories =========
-	// Firestore — still the source of truth for entities not yet cut over
-	// to Neon (User, legacy Plan, PlanJobs, Consent). See the Audit Map
-	// for the full per-entity Firestore→Neon cutover plan/status.
-	fsUserRepo := repository.NewFirestoreUserRepository(fsClient)
-	fsPlanRepo := repository.NewFirestorePlanRepository(fsClient)
-	fsPlanJobsRepo := repository.NewFirestorePlanJobsRepository(fsClient)
-	fsConsentRepo := repository.NewFirestoreConsentRepository(fsClient)
+	// Phase 4 of the Firestore→Neon cutover removed Firestore entirely —
+	// Firebase is now used only for Auth (authClient above) and push
+	// notifications (FCMRepository below, which rides on the same *fb.App
+	// but never touches Firestore). See the Audit Map for the full
+	// per-entity cutover history.
 
 	// Neon is mandatory now, not an optional dual-write target. Phase 1 of
 	// the Firestore→Neon cutover (checkins/device tokens/lifestyle
@@ -125,12 +116,19 @@ func main() {
 		recoveryActionRepo  usecase.RecoveryActionRepository  = repository.NewNeonRecoveryActionRepository(neonPool)
 	)
 
-	// Not yet cut over — still Firestore-primary (fatal), Neon-secondary
-	// (best-effort) dual-write, unchanged from before Phase 1.
-	userRepo := usecase.UserRepository(repository.NewDualUserRepository(fsUserRepo, repository.NewNeonUserRepository(neonPool)))
-	planRepo := usecase.PlanRepository(repository.NewDualPlanRepository(fsPlanRepo, repository.NewNeonPlanRepository(neonPool)))
-	planJobsRepo := usecase.PlanJobsRepository(repository.NewDualPlanJobsRepository(fsPlanJobsRepo, repository.NewNeonPlanJobsRepository(neonPool)))
-	consentRepo := usecase.ConsentStore(repository.NewDualConsentRepository(fsConsentRepo, repository.NewNeonConsentRepository(neonPool)))
+	// Phase 2 cutover — User, legacy Plan, and PlanJobs are Neon-only now
+	// too (data parity verified via a fresh error-free backfill run).
+	// neonUserRepo is kept as its concrete type alongside the userRepo
+	// interface variable because it also satisfies PendingDeletionLister/
+	// InactivityLister (used by the two crons below) — usecase.UserRepository
+	// itself doesn't expose those methods.
+	neonUserRepo := repository.NewNeonUserRepository(neonPool)
+	userRepo := usecase.UserRepository(neonUserRepo)
+	planRepo := usecase.PlanRepository(repository.NewNeonPlanRepository(neonPool))
+	planJobsRepo := usecase.PlanJobsRepository(repository.NewNeonPlanJobsRepository(neonPool))
+
+	// Phase 4 cutover — Neon-only, no Firestore involved at all anymore.
+	consentRepo := usecase.ConsentStore(repository.NewNeonConsentRepository(neonPool))
 	accountAnonymizer := usecase.AccountAnonymizer(repository.NewNeonAccountAnonymizer(neonPool))
 	ineligibilityEventRecorder := usecase.IneligibilityEventRecorder(repository.NewNeonIneligibilityEventRecorder(neonPool))
 
@@ -216,7 +214,7 @@ func main() {
 	// ========= New Weekly Plan Pipeline (VIV-106..113) =========
 	// Deliberately isolated from the old Training Pipeline above — its own
 	// content directory, its own taxonomy, its own async job flow, reusing
-	// only what's genuinely shared (fsClient, oaClient, cyclePhaseLookup,
+	// only what's genuinely shared (oaClient, cyclePhaseLookup,
 	// planJobsRepo/PlanJob's queued/running/done/failed shape).
 	weeklySessionLib, err := corecontent.LoadSessionLibrary("internal/content/training_v2/sessions")
 	if err != nil {
@@ -337,7 +335,6 @@ func main() {
 
 	// App Store account-deletion requirement (guideline 5.1.1v) — see
 	// usecase.DeleteAccountUseCase's doc comment for the deletion ordering.
-	accountDataStore := repository.NewFirestoreAccountDataStore(fsClient)
 	authAccountDeleter := repository.NewFirebaseAuthAccountDeleter(authClient)
 
 	// Sign in with Apple: token exchange (POST /me/apple-credentials) and
@@ -367,16 +364,16 @@ func main() {
 		}
 	}
 
-	deleteAccountUC := usecase.NewDeleteAccountUseCase(accountDataStore, accountAnonymizer, authAccountDeleter, userRepo, appleRevoker)
+	deleteAccountUC := usecase.NewDeleteAccountUseCase(accountAnonymizer, authAccountDeleter, userRepo, appleRevoker)
 	exchangeAppleCodeUC := usecase.NewExchangeAppleAuthorizationCodeUseCase(userRepo, appleExchanger)
 
 	// DELETE /me's 30-day grace period — see ScheduleAccountDeletionUseCase/
-	// RunPendingAccountDeletionsUseCase's doc comments. The sweep queries
-	// fsUserRepo (not userRepo) directly: ListPendingDeletions is a
-	// Firestore-only query, same as every other read of domain.User.
+	// RunPendingAccountDeletionsUseCase's doc comments. ListPendingDeletions
+	// is Neon-only now (Phase 2/3 of the Firestore→Neon cutover), hence
+	// neonUserRepo rather than the userRepo interface variable.
 	scheduleDeletionUC := usecase.NewScheduleAccountDeletionUseCase(userRepo)
 	cancelDeletionUC := usecase.NewCancelAccountDeletionUseCase(userRepo)
-	runPendingDeletionsUC := usecase.NewRunPendingAccountDeletionsUseCase(fsUserRepo, deleteAccountUC)
+	runPendingDeletionsUC := usecase.NewRunPendingAccountDeletionsUseCase(neonUserRepo, deleteAccountUC)
 	recordActivityUC := usecase.NewRecordUserActivityUseCase(userRepo)
 
 	// 2-year-inactivity sweep — "are you still there?" email via Brevo,
@@ -389,7 +386,7 @@ func main() {
 	}
 	reEngagementSender := email.NewBrevoReEngagementEmailSender(cfg.BrevoAPIKey, cfg.BrevoInactivityTemplateID)
 	userContactLookup := repository.NewFirebaseUserContactLookup(authClient)
-	runInactivitySweepUC := usecase.NewRunInactivitySweepUseCase(fsUserRepo, userContactLookup, reEngagementSender, userRepo)
+	runInactivitySweepUC := usecase.NewRunInactivitySweepUseCase(neonUserRepo, userContactLookup, reEngagementSender, userRepo)
 
 	exportUserDataUC := usecase.NewExportUserDataUseCase(userRepo, consentRepo, lifestyleRepo, dailyCheckinRepo, sessionLogRepo, recoveryActionRepo, nutritionPlanRepo, weeklyPlanDraftRepo, planRepo)
 

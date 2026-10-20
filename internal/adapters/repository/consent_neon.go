@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -9,7 +10,10 @@ import (
 	"viv/internal/core/usecase"
 )
 
-var _ usecase.ConsentRepository = (*NeonConsentRepository)(nil)
+var (
+	_ usecase.ConsentRepository = (*NeonConsentRepository)(nil)
+	_ usecase.ConsentChecker    = (*NeonConsentRepository)(nil)
+)
 
 type NeonConsentRepository struct {
 	pool *pgxpool.Pool
@@ -31,6 +35,27 @@ func (r *NeonConsentRepository) Grant(ctx context.Context, userID string, purpos
 		INSERT INTO consents (user_id, purpose, granted, policy_version)
 		VALUES ($1, $2, $3, $4)
 	`, userUUID, string(purpose), granted, policyVersion)
+	return err
+}
+
+// CreateHistorical inserts a consent row with an explicit created_at,
+// for the backfill path only — Grant above always stamps "now" (correct
+// for a live grant/revoke), but copying a user's actual consent history
+// from Firestore needs to preserve each event's original timestamp so
+// GetAll's "most recent per purpose" resolution and the GDPR Art. 7.1
+// paper trail stay accurate.
+func (r *NeonConsentRepository) CreateHistorical(ctx context.Context, userID string, purpose domain.ConsentPurpose, granted bool, policyVersion string, createdAt time.Time) error {
+	var userUUID string
+	if err := r.pool.QueryRow(ctx,
+		`SELECT id FROM users WHERE firebase_uid = $1`, userID,
+	).Scan(&userUUID); err != nil {
+		return err
+	}
+
+	_, err := r.pool.Exec(ctx, `
+		INSERT INTO consents (user_id, purpose, granted, policy_version, created_at)
+		VALUES ($1, $2, $3, $4, $5)
+	`, userUUID, string(purpose), granted, policyVersion, createdAt)
 	return err
 }
 
@@ -62,4 +87,13 @@ func (r *NeonConsentRepository) GetAll(ctx context.Context, userID string) (map[
 		result[c.Purpose] = c
 	}
 	return result, rows.Err()
+}
+
+func (r *NeonConsentRepository) IsGranted(ctx context.Context, userID string, purpose domain.ConsentPurpose) (bool, error) {
+	all, err := r.GetAll(ctx, userID)
+	if err != nil {
+		return false, err
+	}
+	c, ok := all[purpose]
+	return ok && c.Granted, nil
 }

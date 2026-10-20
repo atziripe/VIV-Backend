@@ -22,10 +22,33 @@ func (f *fakeAppleTokenRevoker) RevokeRefreshToken(_ context.Context, refreshTok
 	return nil
 }
 
+// fakeAccountAnonymizer is a minimal usecase.AccountAnonymizer fake —
+// NeonData is required by DeleteAccountUseCase (Neon is the sole source
+// of truth account deletion must succeed against), so every test needs
+// one, even the ones only exercising the Apple-revocation behavior.
+// failFor, if set, fails only that one userID — for tests that need one
+// user's deletion to fail without blocking another's.
+type fakeAccountAnonymizer struct {
+	deleted []string
+	err     error
+	failFor string
+}
+
+func (f *fakeAccountAnonymizer) AnonymizeAndDeleteUser(_ context.Context, userID string) error {
+	if f.err != nil {
+		return f.err
+	}
+	if f.failFor != "" && userID == f.failFor {
+		return errors.New("boom")
+	}
+	f.deleted = append(f.deleted, userID)
+	return nil
+}
+
 func TestDeleteAccount_RevokesAppleTokenWhenPresent(t *testing.T) {
 	users := &fakeUserRepo{users: map[string]*domain.User{"u1": {ID: "u1", AppleRefreshToken: "apple-refresh-abc"}}}
 	revoker := &fakeAppleTokenRevoker{}
-	uc := usecase.NewDeleteAccountUseCase(&fakeAccountDataStore{}, nil, &fakeAuthAccountDeleter{}, users, revoker)
+	uc := usecase.NewDeleteAccountUseCase(&fakeAccountAnonymizer{}, &fakeAuthAccountDeleter{}, users, revoker)
 
 	if err := uc.Execute(context.Background(), "u1"); err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -39,7 +62,7 @@ func TestDeleteAccount_RevokesAppleTokenWhenPresent(t *testing.T) {
 func TestDeleteAccount_SkipsAppleRevocationWhenNoTokenStored(t *testing.T) {
 	users := &fakeUserRepo{users: map[string]*domain.User{"u1": {ID: "u1"}}}
 	revoker := &fakeAppleTokenRevoker{}
-	uc := usecase.NewDeleteAccountUseCase(&fakeAccountDataStore{}, nil, &fakeAuthAccountDeleter{}, users, revoker)
+	uc := usecase.NewDeleteAccountUseCase(&fakeAccountAnonymizer{}, &fakeAuthAccountDeleter{}, users, revoker)
 
 	if err := uc.Execute(context.Background(), "u1"); err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -52,9 +75,8 @@ func TestDeleteAccount_SkipsAppleRevocationWhenNoTokenStored(t *testing.T) {
 func TestDeleteAccount_AppleRevocationFailureDoesNotBlockDeletion(t *testing.T) {
 	users := &fakeUserRepo{users: map[string]*domain.User{"u1": {ID: "u1", AppleRefreshToken: "apple-refresh-abc"}}}
 	revoker := &fakeAppleTokenRevoker{err: errors.New("apple is down")}
-	dataStore := &fakeAccountDataStore{}
 	authDeleter := &fakeAuthAccountDeleter{}
-	uc := usecase.NewDeleteAccountUseCase(dataStore, nil, authDeleter, users, revoker)
+	uc := usecase.NewDeleteAccountUseCase(&fakeAccountAnonymizer{}, authDeleter, users, revoker)
 
 	if err := uc.Execute(context.Background(), "u1"); err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -67,7 +89,7 @@ func TestDeleteAccount_AppleRevocationFailureDoesNotBlockDeletion(t *testing.T) 
 func TestDeleteAccount_NilRevokerSkipsAppleStep(t *testing.T) {
 	users := &fakeUserRepo{users: map[string]*domain.User{"u1": {ID: "u1", AppleRefreshToken: "apple-refresh-abc"}}}
 	authDeleter := &fakeAuthAccountDeleter{}
-	uc := usecase.NewDeleteAccountUseCase(&fakeAccountDataStore{}, nil, authDeleter, users, nil)
+	uc := usecase.NewDeleteAccountUseCase(&fakeAccountAnonymizer{}, authDeleter, users, nil)
 
 	if err := uc.Execute(context.Background(), "u1"); err != nil {
 		t.Fatalf("unexpected error: %v", err)

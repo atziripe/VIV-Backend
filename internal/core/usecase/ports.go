@@ -11,14 +11,6 @@ type UserRepository interface {
 	Save(ctx context.Context, user *domain.User) error
 }
 
-// AccountDataStore wipes every record of a user's data from the primary
-// store (Firestore). DeleteAccountUseCase treats this as fatal: if it
-// fails, the account is NOT closed, so the caller can retry safely —
-// see that usecase's doc comment for the full ordering rationale.
-type AccountDataStore interface {
-	DeleteAllUserData(ctx context.Context, userID string) error
-}
-
 // AccountAnonymizer captures a non-identifying snapshot of a user's
 // profile (the same bucketed shape the long-standing user_profiles_anon
 // view exposes) and then deletes every Neon row tied to them in one

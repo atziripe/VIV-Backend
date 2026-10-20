@@ -8,11 +8,15 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"viv/internal/core/activity"
 	"viv/internal/core/domain"
+	"viv/internal/core/goal"
 	"viv/internal/core/usecase"
 )
 
 var _ usecase.UserRepository = (*NeonUserRepository)(nil)
+var _ usecase.PendingDeletionLister = (*NeonUserRepository)(nil)
+var _ usecase.InactivityLister = (*NeonUserRepository)(nil)
 
 type NeonUserRepository struct {
 	pool *pgxpool.Pool
@@ -22,26 +26,32 @@ func NewNeonUserRepository(pool *pgxpool.Pool) *NeonUserRepository {
 	return &NeonUserRepository{pool: pool}
 }
 
+// userSelectFromJoin is shared by every query that returns one or more
+// domain.User rows via scanUser — GetByID, ListPendingDeletions, and
+// ListInactiveSince all select exactly these columns in exactly this
+// order, differing only in their WHERE clause.
+const userSelectFromJoin = `
+	SELECT
+		u.firebase_uid, u.name, u.created_at, u.updated_at,
+		u.apple_refresh_token, u.pending_deletion_at, u.last_active_at, u.pending_deletion_reason,
+		p.dob, p.height_cm, p.weight_kg,
+		p.daily_activity_level, p.training_often, p.training_duration,
+		p.training_time, p.training_type, p.training_goals, p.priority,
+		p.has_active_injury, p.training_paused, p.last_injury_reported_at,
+		p.diet_restrictions, p.diet_protein_resources, p.digestion_conditions,
+		p.eating_style, p.meals_per_day, p.meals_timing_stability,
+		p.sleep_window, p.sleep_continuity, p.recovery_after_sleep,
+		p.lingering_marker, p.stress_level, p.stress_reactivity,
+		p.onboarding_completed, p.user_catalog, p.goal_id, p.last_active_plan_id,
+		c.cycle_day, c.cycle_duration, c.cycle_phase, c.cycle_type,
+		c.cycle_anchor_at, c.period_duration, c.cycle_updated_at, c.cycle_estimation_disabled
+	FROM users u
+	LEFT JOIN user_profiles p ON p.user_id = u.id
+	LEFT JOIN user_cycles   c ON c.user_id = u.id
+`
+
 func (r *NeonUserRepository) GetByID(ctx context.Context, firebaseUID string) (*domain.User, error) {
-	row := r.pool.QueryRow(ctx, `
-		SELECT
-			u.firebase_uid, u.name, u.created_at, u.updated_at,
-			p.dob, p.height_cm, p.weight_kg,
-			p.daily_activity_level, p.training_often, p.training_duration,
-			p.training_time, p.training_type, p.training_goals, p.priority,
-			p.has_active_injury, p.training_paused, p.last_injury_reported_at,
-			p.diet_restrictions, p.diet_protein_resources, p.digestion_conditions,
-			p.eating_style, p.meals_per_day, p.meals_timing_stability,
-			p.sleep_window, p.sleep_continuity, p.recovery_after_sleep,
-			p.lingering_marker, p.stress_level, p.stress_reactivity,
-			p.onboarding_completed,
-			c.cycle_day, c.cycle_duration, c.cycle_phase, c.cycle_type,
-			c.cycle_anchor_at, c.period_duration
-		FROM users u
-		LEFT JOIN user_profiles p ON p.user_id = u.id
-		LEFT JOIN user_cycles   c ON c.user_id = u.id
-		WHERE u.firebase_uid = $1
-	`, firebaseUID)
+	row := r.pool.QueryRow(ctx, userSelectFromJoin+`WHERE u.firebase_uid = $1`, firebaseUID)
 
 	u, err := scanUser(row)
 	if err != nil {
@@ -51,6 +61,51 @@ func (r *NeonUserRepository) GetByID(ctx context.Context, firebaseUID string) (*
 		return nil, err
 	}
 	return u, nil
+}
+
+// ListPendingDeletions returns every user whose scheduled account deletion
+// is due — mirrors FirestoreUserRepository.ListPendingDeletions, which this
+// replaces for RunPendingAccountDeletionsUseCase now that User is Neon-only
+// (Phase 2 of the Firestore→Neon cutover).
+func (r *NeonUserRepository) ListPendingDeletions(ctx context.Context, before time.Time) ([]*domain.User, error) {
+	rows, err := r.pool.Query(ctx, userSelectFromJoin+`WHERE u.pending_deletion_at <= $1`, before)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []*domain.User
+	for rows.Next() {
+		u, err := scanUser(rows)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, u)
+	}
+	return results, rows.Err()
+}
+
+// ListInactiveSince returns every user whose LastActiveAt is at or before
+// cutoff and who doesn't already have a deletion pending — mirrors
+// FirestoreUserRepository.ListInactiveSince (see that doc comment), done
+// here as a plain SQL predicate instead of a post-filter in application
+// code.
+func (r *NeonUserRepository) ListInactiveSince(ctx context.Context, cutoff time.Time) ([]*domain.User, error) {
+	rows, err := r.pool.Query(ctx, userSelectFromJoin+`WHERE u.last_active_at <= $1 AND u.pending_deletion_at IS NULL`, cutoff)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []*domain.User
+	for rows.Next() {
+		u, err := scanUser(rows)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, u)
+	}
+	return results, rows.Err()
 }
 
 func (r *NeonUserRepository) Save(ctx context.Context, user *domain.User) error {
@@ -68,21 +123,27 @@ func (r *NeonUserRepository) Save(ctx context.Context, user *domain.User) error 
 	// 1. Upsert identity — domain.User.ID is the Firebase UID
 	var internalID string
 	err = tx.QueryRow(ctx, `
-		INSERT INTO users (firebase_uid, name, created_at, updated_at, pending_deletion_at, last_active_at, pending_deletion_reason)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO users (firebase_uid, name, created_at, updated_at, pending_deletion_at, last_active_at, pending_deletion_reason, apple_refresh_token)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		ON CONFLICT (firebase_uid) DO UPDATE
 		  SET name                    = EXCLUDED.name,
 		      updated_at              = EXCLUDED.updated_at,
 		      pending_deletion_at     = EXCLUDED.pending_deletion_at,
 		      last_active_at          = EXCLUDED.last_active_at,
-		      pending_deletion_reason = EXCLUDED.pending_deletion_reason
+		      pending_deletion_reason = EXCLUDED.pending_deletion_reason,
+		      apple_refresh_token     = EXCLUDED.apple_refresh_token
 		RETURNING id
-	`, user.ID, user.Name, user.CreatedAt, user.UpdatedAt, user.PendingDeletionAt, user.LastActiveAt, nullableString(string(user.PendingDeletionReason))).Scan(&internalID)
+	`, user.ID, user.Name, user.CreatedAt, user.UpdatedAt, user.PendingDeletionAt, user.LastActiveAt, nullableString(string(user.PendingDeletionReason)), nullableString(user.AppleRefreshToken)).Scan(&internalID)
 	if err != nil {
 		return err
 	}
 
 	// 2. Upsert profile
+	userCatalog := make([]string, len(user.UserCatalog))
+	for i, id := range user.UserCatalog {
+		userCatalog[i] = string(id)
+	}
+
 	_, err = tx.Exec(ctx, `
 		INSERT INTO user_profiles (
 			user_id,
@@ -94,7 +155,8 @@ func (r *NeonUserRepository) Save(ctx context.Context, user *domain.User) error 
 			eating_style, meals_per_day, meals_timing_stability,
 			sleep_window, sleep_continuity, recovery_after_sleep,
 			lingering_marker, stress_level, stress_reactivity,
-			onboarding_completed, updated_at
+			onboarding_completed, user_catalog, goal_id, last_active_plan_id,
+			updated_at
 		) VALUES (
 			$1,
 			$2, $3, $4,
@@ -105,7 +167,8 @@ func (r *NeonUserRepository) Save(ctx context.Context, user *domain.User) error 
 			$18, $19, $20,
 			$21, $22, $23,
 			$24, $25, $26,
-			$27, NOW()
+			$27, $28, $29, $30,
+			NOW()
 		)
 		ON CONFLICT (user_id) DO UPDATE SET
 			dob                     = EXCLUDED.dob,
@@ -134,6 +197,9 @@ func (r *NeonUserRepository) Save(ctx context.Context, user *domain.User) error 
 			stress_level            = EXCLUDED.stress_level,
 			stress_reactivity       = EXCLUDED.stress_reactivity,
 			onboarding_completed    = EXCLUDED.onboarding_completed,
+			user_catalog            = EXCLUDED.user_catalog,
+			goal_id                 = EXCLUDED.goal_id,
+			last_active_plan_id     = EXCLUDED.last_active_plan_id,
 			updated_at              = NOW()
 	`,
 		internalID,
@@ -145,7 +211,7 @@ func (r *NeonUserRepository) Save(ctx context.Context, user *domain.User) error 
 		user.EatingStyle, user.MealsPerDay, user.MealsTimingStability,
 		user.SleepWindow, user.SleepContinuity, user.RecoveryAfterSleep,
 		user.LingeringMarker, user.StressLevel, user.StressReactivity,
-		user.OnboardingCompleted,
+		user.OnboardingCompleted, userCatalog, nullableString(string(user.GoalID)), user.LastActivePlanID,
 	)
 	if err != nil {
 		return err
@@ -155,20 +221,24 @@ func (r *NeonUserRepository) Save(ctx context.Context, user *domain.User) error 
 	_, err = tx.Exec(ctx, `
 		INSERT INTO user_cycles (
 			user_id, cycle_day, cycle_duration, cycle_phase,
-			cycle_type, cycle_anchor_at, period_duration, updated_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+			cycle_type, cycle_anchor_at, period_duration,
+			cycle_updated_at, cycle_estimation_disabled, updated_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
 		ON CONFLICT (user_id) DO UPDATE SET
-			cycle_day       = EXCLUDED.cycle_day,
-			cycle_duration  = EXCLUDED.cycle_duration,
-			cycle_phase     = EXCLUDED.cycle_phase,
-			cycle_type      = EXCLUDED.cycle_type,
-			cycle_anchor_at = EXCLUDED.cycle_anchor_at,
-			period_duration = EXCLUDED.period_duration,
-			updated_at      = NOW()
+			cycle_day                 = EXCLUDED.cycle_day,
+			cycle_duration             = EXCLUDED.cycle_duration,
+			cycle_phase                = EXCLUDED.cycle_phase,
+			cycle_type                 = EXCLUDED.cycle_type,
+			cycle_anchor_at            = EXCLUDED.cycle_anchor_at,
+			period_duration            = EXCLUDED.period_duration,
+			cycle_updated_at           = EXCLUDED.cycle_updated_at,
+			cycle_estimation_disabled  = EXCLUDED.cycle_estimation_disabled,
+			updated_at                 = NOW()
 	`,
 		internalID,
 		user.CycleDay, user.CycleDuration, user.CyclePhase,
 		user.CycleType, user.CycleAnchorAt, user.PeriodDuration,
+		user.CycleUpdatedAt, user.CycleEstimationDisabled,
 	)
 	if err != nil {
 		return err
@@ -183,9 +253,14 @@ func scanUser(row pgx.Row) (*domain.User, error) {
 	var (
 		u domain.User
 
-		dob        *string
-		heightCm   *float64
-		weightKg   *float64
+		appleRefreshToken     *string
+		pendingDeletionAt     *time.Time
+		lastActiveAt          *time.Time
+		pendingDeletionReason *string
+
+		dob      *string
+		heightCm *float64
+		weightKg *float64
 
 		dailyActivityLevel *string
 		trainingOften      *string
@@ -210,17 +285,23 @@ func scanUser(row pgx.Row) (*domain.User, error) {
 		stressLevel        *string
 		stressReactivity   *string
 		onboarding         *bool
+		userCatalog        []string
+		goalID             *string
+		lastActivePlanID   *string
 
-		cycleDay       *int
-		cycleDuration  *string // string in domain.User
-		cyclePhase     *string
-		cycleType      *string
-		cycleAnchorAt  *time.Time
-		periodDuration *string
+		cycleDay                *int
+		cycleDuration           *string // string in domain.User
+		cyclePhase              *string
+		cycleType               *string
+		cycleAnchorAt           *time.Time
+		periodDuration          *string
+		cycleUpdatedAt          *time.Time
+		cycleEstimationDisabled *bool
 	)
 
 	err := row.Scan(
 		&u.ID, &u.Name, &u.CreatedAt, &u.UpdatedAt,
+		&appleRefreshToken, &pendingDeletionAt, &lastActiveAt, &pendingDeletionReason,
 		&dob, &heightCm, &weightKg,
 		&dailyActivityLevel, &trainingOften, &trainingDuration,
 		&trainingTime, &trainingType, &trainingGoals, &priority,
@@ -229,9 +310,9 @@ func scanUser(row pgx.Row) (*domain.User, error) {
 		&eatingStyle, &mealsPerDay, &mealsTiming,
 		&sleepWindow, &sleepContinuity, &recoveryAfterSleep,
 		&lingeringMarker, &stressLevel, &stressReactivity,
-		&onboarding,
+		&onboarding, &userCatalog, &goalID, &lastActivePlanID,
 		&cycleDay, &cycleDuration, &cyclePhase, &cycleType,
-		&cycleAnchorAt, &periodDuration,
+		&cycleAnchorAt, &periodDuration, &cycleUpdatedAt, &cycleEstimationDisabled,
 	)
 	if err != nil {
 		return nil, err
@@ -262,6 +343,11 @@ func scanUser(row pgx.Row) (*domain.User, error) {
 		return 0
 	}
 
+	u.AppleRefreshToken = derefStr(appleRefreshToken)
+	u.PendingDeletionAt = pendingDeletionAt
+	u.LastActiveAt = lastActiveAt
+	u.PendingDeletionReason = domain.PendingDeletionReason(derefStr(pendingDeletionReason))
+
 	u.DOB = derefStr(dob)
 	u.HeightCm = derefF64(heightCm)
 	u.WeightKg = derefF64(weightKg)
@@ -288,12 +374,23 @@ func scanUser(row pgx.Row) (*domain.User, error) {
 	u.StressLevel = derefStr(stressLevel)
 	u.StressReactivity = derefStr(stressReactivity)
 	u.OnboardingCompleted = derefBool(onboarding)
+	u.GoalID = goal.ID(derefStr(goalID))
+	u.LastActivePlanID = lastActivePlanID
+	if len(userCatalog) > 0 {
+		u.UserCatalog = make([]activity.ID, len(userCatalog))
+		for i, id := range userCatalog {
+			u.UserCatalog[i] = activity.ID(id)
+		}
+	}
+
 	u.CycleDay = derefInt(cycleDay)
 	u.CycleDuration = derefStr(cycleDuration)
 	u.CyclePhase = derefStr(cyclePhase)
 	u.CycleType = derefStr(cycleType)
 	u.CycleAnchorAt = cycleAnchorAt
 	u.PeriodDuration = derefStr(periodDuration)
+	u.CycleUpdatedAt = cycleUpdatedAt
+	u.CycleEstimationDisabled = derefBool(cycleEstimationDisabled)
 
 	return &u, nil
 }
@@ -303,4 +400,11 @@ func nullableString(s string) *string {
 		return nil
 	}
 	return &s
+}
+
+func nullableTime(t time.Time) *time.Time {
+	if t.IsZero() {
+		return nil
+	}
+	return &t
 }
