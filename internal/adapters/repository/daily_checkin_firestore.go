@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/firestore"
+	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -96,4 +97,55 @@ func (r *FirestoreDailyCheckinRepository) GetByDate(ctx context.Context, userID 
 		},
 		SubmittedAt: d.SubmittedAt,
 	}, nil
+}
+
+// ListByUser returns every daily check-in the user ever submitted, newest
+// first — see usecase.DailyCheckinRepository.ListByUser's doc comment.
+// Ordering by firestore.DocumentID works because each doc's ID is already
+// the ISO date string ("2006-01-02"), which sorts chronologically as text.
+func (r *FirestoreDailyCheckinRepository) ListByUser(ctx context.Context, userID string, limit int) ([]*domain.DailyCheckin, error) {
+	iter := r.client.
+		Collection("users").Doc(userID).
+		Collection("daily_checkins").
+		OrderBy(firestore.DocumentID, firestore.Desc).
+		Limit(limit).
+		Documents(ctx)
+
+	var results []*domain.DailyCheckin
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		var d dailyCheckinDoc
+		if err := doc.DataTo(&d); err != nil {
+			return nil, err
+		}
+		date, err := time.Parse("2006-01-02", doc.Ref.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, &domain.DailyCheckin{
+			UserID: userID,
+			Date:   date,
+			Answers: checkin.DailyCheckin{
+				Sleep:  checkin.SleepAnswer(d.Sleep),
+				Body:   checkin.BodyAnswer(d.Body),
+				Demand: checkin.DemandAnswer(d.Demand),
+				Need:   checkin.NeedAnswer(d.Need),
+			},
+			Readiness: checkin.ReadinessDimensions{
+				RecoveryCapacity: checkin.RecoveryCapacity(d.Recovery),
+				LifeBandwidth:    checkin.LifeBandwidth(d.Bandwidth),
+				BuildReadiness:   checkin.BuildReadiness(d.Build),
+			},
+			SubmittedAt: d.SubmittedAt,
+		})
+	}
+	return results, nil
 }

@@ -67,3 +67,39 @@ func (r *NeonRecoveryActionRepository) GetByDate(ctx context.Context, userID str
 		LoggedAt: loggedAt,
 	}, nil
 }
+
+// ListByUser returns every recovery action the user ever logged, newest
+// first — see usecase.RecoveryActionRepository.ListByUser's doc comment.
+// Not read by DualRecoveryActionRepository today (reads go to Firestore),
+// but kept in parity so a future Neon-backed read path has it available.
+func (r *NeonRecoveryActionRepository) ListByUser(ctx context.Context, userID string, limit int) ([]*domain.RecoveryAction, error) {
+	rows, err := r.pool.Query(ctx, `
+		SELECT ra.date, ra.kind, ra.logged_at
+		FROM recovery_actions ra
+		JOIN users u ON u.id = ra.user_id
+		WHERE u.firebase_uid = $1
+		ORDER BY ra.date DESC
+		LIMIT $2
+	`, userID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []*domain.RecoveryAction
+	for rows.Next() {
+		var date time.Time
+		var kind string
+		var loggedAt time.Time
+		if err := rows.Scan(&date, &kind, &loggedAt); err != nil {
+			return nil, err
+		}
+		results = append(results, &domain.RecoveryAction{
+			UserID:   userID,
+			Date:     date,
+			Kind:     domain.RecoveryActionKind(kind),
+			LoggedAt: loggedAt,
+		})
+	}
+	return results, rows.Err()
+}

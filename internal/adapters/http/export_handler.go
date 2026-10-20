@@ -29,6 +29,9 @@ type exportResponse struct {
 	Profile          interface{} `json:"profile"`
 	Consents         interface{} `json:"consents"`
 	LifestyleChanges interface{} `json:"lifestyle_changes"`
+	DailyCheckins    interface{} `json:"daily_checkins"`
+	SessionLogs      interface{} `json:"session_logs"`
+	RecoveryActions  interface{} `json:"recovery_actions"`
 	NutritionPlan    interface{} `json:"nutrition_plan,omitempty"`
 	CurrentWeekDraft interface{} `json:"current_week_draft,omitempty"`
 	LegacyPlan       interface{} `json:"legacy_plan,omitempty"`
@@ -37,9 +40,9 @@ type exportResponse struct {
 // GET /me/export
 //
 // Data portability (GDPR Art. 20) — a JSON copy of the authenticated
-// user's current data. See ExportUserDataUseCase's doc comment for exactly
-// what's included and what a v1 known gap leaves out (full historical
-// daily check-ins/session logs/recovery actions).
+// user's current data, plus full history for every entity that has one
+// (lifestyle changes, daily check-ins, session logs, recovery actions —
+// see ExportUserDataUseCase's doc comment).
 func (h *ExportHandler) Export(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -61,6 +64,9 @@ func (h *ExportHandler) Export(w http.ResponseWriter, r *http.Request) {
 		Profile:          out.Profile,
 		Consents:         out.Consents,
 		LifestyleChanges: out.LifestyleChanges,
+		DailyCheckins:    out.DailyCheckins,
+		SessionLogs:      out.SessionLogs,
+		RecoveryActions:  out.RecoveryActions,
 		NutritionPlan:    out.NutritionPlan,
 		CurrentWeekDraft: out.CurrentWeekDraft,
 		LegacyPlan:       out.LegacyPlan,

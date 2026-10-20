@@ -15,17 +15,11 @@ import (
 // already exist, same spirit as GetHomeTimelineUseCase — no new storage, no
 // new writes.
 //
-// Scope, deliberately: this returns the user's *current* state per entity
-// (profile, consent status, the active nutrition plan, this week's training
-// plan, the legacy plan if still on that pipeline) plus the *full* history
-// of lifestyle changes (the one entity with an existing "list everything"
-// repository method, LifestyleChangeRepository.ListByUser). It does NOT
-// include full historical daily check-ins, session logs, or recovery
-// actions — those repositories only expose single-date lookups
-// (GetByDate), not a "list every date this user ever had one" method, and
-// adding that is real new port surface across both Firestore and Neon, not
-// something to bolt on silently inside an export endpoint. Flagged here so
-// it's a known v1 scope decision, not an oversight.
+// Scope: current state per entity (profile, consent status, the active
+// nutrition plan, this week's training plan, the legacy plan if still on
+// that pipeline), plus full history for every entity that has one —
+// lifestyle changes, daily check-ins, session logs, and recovery actions —
+// via each repository's ListByUser.
 // ============================================================================
 
 type ExportUserDataInput struct {
@@ -38,9 +32,14 @@ type ExportUserDataOutput struct {
 	Profile  *domain.User
 	Consents map[domain.ConsentPurpose]domain.Consent
 
-	// LifestyleChanges is the user's full history — the one entity below
-	// with a real "list everything" repository method already.
+	// LifestyleChanges, DailyCheckins, SessionLogs, and RecoveryActions are
+	// each the user's full history, capped at a generous limit (see the
+	// export*Limit constants below) rather than the single-date/current
+	// state the rest of the product reads.
 	LifestyleChanges []*domain.LifestyleChange
+	DailyCheckins    []*domain.DailyCheckin
+	SessionLogs      []*domain.SessionLog
+	RecoveryActions  []*domain.RecoveryAction
 
 	// NutritionPlan is the new pipeline's current standalone plan — nil if
 	// the user never generated one (or is still nutrition-pipeline-less).
@@ -59,6 +58,9 @@ type ExportUserDataUseCase struct {
 	Users            UserRepository
 	Consents         ConsentRepository
 	LifestyleChanges LifestyleChangeRepository
+	DailyCheckins    DailyCheckinRepository
+	SessionLogs      SessionLogRepository
+	RecoveryActions  RecoveryActionRepository
 	NutritionPlans   NutritionPlanRepository
 	WeeklyPlanDrafts WeeklyPlanDraftRepository
 	Plans            PlanRepository
@@ -68,20 +70,30 @@ func NewExportUserDataUseCase(
 	users UserRepository,
 	consents ConsentRepository,
 	lifestyleChanges LifestyleChangeRepository,
+	dailyCheckins DailyCheckinRepository,
+	sessionLogs SessionLogRepository,
+	recoveryActions RecoveryActionRepository,
 	nutritionPlans NutritionPlanRepository,
 	weeklyPlanDrafts WeeklyPlanDraftRepository,
 	plans PlanRepository,
 ) *ExportUserDataUseCase {
 	return &ExportUserDataUseCase{
 		Users: users, Consents: consents, LifestyleChanges: lifestyleChanges,
+		DailyCheckins: dailyCheckins, SessionLogs: sessionLogs, RecoveryActions: recoveryActions,
 		NutritionPlans: nutritionPlans, WeeklyPlanDrafts: weeklyPlanDrafts, Plans: plans,
 	}
 }
 
 // exportLifestyleChangeLimit is generous enough that "full history" is true
 // in practice (ListByUser has no unbounded/no-limit mode) without risking
-// an unbounded read for a pathological account.
+// an unbounded read for a pathological account. Lifestyle changes are
+// sporadic events; the daily-record entities below use a larger cap since
+// a long-tenured user accrues one per day.
 const exportLifestyleChangeLimit = 1000
+
+// exportDailyRecordLimit covers 10+ years of daily records — generous
+// enough that "full history" is true in practice for every real account.
+const exportDailyRecordLimit = 5000
 
 func (uc *ExportUserDataUseCase) Execute(ctx context.Context, in ExportUserDataInput) (*ExportUserDataOutput, error) {
 	userID := strings.TrimSpace(in.UserID)
@@ -107,6 +119,21 @@ func (uc *ExportUserDataUseCase) Execute(ctx context.Context, in ExportUserDataI
 		return nil, fmt.Errorf("export user data: loading lifestyle changes: %w", err)
 	}
 
+	dailyCheckins, err := uc.DailyCheckins.ListByUser(ctx, userID, exportDailyRecordLimit)
+	if err != nil {
+		return nil, fmt.Errorf("export user data: loading daily check-ins: %w", err)
+	}
+
+	sessionLogs, err := uc.SessionLogs.ListByUser(ctx, userID, exportDailyRecordLimit)
+	if err != nil {
+		return nil, fmt.Errorf("export user data: loading session logs: %w", err)
+	}
+
+	recoveryActions, err := uc.RecoveryActions.ListByUser(ctx, userID, exportDailyRecordLimit)
+	if err != nil {
+		return nil, fmt.Errorf("export user data: loading recovery actions: %w", err)
+	}
+
 	nutritionPlan, err := uc.NutritionPlans.GetByUserID(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("export user data: loading nutrition plan: %w", err)
@@ -129,6 +156,9 @@ func (uc *ExportUserDataUseCase) Execute(ctx context.Context, in ExportUserDataI
 		Profile:          user,
 		Consents:         consents,
 		LifestyleChanges: lifestyleChanges,
+		DailyCheckins:    dailyCheckins,
+		SessionLogs:      sessionLogs,
+		RecoveryActions:  recoveryActions,
 		NutritionPlan:    nutritionPlan,
 		CurrentWeekDraft: currentDraft,
 		LegacyPlan:       legacyPlan,

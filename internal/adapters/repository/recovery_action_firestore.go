@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/firestore"
+	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -70,4 +71,43 @@ func (r *FirestoreRecoveryActionRepository) GetByDate(ctx context.Context, userI
 		Kind:     domain.RecoveryActionKind(d.Kind),
 		LoggedAt: d.LoggedAt,
 	}, nil
+}
+
+// ListByUser returns every recovery action the user ever logged, newest
+// first — see usecase.RecoveryActionRepository.ListByUser's doc comment.
+// Ordering by firestore.DocumentID works because each doc's ID is already
+// the ISO date string ("2006-01-02"), which sorts chronologically as text.
+func (r *FirestoreRecoveryActionRepository) ListByUser(ctx context.Context, userID string, limit int) ([]*domain.RecoveryAction, error) {
+	iter := r.col(userID).
+		OrderBy(firestore.DocumentID, firestore.Desc).
+		Limit(limit).
+		Documents(ctx)
+
+	var results []*domain.RecoveryAction
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		var d recoveryActionDoc
+		if err := doc.DataTo(&d); err != nil {
+			return nil, err
+		}
+		date, err := time.Parse("2006-01-02", doc.Ref.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, &domain.RecoveryAction{
+			UserID:   userID,
+			Date:     date,
+			Kind:     domain.RecoveryActionKind(d.Kind),
+			LoggedAt: d.LoggedAt,
+		})
+	}
+	return results, nil
 }

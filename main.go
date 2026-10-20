@@ -419,7 +419,7 @@ func main() {
 	userContactLookup := repository.NewFirebaseUserContactLookup(authClient)
 	runInactivitySweepUC := usecase.NewRunInactivitySweepUseCase(fsUserRepo, userContactLookup, reEngagementSender, userRepo)
 
-	exportUserDataUC := usecase.NewExportUserDataUseCase(userRepo, consentRepo, lifestyleRepo, nutritionPlanRepo, weeklyPlanDraftRepo, planRepo)
+	exportUserDataUC := usecase.NewExportUserDataUseCase(userRepo, consentRepo, lifestyleRepo, dailyCheckinRepo, sessionLogRepo, recoveryActionRepo, nutritionPlanRepo, weeklyPlanDraftRepo, planRepo)
 
 	// Pre-onboarding eligibility gate ("Which describes you right now?") —
 	// deletes the account outright, not through the 30-day grace period

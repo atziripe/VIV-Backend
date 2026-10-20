@@ -196,6 +196,12 @@ type NutritionPlanCopyEnricher interface {
 type RecoveryActionRepository interface {
 	Upsert(ctx context.Context, a *domain.RecoveryAction) error
 	GetByDate(ctx context.Context, userID string, date time.Time) (*domain.RecoveryAction, error)
+
+	// ListByUser returns every recovery action the user ever logged,
+	// newest first, capped at limit — used by ExportUserDataUseCase for
+	// full data-portability history (GDPR Art. 20), not by any product
+	// feature.
+	ListByUser(ctx context.Context, userID string, limit int) ([]*domain.RecoveryAction, error)
 }
 
 type PlanGenerator interface {

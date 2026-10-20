@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/firestore"
+	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -111,4 +112,56 @@ func (r *FirestoreSessionLogRepository) Upsert(ctx context.Context, log *domain.
 
 	_, err := r.col(log.UserID).Doc(log.Date.Format("2006-01-02")).Set(ctx, doc)
 	return err
+}
+
+// ListByUser returns every session log the user ever has, newest first —
+// see usecase.SessionLogRepository.ListByUser's doc comment. Ordering by
+// firestore.DocumentID works because each doc's ID is already the ISO
+// date string ("2006-01-02"), which sorts chronologically as text.
+func (r *FirestoreSessionLogRepository) ListByUser(ctx context.Context, userID string, limit int) ([]*domain.SessionLog, error) {
+	iter := r.col(userID).
+		OrderBy(firestore.DocumentID, firestore.Desc).
+		Limit(limit).
+		Documents(ctx)
+
+	var results []*domain.SessionLog
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		var d sessionLogDoc
+		if err := doc.DataTo(&d); err != nil {
+			return nil, err
+		}
+		date, err := time.Parse("2006-01-02", doc.Ref.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		sets := make([]domain.SetLog, len(d.Sets))
+		for i, s := range d.Sets {
+			sets[i] = domain.SetLog{
+				ExerciseID: s.ExerciseID, ExerciseName: s.ExerciseName, SetNumber: s.SetNumber,
+				WeightKg: s.WeightKg, Reps: s.Reps, LoggedAt: s.LoggedAt,
+			}
+		}
+
+		results = append(results, &domain.SessionLog{
+			UserID:       userID,
+			Date:         date,
+			ActivityType: d.ActivityType,
+			Status:       domain.SessionLogStatus(d.Status),
+			StartedAt:    d.StartedAt,
+			EndedAt:      d.EndedAt,
+			Sets:         sets,
+			Feedback:     domain.SessionFeedback(d.Feedback),
+			UpdatedAt:    d.UpdatedAt,
+		})
+	}
+	return results, nil
 }

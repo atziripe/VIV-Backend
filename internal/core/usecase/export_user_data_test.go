@@ -97,7 +97,7 @@ func (f *fakePlanRepo) IsTrainingDay(_ context.Context, userID, weekday string) 
 
 func TestExportUserData_NothingGeneratedYet_MostlyNil(t *testing.T) {
 	users := &fakeUserRepo{users: map[string]*domain.User{"u1": {ID: "u1", Name: "Ana"}}}
-	uc := usecase.NewExportUserDataUseCase(users, &fakeConsentRepo{}, &fakeLifestyleChangeRepo{}, &fakeNutritionPlanRepo{}, &fakeDraftRepo{}, &fakePlanRepo{})
+	uc := usecase.NewExportUserDataUseCase(users, &fakeConsentRepo{}, &fakeLifestyleChangeRepo{}, &fakeDailyCheckinRepo{}, &fakeSessionLogRepo{}, &fakeRecoveryActionRepo{}, &fakeNutritionPlanRepo{}, &fakeDraftRepo{}, &fakePlanRepo{})
 
 	out, err := uc.Execute(context.Background(), usecase.ExportUserDataInput{UserID: "u1"})
 	if err != nil {
@@ -118,11 +118,20 @@ func TestExportUserData_NothingGeneratedYet_MostlyNil(t *testing.T) {
 	if len(out.LifestyleChanges) != 0 {
 		t.Errorf("LifestyleChanges = %v, want empty", out.LifestyleChanges)
 	}
+	if len(out.DailyCheckins) != 0 {
+		t.Errorf("DailyCheckins = %v, want empty", out.DailyCheckins)
+	}
+	if len(out.SessionLogs) != 0 {
+		t.Errorf("SessionLogs = %v, want empty", out.SessionLogs)
+	}
+	if len(out.RecoveryActions) != 0 {
+		t.Errorf("RecoveryActions = %v, want empty", out.RecoveryActions)
+	}
 }
 
 func TestExportUserData_UnknownUser_ReturnsNotFound(t *testing.T) {
 	users := &fakeUserRepo{users: map[string]*domain.User{}}
-	uc := usecase.NewExportUserDataUseCase(users, &fakeConsentRepo{}, &fakeLifestyleChangeRepo{}, &fakeNutritionPlanRepo{}, &fakeDraftRepo{}, &fakePlanRepo{})
+	uc := usecase.NewExportUserDataUseCase(users, &fakeConsentRepo{}, &fakeLifestyleChangeRepo{}, &fakeDailyCheckinRepo{}, &fakeSessionLogRepo{}, &fakeRecoveryActionRepo{}, &fakeNutritionPlanRepo{}, &fakeDraftRepo{}, &fakePlanRepo{})
 
 	_, err := uc.Execute(context.Background(), usecase.ExportUserDataInput{UserID: "ghost"})
 	if err == nil {
@@ -139,6 +148,16 @@ func TestExportUserData_IncludesEverythingThatExists(t *testing.T) {
 	_ = lifestyle.Create(context.Background(), &domain.LifestyleChange{ID: "lc1", UserID: "u1", Type: "travel"})
 	_ = lifestyle.Create(context.Background(), &domain.LifestyleChange{ID: "lc2", UserID: "u1", Type: "injury"})
 
+	dailyCheckins := &fakeDailyCheckinRepo{}
+	_ = dailyCheckins.Upsert(context.Background(), &domain.DailyCheckin{UserID: "u1", Date: time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)})
+	_ = dailyCheckins.Upsert(context.Background(), &domain.DailyCheckin{UserID: "u1", Date: time.Date(2026, 9, 2, 0, 0, 0, 0, time.UTC)})
+
+	sessionLogs := &fakeSessionLogRepo{}
+	_ = sessionLogs.Upsert(context.Background(), &domain.SessionLog{UserID: "u1", Date: time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)})
+
+	recoveryActions := &fakeRecoveryActionRepo{}
+	_ = recoveryActions.Upsert(context.Background(), &domain.RecoveryAction{UserID: "u1", Date: time.Date(2026, 9, 2, 0, 0, 0, 0, time.UTC), Kind: domain.RecoveryActionDone})
+
 	nutrition := &fakeNutritionPlanRepo{}
 	_ = nutrition.Save(context.Background(), "u1", domain.NutritionWeekPlan{Phase: domain.PhaseFollicular})
 
@@ -153,7 +172,7 @@ func TestExportUserData_IncludesEverythingThatExists(t *testing.T) {
 	plans := &fakePlanRepo{}
 	_ = plans.Create(context.Background(), &domain.Plan{ID: "p1", UserID: "u1", Status: "active"})
 
-	uc := usecase.NewExportUserDataUseCase(users, consents, lifestyle, nutrition, drafts, plans)
+	uc := usecase.NewExportUserDataUseCase(users, consents, lifestyle, dailyCheckins, sessionLogs, recoveryActions, nutrition, drafts, plans)
 
 	out, err := uc.Execute(context.Background(), usecase.ExportUserDataInput{UserID: "u1"})
 	if err != nil {
@@ -165,6 +184,15 @@ func TestExportUserData_IncludesEverythingThatExists(t *testing.T) {
 	}
 	if len(out.LifestyleChanges) != 2 {
 		t.Errorf("LifestyleChanges = %d, want 2", len(out.LifestyleChanges))
+	}
+	if len(out.DailyCheckins) != 2 {
+		t.Errorf("DailyCheckins = %d, want 2", len(out.DailyCheckins))
+	}
+	if len(out.SessionLogs) != 1 {
+		t.Errorf("SessionLogs = %d, want 1", len(out.SessionLogs))
+	}
+	if len(out.RecoveryActions) != 1 {
+		t.Errorf("RecoveryActions = %d, want 1", len(out.RecoveryActions))
 	}
 	if out.NutritionPlan == nil || out.NutritionPlan.Plan.Phase != domain.PhaseFollicular {
 		t.Errorf("NutritionPlan = %+v, want the saved plan", out.NutritionPlan)
