@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getsentry/sentry-go"
+
 	"viv/internal/core/usecase"
 )
 
@@ -98,6 +100,11 @@ func (h *HomeHandler) GetToday(w http.ResponseWriter, r *http.Request) {
 	out, err := h.UC.Execute(ctx, usecase.GetHomeTimelineInput{UserID: userID, Date: date})
 	if err != nil {
 		log.Printf("[home.today] error: %+v\n", err)
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
 		http.Error(w, "failed to get home timeline", http.StatusInternalServerError)
 		return
 	}

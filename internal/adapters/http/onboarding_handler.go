@@ -6,6 +6,9 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/getsentry/sentry-go"
+
 	"viv/internal/core/usecase"
 )
 
@@ -175,6 +178,11 @@ func (h *OnboardingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		default:
 			log.Printf("[onboarding] complete onboarding error: %v", err)
+			if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+				hub.Scope().SetTag("endpoint", r.URL.Path)
+				hub.Scope().SetTag("method", r.Method)
+				hub.CaptureException(err)
+			}
 			http.Error(w, "failed to complete onboarding", http.StatusInternalServerError)
 		}
 		return

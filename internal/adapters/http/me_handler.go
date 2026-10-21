@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/getsentry/sentry-go"
+
 	"viv/internal/core/domain"
 	"viv/internal/core/usecase"
 )
@@ -106,6 +108,11 @@ func (h *MeHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// MVP error handling, check it later
 		log.Printf("http server error: %v", err)
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
 		http.Error(w, "failed to get current user", http.StatusInternalServerError)
 		return
 	}
@@ -369,6 +376,11 @@ func (h *MeHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		log.Printf("[update-profile] execute error: %v", err)
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
 		http.Error(w, "failed to update profile", http.StatusInternalServerError)
 		return
 	}
@@ -422,6 +434,11 @@ func (h *MeHandler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		log.Printf("[delete-account] execute error: %v", err)
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
 		http.Error(w, "failed to schedule account deletion", http.StatusInternalServerError)
 		return
 	}
@@ -453,6 +470,11 @@ func (h *MeHandler) CancelDeletion(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		log.Printf("[cancel-deletion] execute error: %v", err)
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
 		http.Error(w, "failed to cancel account deletion", http.StatusInternalServerError)
 		return
 	}

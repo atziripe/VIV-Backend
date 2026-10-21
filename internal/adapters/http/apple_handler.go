@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/getsentry/sentry-go"
+
 	"viv/internal/core/usecase"
 )
 
@@ -51,6 +53,11 @@ func (h *AppleHandler) SetCredentials(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		log.Printf("[apple-credentials] execute error: %v", err)
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
 		http.Error(w, "failed to process apple authorization code", http.StatusInternalServerError)
 		return
 	}

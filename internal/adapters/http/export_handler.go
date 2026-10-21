@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/getsentry/sentry-go"
+
 	"viv/internal/core/usecase"
 )
 
@@ -55,6 +57,11 @@ func (h *ExportHandler) Export(w http.ResponseWriter, r *http.Request) {
 	out, err := h.UC.Execute(ctx, usecase.ExportUserDataInput{UserID: userID})
 	if err != nil {
 		log.Printf("[export] error: %v", err)
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
 		http.Error(w, "failed to export data", http.StatusInternalServerError)
 		return
 	}

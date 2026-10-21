@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getsentry/sentry-go"
+
 	"viv/internal/core/domain"
 	"viv/internal/core/usecase"
 )
@@ -51,6 +53,11 @@ func (h *RecoveryCardHandler) GetCard(w http.ResponseWriter, r *http.Request) {
 	out, err := h.CardUC.Execute(ctx, usecase.GetRecoveryCardInput{UserID: userID, Date: date})
 	if err != nil {
 		log.Printf("[recovery.card] error: %+v\n", err)
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
 		http.Error(w, "failed to get recovery card", http.StatusInternalServerError)
 		return
 	}
