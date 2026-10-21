@@ -16,8 +16,16 @@ func NewNeonPool(ctx context.Context, databaseURL string) (*pgxpool.Pool, error)
 		return nil, fmt.Errorf("neon: parse config: %w", err)
 	}
 
-	cfg.MaxConns = 10
-	cfg.MinConns = 2
+	// Neon's pooled endpoint runs PgBouncer with max_client_conn=10,000,
+	// so the real ceiling here isn't Neon — it's how many concurrent
+	// queries your compute size can actually execute. On the Free plan
+	// (autoscales to 2 CU), pushing this much higher than the previous
+	// 10 wouldn't buy more throughput, just deeper queues; 25 gives
+	// meaningful headroom above the old value without over-provisioning
+	// for compute that isn't there. Revisit this (and MinConns) if/when
+	// the Neon compute size changes.
+	cfg.MaxConns = 25
+	cfg.MinConns = 5
 
 	// Neon's connection string routes through PgBouncer in transaction
 	// pooling mode, which can hand two different logical connections the
