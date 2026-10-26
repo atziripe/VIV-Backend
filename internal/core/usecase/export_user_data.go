@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/sync/errgroup"
+
 	"viv/internal/core/domain"
 )
 
@@ -101,54 +103,102 @@ func (uc *ExportUserDataUseCase) Execute(ctx context.Context, in ExportUserDataI
 		return nil, fmt.Errorf("export user data: userID is required")
 	}
 
-	user, err := uc.Users.GetByID(ctx, userID)
-	if err != nil {
-		return nil, fmt.Errorf("export user data: loading profile: %w", err)
+	now := time.Now().UTC()
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+
+	// Every read below depends only on userID (or userID+today), never on
+	// another read's result, so they run concurrently instead of as 9
+	// sequential round trips to Neon — wall time collapses to roughly
+	// that of the slowest one. Each goroutine writes to its own variable
+	// declared below, never one another goroutine also writes, and
+	// errgroup's Wait() happens-after every Go() goroutine returns, so
+	// every write below is visible once Wait() returns — no data race,
+	// no mutex needed. errgroup.WithContext also cancels the other
+	// in-flight reads as soon as one fails, instead of letting them run
+	// to completion for a result that's getting discarded anyway.
+	var (
+		user             *domain.User
+		consents         map[domain.ConsentPurpose]domain.Consent
+		lifestyleChanges []*domain.LifestyleChange
+		dailyCheckins    []*domain.DailyCheckin
+		sessionLogs      []*domain.SessionLog
+		recoveryActions  []*domain.RecoveryAction
+		nutritionPlan    *domain.NutritionPlan
+		currentDraft     *WeekDraft
+		legacyPlan       *domain.Plan
+	)
+
+	g, gctx := errgroup.WithContext(ctx)
+
+	g.Go(func() error {
+		var err error
+		if user, err = uc.Users.GetByID(gctx, userID); err != nil {
+			return fmt.Errorf("loading profile: %w", err)
+		}
+		return nil
+	})
+	g.Go(func() error {
+		var err error
+		if consents, err = uc.Consents.GetAll(gctx, userID); err != nil {
+			return fmt.Errorf("loading consents: %w", err)
+		}
+		return nil
+	})
+	g.Go(func() error {
+		var err error
+		if lifestyleChanges, err = uc.LifestyleChanges.ListByUser(gctx, userID, exportLifestyleChangeLimit); err != nil {
+			return fmt.Errorf("loading lifestyle changes: %w", err)
+		}
+		return nil
+	})
+	g.Go(func() error {
+		var err error
+		if dailyCheckins, err = uc.DailyCheckins.ListByUser(gctx, userID, exportDailyRecordLimit); err != nil {
+			return fmt.Errorf("loading daily check-ins: %w", err)
+		}
+		return nil
+	})
+	g.Go(func() error {
+		var err error
+		if sessionLogs, err = uc.SessionLogs.ListByUser(gctx, userID, exportDailyRecordLimit); err != nil {
+			return fmt.Errorf("loading session logs: %w", err)
+		}
+		return nil
+	})
+	g.Go(func() error {
+		var err error
+		if recoveryActions, err = uc.RecoveryActions.ListByUser(gctx, userID, exportDailyRecordLimit); err != nil {
+			return fmt.Errorf("loading recovery actions: %w", err)
+		}
+		return nil
+	})
+	g.Go(func() error {
+		var err error
+		if nutritionPlan, err = uc.NutritionPlans.GetByUserID(gctx, userID); err != nil {
+			return fmt.Errorf("loading nutrition plan: %w", err)
+		}
+		return nil
+	})
+	g.Go(func() error {
+		var err error
+		if currentDraft, err = uc.WeeklyPlanDrafts.GetByDate(gctx, userID, today); err != nil {
+			return fmt.Errorf("loading current week: %w", err)
+		}
+		return nil
+	})
+	g.Go(func() error {
+		var err error
+		if legacyPlan, err = uc.Plans.GetLatest(gctx, userID); err != nil {
+			return fmt.Errorf("loading legacy plan: %w", err)
+		}
+		return nil
+	})
+
+	if err := g.Wait(); err != nil {
+		return nil, fmt.Errorf("export user data: %w", err)
 	}
 	if user == nil {
 		return nil, ErrUserNotFound(userID)
-	}
-
-	consents, err := uc.Consents.GetAll(ctx, userID)
-	if err != nil {
-		return nil, fmt.Errorf("export user data: loading consents: %w", err)
-	}
-
-	lifestyleChanges, err := uc.LifestyleChanges.ListByUser(ctx, userID, exportLifestyleChangeLimit)
-	if err != nil {
-		return nil, fmt.Errorf("export user data: loading lifestyle changes: %w", err)
-	}
-
-	dailyCheckins, err := uc.DailyCheckins.ListByUser(ctx, userID, exportDailyRecordLimit)
-	if err != nil {
-		return nil, fmt.Errorf("export user data: loading daily check-ins: %w", err)
-	}
-
-	sessionLogs, err := uc.SessionLogs.ListByUser(ctx, userID, exportDailyRecordLimit)
-	if err != nil {
-		return nil, fmt.Errorf("export user data: loading session logs: %w", err)
-	}
-
-	recoveryActions, err := uc.RecoveryActions.ListByUser(ctx, userID, exportDailyRecordLimit)
-	if err != nil {
-		return nil, fmt.Errorf("export user data: loading recovery actions: %w", err)
-	}
-
-	nutritionPlan, err := uc.NutritionPlans.GetByUserID(ctx, userID)
-	if err != nil {
-		return nil, fmt.Errorf("export user data: loading nutrition plan: %w", err)
-	}
-
-	now := time.Now().UTC()
-	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
-	currentDraft, err := uc.WeeklyPlanDrafts.GetByDate(ctx, userID, today)
-	if err != nil {
-		return nil, fmt.Errorf("export user data: loading current week: %w", err)
-	}
-
-	legacyPlan, err := uc.Plans.GetLatest(ctx, userID)
-	if err != nil {
-		return nil, fmt.Errorf("export user data: loading legacy plan: %w", err)
 	}
 
 	return &ExportUserDataOutput{
