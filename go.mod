@@ -11,6 +11,7 @@ require (
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sashabaranov/go-openai v1.41.2
+	golang.org/x/sync v0.20.0
 	google.golang.org/api v0.279.0
 )
 
@@ -56,7 +57,6 @@ require (
 	golang.org/x/crypto v0.51.0 // indirect
 	golang.org/x/net v0.54.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
-	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.44.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
