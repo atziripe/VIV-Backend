@@ -34,7 +34,7 @@ const userSelectFromJoin = `
 	SELECT
 		u.firebase_uid, u.name, u.created_at, u.updated_at,
 		u.apple_refresh_token, u.pending_deletion_at, u.last_active_at, u.pending_deletion_reason,
-		p.dob, p.height_cm, p.weight_kg,
+		p.dob::text, p.height_cm::double precision, p.weight_kg::double precision,
 		p.daily_activity_level, p.training_often, p.training_duration,
 		p.training_time, p.training_type, p.training_goals, p.priority,
 		p.has_active_injury, p.training_paused, p.last_injury_reported_at,
@@ -43,7 +43,7 @@ const userSelectFromJoin = `
 		p.sleep_window, p.sleep_continuity, p.recovery_after_sleep,
 		p.lingering_marker, p.stress_level, p.stress_reactivity,
 		p.onboarding_completed, p.user_catalog, p.goal_id, p.last_active_plan_id,
-		c.cycle_day, c.cycle_duration, c.cycle_phase, c.cycle_type,
+		c.cycle_day, c.cycle_duration::text, c.cycle_phase, c.cycle_type,
 		c.cycle_anchor_at, c.period_duration, c.cycle_updated_at, c.cycle_estimation_disabled
 	FROM users u
 	LEFT JOIN user_profiles p ON p.user_id = u.id

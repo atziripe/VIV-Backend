@@ -37,6 +37,7 @@ func (e *AsyncNutritionPlanCopyEnricher) EnrichAsync(userID string, plan domain.
 
 		if granted, err := e.consents.IsGranted(ctx, userID, domain.ConsentAIProcessing); err != nil {
 			log.Printf("[mealgen.copy] consent check failed user=%s err=%v", userID, err)
+			reportFailure("mealgen_nutrition_copy_consent_check", userID, err)
 			return
 		} else if !granted {
 			return
@@ -45,6 +46,7 @@ func (e *AsyncNutritionPlanCopyEnricher) EnrichAsync(userID string, plan domain.
 		enriched, changed, err := EnrichPlanCopy(ctx, plan, e.generator, e.cache)
 		if err != nil {
 			log.Printf("[mealgen.copy] nutrition-plan enrichment failed user=%s err=%v", userID, err)
+			reportFailure("mealgen_nutrition_copy_enrichment", userID, err)
 		}
 		if !changed {
 			return
@@ -52,6 +54,7 @@ func (e *AsyncNutritionPlanCopyEnricher) EnrichAsync(userID string, plan domain.
 
 		if err := e.plans.Save(ctx, userID, enriched); err != nil {
 			log.Printf("[mealgen.copy] nutrition-plan update failed user=%s err=%v", userID, err)
+			reportFailure("mealgen_nutrition_copy_update", userID, err)
 			return
 		}
 		log.Printf("[mealgen.copy] enriched copy saved user=%s (nutrition plan)", userID)

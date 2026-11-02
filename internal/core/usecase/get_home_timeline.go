@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/sync/errgroup"
+
 	"viv/internal/core/checkin"
 	"viv/internal/core/domain"
 )
@@ -136,17 +138,59 @@ func (uc *GetHomeTimelineUseCase) Execute(ctx context.Context, in GetHomeTimelin
 	date := time.Date(in.Date.Year(), in.Date.Month(), in.Date.Day(), 0, 0, 0, 0, time.UTC)
 	now := time.Now().UTC()
 
-	user, err := uc.Users.GetByID(ctx, userID)
-	if err != nil {
-		return GetHomeTimelineOutput{}, fmt.Errorf("get home timeline: loading user: %w", err)
-	}
-	if user == nil {
-		return GetHomeTimelineOutput{}, ErrUserNotFound(userID)
+	// user, draft, dailyCheckin, and the raw nutrition plan are each
+	// independent of the other three — none needs any of the others'
+	// results, only userID/date — so they're fetched concurrently
+	// instead of as 4 sequential round trips. Each goroutine writes only
+	// its own variable below, never one another goroutine touches, so
+	// there's no race and no mutex needed. The conditional read further
+	// down (session log OR recovery card — never both, since a day is
+	// either a rest day or isn't) stays sequential: it needs today,
+	// which depends on draft, and it's never more than one extra call
+	// anyway, so there's nothing to parallelize there.
+	var (
+		user          *domain.User
+		draft         *WeekDraft
+		dailyCheckin  *domain.DailyCheckin
+		nutritionPlan *domain.NutritionPlan
+	)
+
+	g, gctx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		var err error
+		if user, err = uc.Users.GetByID(gctx, userID); err != nil {
+			return fmt.Errorf("loading user: %w", err)
+		}
+		return nil
+	})
+	g.Go(func() error {
+		var err error
+		if draft, err = uc.Drafts.GetByDate(gctx, userID, date); err != nil {
+			return fmt.Errorf("loading week: %w", err)
+		}
+		return nil
+	})
+	g.Go(func() error {
+		var err error
+		if dailyCheckin, err = uc.Checkins.GetByDate(gctx, userID, date); err != nil {
+			return fmt.Errorf("loading checkin: %w", err)
+		}
+		return nil
+	})
+	g.Go(func() error {
+		var err error
+		if nutritionPlan, err = uc.Nutrition.GetByUserID(gctx, userID); err != nil {
+			return fmt.Errorf("loading nutrition plan: %w", err)
+		}
+		return nil
+	})
+
+	if err := g.Wait(); err != nil {
+		return GetHomeTimelineOutput{}, fmt.Errorf("get home timeline: %w", err)
 	}
 
-	draft, err := uc.Drafts.GetByDate(ctx, userID, date)
-	if err != nil {
-		return GetHomeTimelineOutput{}, fmt.Errorf("get home timeline: loading week: %w", err)
+	if user == nil {
+		return GetHomeTimelineOutput{}, ErrUserNotFound(userID)
 	}
 	if draft == nil {
 		return GetHomeTimelineOutput{Found: false}, nil
@@ -156,11 +200,6 @@ func (uc *GetHomeTimelineUseCase) Execute(ctx context.Context, in GetHomeTimelin
 		return GetHomeTimelineOutput{}, fmt.Errorf("get home timeline: %s is not part of the loaded week", date.Format("2006-01-02"))
 	}
 	today := draft.Days[idx]
-
-	dailyCheckin, err := uc.Checkins.GetByDate(ctx, userID, date)
-	if err != nil {
-		return GetHomeTimelineOutput{}, fmt.Errorf("get home timeline: loading checkin: %w", err)
-	}
 
 	var sessionStart, sessionEnd time.Time
 	var sessionConsideredDone bool
@@ -188,12 +227,10 @@ func (uc *GetHomeTimelineUseCase) Execute(ctx context.Context, in GetHomeTimelin
 	}
 
 	var nutritionDay *domain.NutritionDayPlan
-	if plan, err := uc.Nutrition.GetByUserID(ctx, userID); err != nil {
-		return GetHomeTimelineOutput{}, fmt.Errorf("get home timeline: loading nutrition plan: %w", err)
-	} else if plan != nil {
-		for i := range plan.Plan.Days {
-			if strings.EqualFold(plan.Plan.Days[i].Weekday, today.Weekday) {
-				nutritionDay = &plan.Plan.Days[i]
+	if nutritionPlan != nil {
+		for i := range nutritionPlan.Plan.Days {
+			if strings.EqualFold(nutritionPlan.Plan.Days[i].Weekday, today.Weekday) {
+				nutritionDay = &nutritionPlan.Plan.Days[i]
 				break
 			}
 		}
@@ -497,39 +534,61 @@ func weekNumber(start time.Time) int {
 
 // weekProgress tallies this week's training days against how many have a
 // completed session log. SessionLogRepository has no range query today,
-// so this is up to 7 GetByDate calls — fine for a once-per-screen-open
-// read; worth a dedicated range method if this becomes a hot path.
+// so this is up to 7 GetByDate calls, one per day — each day is fully
+// independent of every other, so they run concurrently instead of as up
+// to 7 sequential round trips. Every goroutine writes only its own index
+// of days (never one another goroutine touches, since each is a distinct
+// weekday), so there's no race and no mutex needed; the two running
+// totals (TotalSessions/CompletedSessions) are tallied in a second,
+// purely sequential pass over the now-complete days slice, after
+// g.Wait() returns, rather than as shared counters multiple goroutines
+// would need to increment safely.
 //
 // A non-loggable (session-library) day never gets a SessionLog (see
 // loggableToday's doc comment in Execute) — applying gap 2's rule here
 // too keeps a past session-library day showing "done" instead of stuck
 // on "pending" forever, consistent with how the Timeline treats it.
 func weekProgress(ctx context.Context, logs SessionLogRepository, userID string, draft WeekDraft, now time.Time) WeekProgress {
-	wp := WeekProgress{Days: make([]DayDot, 0, 7)}
-	for _, d := range draft.Days {
-		dot := DayDot{Weekday: d.Weekday, IsToday: sameDate(d.Date, now)}
+	days := make([]DayDot, len(draft.Days))
+
+	g, gctx := errgroup.WithContext(ctx)
+	for i, d := range draft.Days {
+		g.Go(func() error {
+			dot := DayDot{Weekday: d.Weekday, IsToday: sameDate(d.Date, now)}
+			if d.IsRestDay {
+				dot.Status = "rest"
+				days[i] = dot
+				return nil
+			}
+
+			done := false
+			if d.Content != nil && d.Content.Exercises != nil {
+				log, err := logs.GetByDate(gctx, userID, d.Date)
+				done = err == nil && log != nil && log.Status == domain.SessionLogDone
+			} else {
+				done = d.Date.Before(now) && !sameDate(d.Date, now)
+			}
+
+			if done {
+				dot.Status = "done"
+			} else {
+				dot.Status = "pending"
+			}
+			days[i] = dot
+			return nil
+		})
+	}
+	_ = g.Wait()
+
+	wp := WeekProgress{Days: days}
+	for i, d := range draft.Days {
 		if d.IsRestDay {
-			dot.Status = "rest"
-			wp.Days = append(wp.Days, dot)
 			continue
 		}
 		wp.TotalSessions++
-
-		done := false
-		if d.Content != nil && d.Content.Exercises != nil {
-			log, err := logs.GetByDate(ctx, userID, d.Date)
-			done = err == nil && log != nil && log.Status == domain.SessionLogDone
-		} else {
-			done = d.Date.Before(now) && !sameDate(d.Date, now)
-		}
-
-		if done {
-			dot.Status = "done"
+		if days[i].Status == "done" {
 			wp.CompletedSessions++
-		} else {
-			dot.Status = "pending"
 		}
-		wp.Days = append(wp.Days, dot)
 	}
 	return wp
 }

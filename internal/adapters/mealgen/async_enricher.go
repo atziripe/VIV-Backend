@@ -45,6 +45,7 @@ func (e *AsyncCopyEnricher) EnrichAsync(userID, planID string, plan domain.Nutri
 		// state (see CopyEnriched), not an error.
 		if granted, err := e.consents.IsGranted(ctx, userID, domain.ConsentAIProcessing); err != nil {
 			log.Printf("[mealgen.copy] consent check failed user=%s plan=%s err=%v", userID, planID, err)
+			reportFailure("mealgen_copy_consent_check", userID, err)
 			return
 		} else if !granted {
 			return
@@ -53,6 +54,7 @@ func (e *AsyncCopyEnricher) EnrichAsync(userID, planID string, plan domain.Nutri
 		enriched, changed, err := EnrichPlanCopy(ctx, plan, e.generator, e.cache)
 		if err != nil {
 			log.Printf("[mealgen.copy] enrichment failed user=%s plan=%s err=%v", userID, planID, err)
+			reportFailure("mealgen_copy_enrichment", userID, err)
 		}
 		if !changed {
 			return
@@ -61,10 +63,12 @@ func (e *AsyncCopyEnricher) EnrichAsync(userID, planID string, plan domain.Nutri
 		data, err := json.Marshal(enriched)
 		if err != nil {
 			log.Printf("[mealgen.copy] marshal failed user=%s plan=%s err=%v", userID, planID, err)
+			reportFailure("mealgen_copy_marshal", userID, err)
 			return
 		}
 		if err := e.planRepo.UpdateNutritionJSON(ctx, userID, planID, data); err != nil {
 			log.Printf("[mealgen.copy] update failed user=%s plan=%s err=%v", userID, planID, err)
+			reportFailure("mealgen_copy_update", userID, err)
 			return
 		}
 		log.Printf("[mealgen.copy] enriched copy saved user=%s plan=%s", userID, planID)

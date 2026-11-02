@@ -47,17 +47,20 @@ func (r *LocalWeeklyPlanRunner) Run(jobID string, input usecase.GenerateWeeklyPl
 
 		if err := r.jobsRepo.MarkRunning(ctx, userID, jobID); err != nil {
 			log.Printf("[weeklyplan.runner] mark running failed user=%s job=%s err=%v", userID, jobID, err)
+			reportFailure("weekly_plan_mark_running", userID, jobID, err)
 		}
 
 		out, err := r.generateUC.Execute(ctx, input)
 		if err != nil {
 			log.Printf("[weeklyplan.runner] generation failed user=%s job=%s err=%v", userID, jobID, err)
+			reportFailure("weekly_plan_generation", userID, jobID, err)
 			_ = r.jobsRepo.MarkFailed(context.Background(), userID, jobID, err.Error())
 			return
 		}
 
 		if err := r.jobsRepo.MarkDone(ctx, userID, jobID, out.Draft.ID); err != nil {
 			log.Printf("[weeklyplan.runner] mark done failed user=%s job=%s draft=%s err=%v", userID, jobID, out.Draft.ID, err)
+			reportFailure("weekly_plan_mark_done", userID, jobID, err)
 		}
 	}()
 }

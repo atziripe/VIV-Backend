@@ -32,6 +32,14 @@ const (
 // just needs to comfortably outlast one HTTP round trip.
 const clientSecretTTL = 5 * time.Minute
 
+// requestTimeout bounds every call to Apple's servers. http.DefaultClient
+// (the previous value here) has no timeout of its own — a slow or stuck
+// network would hang until whichever caller is waiting on this gives up
+// first (observed in practice: the client's own timeout fired ~35s in,
+// surfacing as "context canceled" here rather than a clear, actionable
+// timeout error).
+const requestTimeout = 15 * time.Second
+
 // Client talks to Apple's own servers for the two "Sign in with Apple"
 // operations VIV needs: exchanging a client-captured authorization_code
 // for a refresh_token (ExchangeAuthorizationCode), and revoking that
@@ -70,7 +78,7 @@ func NewClient(teamID, keyID, clientID, privateKeyPEM string) (*Client, error) {
 
 	return &Client{
 		teamID: teamID, keyID: keyID, clientID: clientID,
-		privateKey: ecKey, httpClient: http.DefaultClient,
+		privateKey: ecKey, httpClient: &http.Client{Timeout: requestTimeout},
 	}, nil
 }
 
