@@ -5,7 +5,15 @@ import (
 	"log"
 	"math/rand"
 	"strings"
+
+	"golang.org/x/sync/errgroup"
 )
+
+// sundayCheckinConcurrency bounds how many SendPush calls run at once —
+// unbounded fan-out against FCM (and the Neon pool, for the occasional
+// Deactivate) isn't worth it for a once-a-week job; this just keeps the
+// whole run from being N sequential round trips to FCM.
+const sundayCheckinConcurrency = 20
 
 type SendSundayCheckinUseCase struct {
 	DeviceToken  DeviceTokenRepository
@@ -32,19 +40,31 @@ func (uc *SendSundayCheckinUseCase) Execute(ctx context.Context) error {
 
 	msg := sundayMessages[rand.Intn(len(sundayMessages))]
 
+	// Each token's send+deactivate is independent of every other's — no
+	// shared state between iterations, so this fans out instead of
+	// paying for N sequential FCM round trips. Every goroutine always
+	// returns nil (a failed send/deactivate is logged, not propagated —
+	// same as the sequential version), so errgroup is just doing bounded
+	// concurrency + wait-for-all here, not error aggregation.
+	g, gctx := errgroup.WithContext(ctx)
+	g.SetLimit(sundayCheckinConcurrency)
+
 	for _, t := range tokens {
-		err := uc.Notification.SendPush(ctx, t.Token, msg.Title, msg.Body)
-		if err != nil {
-			if isInvalidToken(err) {
-				log.Printf("[sunday_checkin] invalid token for user %s, deactivating", t.UserID)
-				_ = uc.DeviceToken.Deactivate(ctx, t.UserID)
-			} else {
-				log.Printf("[sunday_checkin] failed to send to user %s: %v", t.UserID, err)
+		g.Go(func() error {
+			if err := uc.Notification.SendPush(gctx, t.Token, msg.Title, msg.Body); err != nil {
+				if isInvalidToken(err) {
+					log.Printf("[sunday_checkin] invalid token for user %s, deactivating", t.UserID)
+					_ = uc.DeviceToken.Deactivate(gctx, t.UserID)
+				} else {
+					log.Printf("[sunday_checkin] failed to send to user %s: %v", t.UserID, err)
+				}
+				return nil
 			}
-			continue
-		}
-		log.Printf("[sunday_checkin] sent to user %s", t.UserID)
+			log.Printf("[sunday_checkin] sent to user %s", t.UserID)
+			return nil
+		})
 	}
+	_ = g.Wait()
 
 	return nil
 }

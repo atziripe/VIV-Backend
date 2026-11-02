@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/sync/errgroup"
+
 	"viv/internal/core/checkin"
 	"viv/internal/core/domain"
 )
@@ -497,39 +499,61 @@ func weekNumber(start time.Time) int {
 
 // weekProgress tallies this week's training days against how many have a
 // completed session log. SessionLogRepository has no range query today,
-// so this is up to 7 GetByDate calls — fine for a once-per-screen-open
-// read; worth a dedicated range method if this becomes a hot path.
+// so this is up to 7 GetByDate calls, one per day — each day is fully
+// independent of every other, so they run concurrently instead of as up
+// to 7 sequential round trips. Every goroutine writes only its own index
+// of days (never one another goroutine touches, since each is a distinct
+// weekday), so there's no race and no mutex needed; the two running
+// totals (TotalSessions/CompletedSessions) are tallied in a second,
+// purely sequential pass over the now-complete days slice, after
+// g.Wait() returns, rather than as shared counters multiple goroutines
+// would need to increment safely.
 //
 // A non-loggable (session-library) day never gets a SessionLog (see
 // loggableToday's doc comment in Execute) — applying gap 2's rule here
 // too keeps a past session-library day showing "done" instead of stuck
 // on "pending" forever, consistent with how the Timeline treats it.
 func weekProgress(ctx context.Context, logs SessionLogRepository, userID string, draft WeekDraft, now time.Time) WeekProgress {
-	wp := WeekProgress{Days: make([]DayDot, 0, 7)}
-	for _, d := range draft.Days {
-		dot := DayDot{Weekday: d.Weekday, IsToday: sameDate(d.Date, now)}
+	days := make([]DayDot, len(draft.Days))
+
+	g, gctx := errgroup.WithContext(ctx)
+	for i, d := range draft.Days {
+		g.Go(func() error {
+			dot := DayDot{Weekday: d.Weekday, IsToday: sameDate(d.Date, now)}
+			if d.IsRestDay {
+				dot.Status = "rest"
+				days[i] = dot
+				return nil
+			}
+
+			done := false
+			if d.Content != nil && d.Content.Exercises != nil {
+				log, err := logs.GetByDate(gctx, userID, d.Date)
+				done = err == nil && log != nil && log.Status == domain.SessionLogDone
+			} else {
+				done = d.Date.Before(now) && !sameDate(d.Date, now)
+			}
+
+			if done {
+				dot.Status = "done"
+			} else {
+				dot.Status = "pending"
+			}
+			days[i] = dot
+			return nil
+		})
+	}
+	_ = g.Wait()
+
+	wp := WeekProgress{Days: days}
+	for i, d := range draft.Days {
 		if d.IsRestDay {
-			dot.Status = "rest"
-			wp.Days = append(wp.Days, dot)
 			continue
 		}
 		wp.TotalSessions++
-
-		done := false
-		if d.Content != nil && d.Content.Exercises != nil {
-			log, err := logs.GetByDate(ctx, userID, d.Date)
-			done = err == nil && log != nil && log.Status == domain.SessionLogDone
-		} else {
-			done = d.Date.Before(now) && !sameDate(d.Date, now)
-		}
-
-		if done {
-			dot.Status = "done"
+		if days[i].Status == "done" {
 			wp.CompletedSessions++
-		} else {
-			dot.Status = "pending"
 		}
-		wp.Days = append(wp.Days, dot)
 	}
 	return wp
 }
