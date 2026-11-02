@@ -3,6 +3,7 @@ package runner
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -84,17 +85,22 @@ func (r *LocalTrainingPlanRunner) Run(userID, jobID, checkinID string) {
 			CheckinID: checkinID,
 		}
 
-		// Helper for failure logging
+		// Helper for failure logging — the single aggregation point for
+		// every real generation-failure path below, so Sentry reporting
+		// only needs to be wired in once here rather than at each call
+		// site.
 		fail := func(reason string) {
 			gl.Success = false
 			gl.Error = reason
 			gl.TotalDurationMs = time.Since(startTotal).Milliseconds()
 			logGeneration(gl)
+			reportFailure("training_plan_generation", userID, jobID, errors.New(reason))
 			_ = r.jobsRepo.MarkFailed(context.Background(), userID, jobID, reason)
 		}
 
 		if err := r.jobsRepo.MarkRunning(ctx, userID, jobID); err != nil {
 			log.Printf("[plan.runner] mark running failed user=%s job=%s err=%v", userID, jobID, err)
+			reportFailure("training_plan_mark_running", userID, jobID, err)
 		}
 
 		// ── Load dependencies ────────────────────────────────────
@@ -202,6 +208,7 @@ func (r *LocalTrainingPlanRunner) Run(userID, jobID, checkinID string) {
 				Failed:     true,
 			}
 			log.Printf("[plan.runner] nutrition generation failed (non-fatal): %v", err)
+			reportFailure("training_plan_nutrition_generation", userID, jobID, err)
 		} else {
 			nutritionTokens := nutritionOutput.TokensUsed.PromptTokens + nutritionOutput.TokensUsed.CompletionTokens
 			gl.Nutrition = &stepLog{
@@ -212,6 +219,7 @@ func (r *LocalTrainingPlanRunner) Run(userID, jobID, checkinID string) {
 			nutritionJSON, err = json.Marshal(nutritionOutput.Plan)
 			if err != nil {
 				log.Printf("[plan.runner] nutrition marshal failed user=%s err=%v", userID, err)
+				reportFailure("training_plan_nutrition_marshal", userID, jobID, err)
 				nutritionJSON = nil
 			}
 		}
@@ -247,6 +255,7 @@ func (r *LocalTrainingPlanRunner) Run(userID, jobID, checkinID string) {
 		user.LastActivePlanID = &plan.ID
 		if err := r.userRepo.Save(ctx, user); err != nil {
 			log.Printf("[plan.runner] update LastActivePlanID failed user=%s plan=%s err=%v", userID, plan.ID, err)
+			reportFailure("training_plan_update_last_active_plan", userID, jobID, err)
 		}
 
 		// Kick off copy enrichment in the background — the plan above is
@@ -270,6 +279,7 @@ func (r *LocalTrainingPlanRunner) Run(userID, jobID, checkinID string) {
 		// 8. Mark job done
 		if err := r.jobsRepo.MarkDone(ctx, userID, jobID, plan.ID); err != nil {
 			log.Printf("[plan.runner] mark done failed user=%s job=%s plan=%s err=%v", userID, jobID, plan.ID, err)
+			reportFailure("training_plan_mark_done", userID, jobID, err)
 		}
 	}()
 }
