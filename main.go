@@ -30,6 +30,7 @@ import (
 	corenutrition "viv/internal/core/nutrition"
 	"viv/internal/core/rules"
 	rulestraining "viv/internal/core/rules/training"
+	"viv/internal/core/strengthlibrary"
 	coretraining "viv/internal/core/training"
 	"viv/internal/core/usecase"
 
@@ -254,6 +255,18 @@ func main() {
 		fatal("failed to load mesocycle warmup/cooldown library: %v", err)
 	}
 	log.Printf("weekly-plan content loaded: session library + exercise library + mesocycle warmup/cooldown library")
+
+	// VIV-101's reviewed Strength movement catalog — a separate, new
+	// library (internal/core/strengthlibrary) loaded and validated here
+	// purely so a broken catalog fails the boot the same way every other
+	// content library's does. Nothing consumes it yet: VIV-108's real
+	// curated exercise-set selector (today still mesocycle.StubExerciseSetSelector,
+	// wired above) is what will call strengthlib.ApprovedExercises once
+	// it's ready — wiring that in is explicitly out of scope for this change.
+	if _, err := strengthlibrary.Load(); err != nil {
+		fatal("failed to load strength movement library: %v", err)
+	}
+	log.Printf("strength movement library loaded (include_pending_exercises=%v)", cfg.IncludePendingExercises)
 
 	// StubExerciseSetSelector: real curated exercise-set selection logic
 	// (VIV-108) doesn't exist yet — this just offers everything the

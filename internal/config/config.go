@@ -57,9 +57,35 @@ type Config struct {
 	AppleKeyID      string
 	AppleClientID   string
 	ApplePrivateKey string
+
+	// AppEnv is the deployment environment ("production", "staging",
+	// "development", ...) — same raw value main.go's sentry.Init already
+	// reads directly from APP_ENV for its own Environment option. Centralized
+	// here too so IncludePendingExercises (below) has something to gate on
+	// without every reader re-parsing the env var its own way.
+	AppEnv string
+
+	// IncludePendingExercises exposes exercises still pending Lina's
+	// review through strengthlibrary.Library.ExercisesForZone's dev-only
+	// escape hatch, instead of only the Approved set
+	// (strengthlibrary.Library.ApprovedExercises always ignores this
+	// flag completely — see its doc comment). Defaults to false, and
+	// Load forces it back to false outside development/staging no
+	// matter what INCLUDE_PENDING_EXERCISES says — a misconfigured
+	// production env var can never turn this on.
+	IncludePendingExercises bool
 }
 
 func Load() (*Config, error) {
+	appEnv := os.Getenv("APP_ENV")
+	includePending := getEnv("INCLUDE_PENDING_EXERCISES", "false") == "true"
+	if includePending && appEnv != "development" && appEnv != "staging" {
+		// Fail-safe, not a validation error: a stray env var in
+		// production should never surface pending, unreviewed Strength
+		// exercises to real users.
+		includePending = false
+	}
+
 	cfg := &Config{
 		HTTPPort:                getEnv("HTTP_PORT", "8080"),
 		FirebaseProjectID:       getEnv("FIREBASE_PROJECT_ID", ""),
@@ -75,6 +101,9 @@ func Load() (*Config, error) {
 		AppleKeyID:      os.Getenv("APPLE_KEY_ID"),
 		AppleClientID:   os.Getenv("APPLE_CLIENT_ID"),
 		ApplePrivateKey: strings.ReplaceAll(os.Getenv("APPLE_PRIVATE_KEY"), `\n`, "\n"),
+
+		AppEnv:                  appEnv,
+		IncludePendingExercises: includePending,
 	}
 	// podrías validar aquí que ProjectID no esté vacío, etc.
 	return cfg, nil
