@@ -74,6 +74,18 @@ type Config struct {
 	// matter what INCLUDE_PENDING_EXERCISES says — a misconfigured
 	// production env var can never turn this on.
 	IncludePendingExercises bool
+
+	// UseRealStrengthSessions switches Strength session assembly
+	// (VIV-112, internal/core/strengthsession) on — the real VIV-108
+	// pinned block hydrated against the real strengthlibrary catalog,
+	// instead of the OLD path (content.ExerciseLibrary's placeholder
+	// seed data). Every other activity type is unaffected either way.
+	// Unlike IncludePendingExercises, this is a plain feature flag, not
+	// a safety gate — USE_REAL_STRENGTH_SESSIONS, when explicitly set,
+	// always wins; only the default (unset) differs by environment:
+	// true in development, false everywhere else, until the team
+	// decides it's ready for staging/production.
+	UseRealStrengthSessions bool
 }
 
 func Load() (*Config, error) {
@@ -84,6 +96,11 @@ func Load() (*Config, error) {
 		// production should never surface pending, unreviewed Strength
 		// exercises to real users.
 		includePending = false
+	}
+
+	useRealStrengthSessions := appEnv == "development"
+	if v := os.Getenv("USE_REAL_STRENGTH_SESSIONS"); v != "" {
+		useRealStrengthSessions = v == "true"
 	}
 
 	cfg := &Config{
@@ -104,6 +121,7 @@ func Load() (*Config, error) {
 
 		AppEnv:                  appEnv,
 		IncludePendingExercises: includePending,
+		UseRealStrengthSessions: useRealStrengthSessions,
 	}
 	// podrías validar aquí que ProjectID no esté vacío, etc.
 	return cfg, nil

@@ -10,6 +10,8 @@ import (
 	"viv/internal/core/content"
 	"viv/internal/core/goal"
 	"viv/internal/core/mesocycle"
+	"viv/internal/core/strengthlibrary"
+	"viv/internal/core/strengthsession"
 	"viv/internal/core/usecase"
 )
 
@@ -139,6 +141,70 @@ func TestGetWeeklyPlanDay_MesocyclePinnedPath(t *testing.T) {
 	}
 	if d.MainExercises[0].Sets != 3 || d.MainExercises[0].Reps != "8-10 /leg" {
 		t.Errorf("MainExercises[0] prescription mismatch: %+v", d.MainExercises[0])
+	}
+}
+
+func TestGetWeeklyPlanDay_StrengthBlockPath(t *testing.T) {
+	drafts := &fakeDraftRepo{}
+	monday := time.Date(2026, time.May, 4, 0, 0, 0, 0, time.UTC)
+
+	strengthDay := usecase.DayPlan{
+		Assignment: cascade.SlotAssignment{
+			ActivityType: activity.Strength, Intensity: activity.IntensityM, Impact: activity.ImpactM,
+			MuscleGroup: activity.MuscleGroupLower,
+		},
+	}
+	strengthDay.Content = &usecase.SelectedContent{
+		StrengthBlock: &strengthsession.AssembledSession{
+			Exercises: []strengthsession.AssembledExercise{
+				{Slot: "Squat", Priority: strengthlibrary.PriorityMain, ExerciseName: "Back Squat", Equipment: []string{"Barbell", "Rack"}, PrescriptionText: "4 × 6-8 @ RIR 2-3"},
+				{Slot: "Hip Thrust", Priority: strengthlibrary.PriorityAccessory, ExerciseName: "Hip Thrust A", Equipment: []string{"Barbell"}, PrescriptionText: "3 × 10-12 @ RIR 2-3"},
+			},
+			Week:         3,
+			BlockNumber:  2,
+			ConfigStatus: "draft_not_reviewed_by_sport_scientist",
+			TierChanges:  []strengthsession.TierChange{{Lever: strengthsession.LeverLoadReduced, Detail: "using week 1's prescription for every exercise, regardless of the actual current week"}},
+		},
+	}
+	seedDraft(t, drafts, "u1", monday, goal.StrengthMuscle, [7]usecase.DayPlan{
+		strengthDay, restDay(), restDay(), restDay(), restDay(), restDay(), restDay(),
+	})
+
+	uc := usecase.NewGetWeeklyPlanDayUseCase(drafts, &fakeSessionLogRepo{})
+	out, err := uc.Execute(context.Background(), usecase.GetWeeklyPlanDayInput{UserID: "u1", Date: monday})
+	if err != nil {
+		t.Fatalf("Execute returned error: %v", err)
+	}
+
+	d := out.Day
+	if d.StrengthBlockNumber != 2 {
+		t.Errorf("StrengthBlockNumber = %d, want 2", d.StrengthBlockNumber)
+	}
+	if d.StrengthWeek != 3 {
+		t.Errorf("StrengthWeek = %d, want 3", d.StrengthWeek)
+	}
+	if d.StrengthConfigStatus != "draft_not_reviewed_by_sport_scientist" {
+		t.Errorf("StrengthConfigStatus = %q, want the config's provisional status to come through verbatim", d.StrengthConfigStatus)
+	}
+	if len(d.StrengthTierChanges) != 1 || d.StrengthTierChanges[0].Lever != strengthsession.LeverLoadReduced {
+		t.Fatalf("StrengthTierChanges = %+v, want the single LoadReduced change", d.StrengthTierChanges)
+	}
+	if len(d.MainExercises) != 2 {
+		t.Fatalf("MainExercises = %+v, want 2", d.MainExercises)
+	}
+	if d.MainExercises[0].Name != "Back Squat" || d.MainExercises[0].Slot != "Squat" || d.MainExercises[0].Priority != "Main" {
+		t.Errorf("MainExercises[0] = %+v, want Back Squat/Squat/Main", d.MainExercises[0])
+	}
+	if d.MainExercises[0].PrescriptionText != "4 × 6-8 @ RIR 2-3" {
+		t.Errorf("PrescriptionText = %q, want the config-authored text kept as written", d.MainExercises[0].PrescriptionText)
+	}
+	if len(d.MainExercises[0].Equipment) != 2 {
+		t.Errorf("Equipment = %+v, want 2 entries", d.MainExercises[0].Equipment)
+	}
+	// This path never decomposes the prescription back into structured
+	// numbers — Sets/Reps/RestSeconds/LoadGuidance/FormCue stay zero.
+	if d.MainExercises[0].Sets != 0 || d.MainExercises[0].Reps != "" {
+		t.Errorf("expected Sets/Reps to stay zero for the Strength assembly path, got %+v", d.MainExercises[0])
 	}
 }
 

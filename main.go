@@ -25,12 +25,14 @@ import (
 	"viv/internal/adapters/repository"
 	"viv/internal/adapters/runner"
 	"viv/internal/config"
+	"viv/internal/core/cascade"
 	corecontent "viv/internal/core/content"
 	"viv/internal/core/mesocycle"
 	corenutrition "viv/internal/core/nutrition"
 	"viv/internal/core/rules"
 	rulestraining "viv/internal/core/rules/training"
 	"viv/internal/core/strengthlibrary"
+	"viv/internal/core/strengthsession"
 	coretraining "viv/internal/core/training"
 	"viv/internal/core/usecase"
 
@@ -273,18 +275,31 @@ func main() {
 	// VIV-108 real selector: deterministic, config-driven slot-pool
 	// rotation over the approved catalog above — replaces the old
 	// StubExerciseSetSelector/StubExerciseLibrary placeholder entirely.
-	// NOTE: content_selection.go (VIV-112) still hydrates pinned IDs
-	// against weeklyExerciseLib (internal/content/training_v2/exercises/,
-	// 3 placeholder exercises per muscle group) — those IDs won't match
-	// strengthLib's real ones (e.g. "lower_goblet_squat") until that
-	// content is replaced with real prescriptions for the 113-exercise
-	// catalog. Known, accepted gap — see the commit that wired this in.
 	exercisePinService := usecase.NewExercisePinService(exercisePinRepo, mesocycle.DefaultBlockExerciseSelector{}, strengthLib, strengthBlockConfig)
 
-	weeklyScheduler := openai.NewWeeklyScheduler(oaClient)                                                                                                // VIV-109, real LLM-backed Layer 1
-	ruleEngineValidator := usecase.NewRuleEngineValidator(weeklyScheduler)                                                                                // VIV-110, retries Layer 1 once on a spacing violation
-	jointImpactWarnings := usecase.NewJointImpactWarningsLayer()                                                                                          // VIV-111
-	weeklyContentSelector := usecase.NewSessionContentSelector(weeklySessionLib, weeklyExerciseLib, weeklyMesocycleWarmupCooldownLib, exercisePinService) // VIV-112
+	// VIV-105's ReduceDuration/SimplifyComplexity levers have never
+	// actually fired for ANY activity type before this — DefaultContentLibrary
+	// was never assigned anywhere, so it stayed the package's own
+	// always-false stub. This wires it for real, but ONLY for Strength
+	// (strengthsession.ContentLibraryAdapter.HasVariant returns false
+	// for every other activity type unconditionally) and only when
+	// cfg.UseRealStrengthSessions is on — with the flag off, Strength
+	// must behave exactly like the old stub too, since the OLD content
+	// selection path below has no idea how to handle a DurationTier=Short
+	// Strength slot.
+	cascade.DefaultContentLibrary = strengthsession.ContentLibraryAdapter{
+		Config:  strengthBlockConfig,
+		Enabled: cfg.UseRealStrengthSessions,
+	}
+
+	weeklyScheduler := openai.NewWeeklyScheduler(oaClient)                 // VIV-109, real LLM-backed Layer 1
+	ruleEngineValidator := usecase.NewRuleEngineValidator(weeklyScheduler) // VIV-110, retries Layer 1 once on a spacing violation
+	jointImpactWarnings := usecase.NewJointImpactWarningsLayer()           // VIV-111
+	weeklyContentSelector := usecase.NewSessionContentSelector(            // VIV-112
+		weeklySessionLib, weeklyExerciseLib, weeklyMesocycleWarmupCooldownLib, exercisePinService,
+		strengthLib, strengthBlockConfig, cfg.UseRealStrengthSessions,
+	)
+	log.Printf("strength session assembly: use_real_strength_sessions=%v", cfg.UseRealStrengthSessions)
 
 	generateWeeklyPlanUC := usecase.NewGenerateWeeklyPlanUsecase(
 		cyclePhaseLookup,

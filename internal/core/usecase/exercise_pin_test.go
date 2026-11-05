@@ -79,7 +79,20 @@ func testFixtureConfig(t *testing.T) *strengthlibrary.BlockConfig {
 			"Full body":  [{"slot": "Squat", "priority": "Main", "source_groups": ["Squat"]}],
 			"Core":       [{"slot": "Anti-Extension", "priority": "Main", "source_groups": ["Anti-extension"]}]
 		},
-		"rotation_policy": {"Main": "hold", "Accessory": 1, "Optional": 1}
+		"rotation_policy": {"Main": "hold", "Accessory": 1, "Optional": 1},
+		"status": "test_fixture",
+		"exercise_types": {"Placeholder Exercise": {"type": "C", "per_side": false}},
+		"weekly_prescription_by_type": {"C": ["w1", "w2", "w3", "w4"]},
+		"variant_rules": {
+			"short": {"drop_order": ["Optional", "Accessory"], "never_drop": ["Main"], "min_exercises": 3},
+			"reduced_load": {"rule": "use_week_1_prescription_of_each_exercise_type"},
+			"simplified": {"active": false},
+			"intensity_mapping": {
+				"Low": {"extra_rir": 2, "sets_delta": -1, "min_sets": 2},
+				"Medium": "as_written",
+				"High": "treated_as_Medium_until_reviewed"
+			}
+		}
 	}`))
 	if err != nil {
 		t.Fatalf("testFixtureConfig: %v", err)
@@ -303,5 +316,38 @@ func TestExercisePinService_CascadeAdjustmentNeverChangesPinnedExercises(t *test
 	}
 	if repo.saveCalls != 1 {
 		t.Errorf("saveCalls = %d, want 1 — the cascade adjustment must not have triggered re-selection", repo.saveCalls)
+	}
+}
+
+// ============================================================================
+// ResolvePinnedBlock — the richer sibling VIV-112 needs
+// ============================================================================
+
+func TestExercisePinService_ResolvePinnedBlock_ReturnsBlockNumberAndActivatedOn(t *testing.T) {
+	repo := newFakeExercisePinRepo()
+	day0 := time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC)
+	svc := newTestPinService(t, repo, day0)
+
+	pin, err := svc.ResolvePinnedBlock(context.Background(), "u1", activity.Strength, activity.MuscleGroupLower)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if pin.BlockNumber != 1 {
+		t.Errorf("BlockNumber = %d, want 1", pin.BlockNumber)
+	}
+	if !pin.ActivatedOn.Equal(day0) {
+		t.Errorf("ActivatedOn = %v, want %v", pin.ActivatedOn, day0)
+	}
+	if len(pin.ActiveExercises) == 0 {
+		t.Error("expected a non-empty ActiveExercises map")
+	}
+
+	day29 := day0.AddDate(0, 0, mesocycle.StrengthMesocycleLengthDays)
+	rotated, err := newTestPinService(t, repo, day29).ResolvePinnedBlock(context.Background(), "u1", activity.Strength, activity.MuscleGroupLower)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if rotated.BlockNumber != 2 {
+		t.Errorf("after rotation, BlockNumber = %d, want 2", rotated.BlockNumber)
 	}
 }

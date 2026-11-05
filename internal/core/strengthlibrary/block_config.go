@@ -47,11 +47,17 @@ type rotationSpec struct {
 }
 
 // BlockConfig is VIV_Strength_Block_Config.json, loaded and validated —
-// which slots exist per zone, and how each priority tier rotates by
-// default.
+// which slots exist per zone, how each priority tier rotates by
+// default, and (see prescription_config.go) the exercise-type/
+// prescription/variant-rules data VIV-112's session assembly needs.
 type BlockConfig struct {
 	zones          map[Zone][]Slot
 	rotationPolicy map[SlotPriority]rotationSpec
+
+	status             string
+	exerciseTypes      map[string]exerciseTypeInfo
+	prescriptionByType map[string][4]string
+	variantRules       VariantRules
 }
 
 //go:embed data/VIV_Strength_Block_Config.json
@@ -83,8 +89,12 @@ func NewBlockConfigFromJSON(data []byte) (*BlockConfig, error) {
 // ticket, deliberately not modeled here; encoding/json ignores unknown
 // fields by default, so they just pass through unparsed.
 type rawBlockConfig struct {
-	Zones          map[string][]rawSlot       `json:"zones"`
-	RotationPolicy map[string]json.RawMessage `json:"rotation_policy"`
+	Status                   string                     `json:"status"`
+	Zones                    map[string][]rawSlot       `json:"zones"`
+	RotationPolicy           map[string]json.RawMessage `json:"rotation_policy"`
+	ExerciseTypes            map[string]rawExerciseType `json:"exercise_types"`
+	WeeklyPrescriptionByType map[string][]string        `json:"weekly_prescription_by_type"`
+	VariantRules             rawVariantRules            `json:"variant_rules"`
 }
 
 type rawSlot struct {
@@ -180,6 +190,10 @@ func loadBlockConfigFromJSON(data []byte) (*BlockConfig, error) {
 			return nil, fmt.Errorf("strengthlibrary: block config: rotation_policy[%q]: %w", p, err)
 		}
 		cfg.rotationPolicy[p] = spec
+	}
+
+	if err := populatePrescriptionConfig(cfg, raw); err != nil {
+		return nil, err
 	}
 
 	return cfg, nil

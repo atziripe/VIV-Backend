@@ -94,6 +94,20 @@ func (f *fakePinResolver) ResolvePinnedExercises(_ context.Context, userID strin
 	return f.ids, nil
 }
 
+// ResolvePinnedBlock is only exercised by the real VIV-112 Strength
+// assembly path (useRealStrengthSessions=true), which none of the tests
+// in this file enable — every call site here passes
+// useRealStrengthSessions=false, so this is never actually invoked, but
+// must exist to satisfy usecase.ExercisePinResolver.
+func (f *fakePinResolver) ResolvePinnedBlock(_ context.Context, userID string, activityType activity.ID, muscleGroup activity.MuscleGroup) (mesocycle.PinnedExerciseSet, error) {
+	f.callCount++
+	f.lastUser, f.lastType, f.lastGroup = userID, activityType, muscleGroup
+	if f.err != nil {
+		return mesocycle.PinnedExerciseSet{}, f.err
+	}
+	return mesocycle.PinnedExerciseSet{ActivityType: activityType, MuscleGroup: muscleGroup}, nil
+}
+
 // oneDayDraft builds a WeekDraft with day 0 set to day0 and every other
 // day explicitly marked as a rest day — the zero-value DayPlan is NOT a
 // rest day (IsRestDay defaults to false), so leaving days 1-6
@@ -122,7 +136,7 @@ func standardYogaSession() content.Session {
 func TestSessionContentSelector_StandardTierSlotSelectsNormally(t *testing.T) {
 	sessions := buildSessionLibrary(t, standardYogaSession())
 	exercises := buildExerciseLibrary(t)
-	selector := usecase.NewSessionContentSelector(sessions, exercises, buildWarmupCooldownLibrary(t), &fakePinResolver{})
+	selector := usecase.NewSessionContentSelector(sessions, exercises, buildWarmupCooldownLibrary(t), &fakePinResolver{}, nil, nil, false)
 
 	draft := oneDayDraft("u1", usecase.DayPlan{
 		Assignment: cascade.SlotAssignment{ActivityType: activity.Yoga, Intensity: activity.IntensityL, Impact: activity.ImpactL, MuscleGroup: activity.MuscleGroupFullBody},
@@ -152,7 +166,7 @@ func TestSessionContentSelector_MissingVariantErrorsLoudly(t *testing.T) {
 	// Library has ONLY the standard yoga session — no "short" variant.
 	sessions := buildSessionLibrary(t, standardYogaSession())
 	exercises := buildExerciseLibrary(t)
-	selector := usecase.NewSessionContentSelector(sessions, exercises, buildWarmupCooldownLibrary(t), &fakePinResolver{})
+	selector := usecase.NewSessionContentSelector(sessions, exercises, buildWarmupCooldownLibrary(t), &fakePinResolver{}, nil, nil, false)
 
 	draft := oneDayDraft("u1", usecase.DayPlan{
 		Assignment: cascade.SlotAssignment{
@@ -173,7 +187,7 @@ func TestSessionContentSelector_MissingVariantErrorsLoudly(t *testing.T) {
 func TestSessionContentSelector_MissingStandardContentErrors(t *testing.T) {
 	sessions := buildSessionLibrary(t) // empty library
 	exercises := buildExerciseLibrary(t)
-	selector := usecase.NewSessionContentSelector(sessions, exercises, buildWarmupCooldownLibrary(t), &fakePinResolver{})
+	selector := usecase.NewSessionContentSelector(sessions, exercises, buildWarmupCooldownLibrary(t), &fakePinResolver{}, nil, nil, false)
 
 	draft := oneDayDraft("u1", usecase.DayPlan{
 		Assignment: cascade.SlotAssignment{ActivityType: activity.Yoga, Intensity: activity.IntensityL, Impact: activity.ImpactL, MuscleGroup: activity.MuscleGroupFullBody},
@@ -202,7 +216,7 @@ func TestSessionContentSelector_StrengthSlotPullsFromPinnedSet(t *testing.T) {
 	sessions := buildSessionLibrary(t) // deliberately empty — Strength must never touch this
 	exercises := buildExerciseLibrary(t, lowerExercises()...)
 	pins := &fakePinResolver{ids: []mesocycle.ExerciseID{"lower_exercise_1", "lower_exercise_2"}}
-	selector := usecase.NewSessionContentSelector(sessions, exercises, buildWarmupCooldownLibrary(t, lowerWarmupCooldown()), pins)
+	selector := usecase.NewSessionContentSelector(sessions, exercises, buildWarmupCooldownLibrary(t, lowerWarmupCooldown()), pins, nil, nil, false)
 
 	draft := oneDayDraft("u1", usecase.DayPlan{
 		Assignment: cascade.SlotAssignment{ActivityType: activity.Strength, Intensity: activity.IntensityM, Impact: activity.ImpactM, MuscleGroup: activity.MuscleGroupLower, LoadTier: cascade.LoadStandard},
@@ -247,7 +261,7 @@ func TestSessionContentSelector_StrengthSlotUsesReducedPrescriptionForLoadTierRe
 	sessions := buildSessionLibrary(t)
 	exercises := buildExerciseLibrary(t, lowerExercises()...)
 	pins := &fakePinResolver{ids: []mesocycle.ExerciseID{"lower_exercise_1", "lower_exercise_2"}}
-	selector := usecase.NewSessionContentSelector(sessions, exercises, buildWarmupCooldownLibrary(t, lowerWarmupCooldown()), pins)
+	selector := usecase.NewSessionContentSelector(sessions, exercises, buildWarmupCooldownLibrary(t, lowerWarmupCooldown()), pins, nil, nil, false)
 
 	draft := oneDayDraft("u1", usecase.DayPlan{
 		Assignment: cascade.SlotAssignment{ActivityType: activity.Strength, Intensity: activity.IntensityL, Impact: activity.ImpactL, MuscleGroup: activity.MuscleGroupLower, LoadTier: cascade.LoadReduced, AdjustmentLever: cascade.AdjustmentProtectType},
@@ -273,7 +287,7 @@ func TestSessionContentSelector_PinnedExerciseNotInLibraryErrors(t *testing.T) {
 	sessions := buildSessionLibrary(t)
 	exercises := buildExerciseLibrary(t) // empty — the pinned ID won't be found
 	pins := &fakePinResolver{ids: []mesocycle.ExerciseID{"ghost_exercise"}}
-	selector := usecase.NewSessionContentSelector(sessions, exercises, buildWarmupCooldownLibrary(t), pins)
+	selector := usecase.NewSessionContentSelector(sessions, exercises, buildWarmupCooldownLibrary(t), pins, nil, nil, false)
 
 	draft := oneDayDraft("u1", usecase.DayPlan{
 		Assignment: cascade.SlotAssignment{ActivityType: activity.Strength, Intensity: activity.IntensityM, Impact: activity.ImpactM, MuscleGroup: activity.MuscleGroupLower, LoadTier: cascade.LoadStandard},
@@ -293,7 +307,7 @@ func TestSessionContentSelector_RestDaysSkipped(t *testing.T) {
 	sessions := buildSessionLibrary(t)
 	exercises := buildExerciseLibrary(t)
 	pins := &fakePinResolver{}
-	selector := usecase.NewSessionContentSelector(sessions, exercises, buildWarmupCooldownLibrary(t), pins)
+	selector := usecase.NewSessionContentSelector(sessions, exercises, buildWarmupCooldownLibrary(t), pins, nil, nil, false)
 
 	draft := oneDayDraft("u1", usecase.DayPlan{IsRestDay: true})
 

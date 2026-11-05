@@ -264,6 +264,19 @@ type weeklyPlanDayExerciseResponse struct {
 	RestSeconds  int    `json:"rest_seconds"`
 	LoadGuidance string `json:"load_guidance"`
 	FormCue      string `json:"form_cue"`
+
+	// Slot/Priority/Equipment/PrescriptionText are populated for the
+	// real VIV-112 Strength assembly path only — see
+	// usecase.WeeklyPlanDayExercise's doc comment.
+	Slot             string   `json:"slot,omitempty"`
+	Priority         string   `json:"priority,omitempty"`
+	Equipment        []string `json:"equipment,omitempty"`
+	PrescriptionText string   `json:"prescription_text,omitempty"`
+}
+
+type weeklyPlanTierChangeResponse struct {
+	Lever  string `json:"lever"`
+	Detail string `json:"detail"`
 }
 
 type weeklyPlanDayDetailResponse struct {
@@ -292,6 +305,20 @@ type weeklyPlanDayDetailResponse struct {
 	Warmup        *weeklyPlanDayBlockResponse     `json:"warmup,omitempty"`
 	MainExercises []weeklyPlanDayExerciseResponse `json:"main_exercises,omitempty"`
 	Cooldown      *weeklyPlanDayBlockResponse     `json:"cooldown,omitempty"`
+
+	// StrengthBlockNumber/StrengthWeek/StrengthConfigStatus/
+	// StrengthTierChanges are populated for the real VIV-112 Strength
+	// assembly path only — see usecase.WeeklyPlanDayDetail's doc
+	// comment. config.Status() is required non-empty by
+	// strengthlibrary's own load-time validation, so
+	// StrengthConfigStatus is always present (never silently dropped)
+	// whenever this IS a Strength day assembled by that path — the task
+	// that built it requires the config's provisional status stay
+	// traceable to the client.
+	StrengthBlockNumber  int                            `json:"strength_block_number,omitempty"`
+	StrengthWeek         int                            `json:"strength_week,omitempty"`
+	StrengthConfigStatus string                         `json:"strength_config_status,omitempty"`
+	StrengthTierChanges  []weeklyPlanTierChangeResponse `json:"strength_tier_changes,omitempty"`
 
 	// Session is the in-progress or completed real-time log for a
 	// Loggable day, if one has been started — see SessionLogHandler
@@ -381,6 +408,12 @@ func (h *WeeklyPlanHandler) Day(w http.ResponseWriter, r *http.Request) {
 		resp.DurationMinutes = d.DurationMinutes
 		resp.DurationIsEstimated = d.DurationIsEstimated
 		resp.ExerciseCount = len(d.MainExercises)
+		resp.StrengthBlockNumber = d.StrengthBlockNumber
+		resp.StrengthWeek = d.StrengthWeek
+		resp.StrengthConfigStatus = d.StrengthConfigStatus
+		for _, tc := range d.StrengthTierChanges {
+			resp.StrengthTierChanges = append(resp.StrengthTierChanges, weeklyPlanTierChangeResponse{Lever: tc.Lever, Detail: tc.Detail})
+		}
 		if d.Session != nil {
 			sr := toSessionLogResponse(*d.Session)
 			resp.Session = &sr
@@ -404,6 +437,7 @@ func (h *WeeklyPlanHandler) Day(w http.ResponseWriter, r *http.Request) {
 			resp.MainExercises = append(resp.MainExercises, weeklyPlanDayExerciseResponse{
 				ID: e.ID, Name: e.Name, Sets: e.Sets, Reps: e.Reps, RestSeconds: e.RestSeconds,
 				LoadGuidance: e.LoadGuidance, FormCue: e.FormCue,
+				Slot: e.Slot, Priority: e.Priority, Equipment: e.Equipment, PrescriptionText: e.PrescriptionText,
 			})
 		}
 	}

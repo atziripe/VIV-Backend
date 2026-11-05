@@ -479,5 +479,36 @@
       "3 × 40 s"
     ]
   },
-  "rir_note": "RIR = reps in reserve"
+  "rir_note": "RIR = reps in reserve",
+  "variant_rules": {
+    "_status": "DRAFT. Conservative defaults by the founding team. Not reviewed by a sport scientist.",
+    "short": {
+      "drop_order": [
+        "Optional",
+        "Accessory"
+      ],
+      "never_drop": [
+        "Main"
+      ],
+      "min_exercises": 3,
+      "note": "Drop Optional slots first, then Accessory slots from the last one up. Never drop Main."
+    },
+    "reduced_load": {
+      "rule": "use_week_1_prescription_of_each_exercise_type",
+      "note": "Same exercises, prescription of week 1 (RIR 3) whatever the current week is."
+    },
+    "simplified": {
+      "active": false,
+      "note": "Inactive until the technical/balance ratings are reviewed."
+    },
+    "intensity_mapping": {
+      "Low": {
+        "extra_rir": 2,
+        "sets_delta": -1,
+        "min_sets": 2
+      },
+      "Medium": "as_written",
+      "High": "treated_as_Medium_until_reviewed"
+    }
+  }
 }

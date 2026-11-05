@@ -2,6 +2,27 @@ package strengthlibrary
 
 import "testing"
 
+// minimalPrescriptionJSON is the smallest valid status/exercise_types/
+// weekly_prescription_by_type/variant_rules section a BlockConfig
+// fixture needs to pass validation — these tests don't exercise
+// prescription lookups at all, so the exercise name/type code are
+// arbitrary placeholders.
+const minimalPrescriptionJSON = `
+	"status": "test_fixture",
+	"exercise_types": {"Placeholder Exercise": {"type": "C", "per_side": false}},
+	"weekly_prescription_by_type": {"C": ["w1", "w2", "w3", "w4"]},
+	"variant_rules": {
+		"short": {"drop_order": ["Optional", "Accessory"], "never_drop": ["Main"], "min_exercises": 3},
+		"reduced_load": {"rule": "use_week_1_prescription_of_each_exercise_type"},
+		"simplified": {"active": false},
+		"intensity_mapping": {
+			"Low": {"extra_rir": 2, "sets_delta": -1, "min_sets": 2},
+			"Medium": "as_written",
+			"High": "treated_as_Medium_until_reviewed"
+		}
+	}
+`
+
 func TestLoadBlockConfig_EmbeddedConfigIsValid(t *testing.T) {
 	cfg, err := LoadBlockConfig()
 	if err != nil {
@@ -55,7 +76,7 @@ func testBlockConfigJSON() []byte {
 				{"slot": "Calves", "priority": "Optional", "source_groups": ["Calves"]}
 			]
 		},
-		"rotation_policy": {"Main": "hold", "Accessory": 1, "Optional": 1}
+		"rotation_policy": {"Main": "hold", "Accessory": 1, "Optional": 1},` + minimalPrescriptionJSON + `
 	}`)
 }
 
@@ -110,7 +131,7 @@ func TestBlockConfig_SlotOverrideChangesRotationPeriod(t *testing.T) {
 				{"slot": "Calves", "priority": "Optional", "source_groups": ["Calves"], "rotation_period_blocks": 2}
 			]
 		},
-		"rotation_policy": {"Main": "hold", "Accessory": 1, "Optional": 1}
+		"rotation_policy": {"Main": "hold", "Accessory": 1, "Optional": 1},` + minimalPrescriptionJSON + `
 	}`)
 	cfg, err := NewBlockConfigFromJSON(withOverride)
 	if err != nil {

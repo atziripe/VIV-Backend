@@ -42,12 +42,32 @@ type WeeklyPlanDayExercise struct {
 	RestSeconds  int
 	LoadGuidance string
 	FormCue      string
+
+	// Slot/Priority/Equipment/PrescriptionText are populated for the real
+	// VIV-112 Strength assembly path only (StrengthBlock) — that path's
+	// prescription is a single piece of config-authored text, kept as
+	// written rather than decomposed back into Sets/Reps/RestSeconds/
+	// LoadGuidance/FormCue, so those fields stay zero there. See
+	// strengthsession.AssembledExercise.
+	Slot             string
+	Priority         string
+	Equipment        []string
+	PrescriptionText string
 }
 
 type WeeklyPlanDayBlock struct {
 	DurationMinutes int
 	Description     string
 	Movements       []string
+}
+
+// WeeklyPlanTierChange is one cascade (VIV-105) tier decision that
+// actually changed something about a Strength day's assembly, surfaced
+// as plain data so the client can say why. Mirrors
+// strengthsession.TierChange.
+type WeeklyPlanTierChange struct {
+	Lever  string
+	Detail string
 }
 
 type WeeklyPlanDayDetail struct {
@@ -91,6 +111,19 @@ type WeeklyPlanDayDetail struct {
 	Warmup        *WeeklyPlanDayBlock
 	MainExercises []WeeklyPlanDayExercise
 	Cooldown      *WeeklyPlanDayBlock
+
+	// StrengthBlockNumber/StrengthWeek/StrengthConfigStatus/
+	// StrengthTierChanges are populated for the real VIV-112 Strength
+	// assembly path only (day.Content.StrengthBlock != nil) — zero
+	// otherwise. StrengthConfigStatus is
+	// VIV_Strength_Block_Config.json's own "status" field verbatim
+	// (e.g. "draft_not_reviewed_by_sport_scientist"); the task that
+	// built the Strength assembly requires this stay traceable all the
+	// way to the client, so it is never dropped here either.
+	StrengthBlockNumber  int
+	StrengthWeek         int
+	StrengthConfigStatus string
+	StrengthTierChanges  []WeeklyPlanTierChange
 
 	// Session is the in-progress or completed real-time log for this day
 	// — nil when Loggable is false, or when Loggable is true but the user
@@ -200,6 +233,24 @@ func (uc *GetWeeklyPlanDayUseCase) Execute(ctx context.Context, in GetWeeklyPlan
 				Description:     day.Content.Cooldown.Description,
 				Movements:       day.Content.Cooldown.Movements,
 			}
+		}
+
+	case day.Content != nil && day.Content.StrengthBlock != nil:
+		sb := day.Content.StrengthBlock
+		detail.StrengthBlockNumber = sb.BlockNumber
+		detail.StrengthWeek = sb.Week
+		detail.StrengthConfigStatus = sb.ConfigStatus
+		for _, tc := range sb.TierChanges {
+			detail.StrengthTierChanges = append(detail.StrengthTierChanges, WeeklyPlanTierChange{Lever: tc.Lever, Detail: tc.Detail})
+		}
+		for _, e := range sb.Exercises {
+			detail.MainExercises = append(detail.MainExercises, WeeklyPlanDayExercise{
+				Name:             e.ExerciseName,
+				Slot:             e.Slot,
+				Priority:         string(e.Priority),
+				Equipment:        e.Equipment,
+				PrescriptionText: e.PrescriptionText,
+			})
 		}
 	}
 

@@ -99,31 +99,12 @@ func (s *ExercisePinService) ResolvePinnedExercises(
 	activityType activity.ID,
 	muscleGroup activity.MuscleGroup,
 ) ([]mesocycle.ExerciseID, error) {
-	userID = strings.TrimSpace(userID)
-	if userID == "" {
-		return nil, fmt.Errorf("exercise pin: userID is required")
-	}
 	if !mesocycle.IsMesocycleEligible(activityType) {
 		return nil, nil
 	}
-
-	existing, err := s.repo.Get(ctx, userID, activityType, muscleGroup)
+	pin, err := s.ResolvePinnedBlock(ctx, userID, activityType, muscleGroup)
 	if err != nil {
-		return nil, fmt.Errorf("exercise pin: loading existing pin: %w", err)
-	}
-
-	pin, changed, thinSlots, err := mesocycle.ResolvePin(existing, activityType, muscleGroup, s.now(), s.selector, s.library, s.config)
-	if err != nil {
-		return nil, fmt.Errorf("exercise pin: resolving pin: %w", err)
-	}
-
-	if changed {
-		if err := s.repo.Save(ctx, userID, pin); err != nil {
-			return nil, fmt.Errorf("exercise pin: saving pin: %w", err)
-		}
-		for _, slotName := range thinSlots {
-			log.Printf("[exercise_pin] thin slot: zone slot %q for %s/%s has only 1 approved exercise — needs more library variety", slotName, activityType, muscleGroup)
-		}
+		return nil, err
 	}
 
 	groups := make([]string, 0, len(pin.ActiveExercises))
@@ -137,4 +118,47 @@ func (s *ExercisePinService) ResolvePinnedExercises(
 		ids[i] = pin.ActiveExercises[strengthlibrary.MovementGroup(group)]
 	}
 	return ids, nil
+}
+
+// ResolvePinnedBlock is ResolvePinnedExercises's richer sibling — VIV-112
+// (Strength session assembly) needs the full pin, not just the flat ID
+// list: BlockNumber and ActivatedOn are what let it compute which of the
+// 4 weeks the user is in and re-derive the per-slot exercise map (via
+// mesocycle.DefaultBlockExerciseSelector.SelectBlockExercises(zone,
+// pin.BlockNumber, ...), a pure function of zone+block number — cheaper
+// and simpler than reverse-mapping ActiveExercises' MovementGroup keys
+// back to slot names). Unlike ResolvePinnedExercises, this errors for a
+// non-eligible activityType rather than returning a zero value — every
+// caller of this method already knows it's asking about Strength.
+func (s *ExercisePinService) ResolvePinnedBlock(
+	ctx context.Context,
+	userID string,
+	activityType activity.ID,
+	muscleGroup activity.MuscleGroup,
+) (mesocycle.PinnedExerciseSet, error) {
+	userID = strings.TrimSpace(userID)
+	if userID == "" {
+		return mesocycle.PinnedExerciseSet{}, fmt.Errorf("exercise pin: userID is required")
+	}
+
+	existing, err := s.repo.Get(ctx, userID, activityType, muscleGroup)
+	if err != nil {
+		return mesocycle.PinnedExerciseSet{}, fmt.Errorf("exercise pin: loading existing pin: %w", err)
+	}
+
+	pin, changed, thinSlots, err := mesocycle.ResolvePin(existing, activityType, muscleGroup, s.now(), s.selector, s.library, s.config)
+	if err != nil {
+		return mesocycle.PinnedExerciseSet{}, fmt.Errorf("exercise pin: resolving pin: %w", err)
+	}
+
+	if changed {
+		if err := s.repo.Save(ctx, userID, pin); err != nil {
+			return mesocycle.PinnedExerciseSet{}, fmt.Errorf("exercise pin: saving pin: %w", err)
+		}
+		for _, slotName := range thinSlots {
+			log.Printf("[exercise_pin] thin slot: zone slot %q for %s/%s has only 1 approved exercise — needs more library variety", slotName, activityType, muscleGroup)
+		}
+	}
+
+	return pin, nil
 }
