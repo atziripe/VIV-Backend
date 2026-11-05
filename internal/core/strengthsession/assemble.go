@@ -70,6 +70,17 @@ const (
 	LeverIntensityHighDowngraded = "intensity_high_downgraded"
 )
 
+// AssembledWarmupCooldown is one zone's warm-up or cool-down —
+// strengthlibrary.WarmupCooldown's two halves, each carried separately
+// since a session shows them as two distinct blocks. Movements are the
+// config's own plain-text lines, kept exactly as written — never
+// parsed into sets/reps, same convention as AssembledExercise's
+// PrescriptionText.
+type AssembledWarmupCooldown struct {
+	DurationMinutes int
+	Movements       []string
+}
+
 // AssembledSession is VIV-112's full output for one Strength slot.
 type AssembledSession struct {
 	Exercises []AssembledExercise
@@ -90,6 +101,25 @@ type AssembledSession struct {
 	// broken out as its own field (not just a TierChanges entry) so the
 	// caller can log it without string-matching TierChanges.
 	HighIntensityDowngraded bool
+
+	// Warmup/Cooldown come straight from
+	// config.WarmupCooldownForZone(zone) — resolved once, up front, and
+	// never touched by any tier lever. warmup_cooldown.applies_to_all_tiers
+	// is validated true at config load time specifically so this stays
+	// true: a Short session drops exercise SLOTS only (see entries/
+	// dropForShort above), never shortens the warm-up/cool-down itself.
+	Warmup   AssembledWarmupCooldown
+	Cooldown AssembledWarmupCooldown
+
+	// RampUpNote is warmup_cooldown.ramp_up_note verbatim — shown once
+	// per session, before the first Main exercise; never per-exercise,
+	// never per-zone.
+	RampUpNote string
+
+	// WarmupCooldownStatus is warmup_cooldown._status verbatim — passed
+	// through next to ConfigStatus so it stays just as traceable; never
+	// removed, never left out.
+	WarmupCooldownStatus string
 }
 
 // slotEntry pairs one configured slot with the exercise
@@ -119,6 +149,11 @@ type slotEntry struct {
 //     ComplexityTier=Simplified never reaches here — see
 //     NewContentLibraryAdapter, which is what keeps the cascade from
 //     ever setting it for Strength in the first place.
+//  6. Warm-up/cool-down: config.WarmupCooldownForZone(zone), resolved
+//     once up front and never touched by any tier lever (the config's
+//     applies_to_all_tiers is validated true at load time for exactly
+//     this reason) — a Short session still gets the full warm-up/
+//     cool-down, only its exercise slots are trimmed.
 func Assemble(
 	assignment cascade.SlotAssignment,
 	pin mesocycle.PinnedExerciseSet,
@@ -134,6 +169,11 @@ func Assemble(
 	zone, ok := strengthlibrary.ZoneFromMuscleGroup(assignment.MuscleGroup)
 	if !ok {
 		return AssembledSession{}, fmt.Errorf("strengthsession: muscle group %q has no strength zone", assignment.MuscleGroup)
+	}
+
+	warmupCooldown, ok := config.WarmupCooldownForZone(zone)
+	if !ok {
+		return AssembledSession{}, fmt.Errorf("strengthsession: zone %q has no warmup_cooldown entry in the config", zone)
 	}
 
 	week, err := weekInBlock(pin.ActivatedOn, today)
@@ -234,6 +274,16 @@ func Assemble(
 		ConfigStatus:            config.Status(),
 		TierChanges:             tierChanges,
 		HighIntensityDowngraded: highDowngraded,
+		Warmup: AssembledWarmupCooldown{
+			DurationMinutes: warmupCooldown.WarmupMinutes,
+			Movements:       warmupCooldown.Warmup,
+		},
+		Cooldown: AssembledWarmupCooldown{
+			DurationMinutes: warmupCooldown.CooldownMinutes,
+			Movements:       warmupCooldown.Cooldown,
+		},
+		RampUpNote:           config.RampUpNote(),
+		WarmupCooldownStatus: config.WarmupCooldownStatus(),
 	}, nil
 }
 

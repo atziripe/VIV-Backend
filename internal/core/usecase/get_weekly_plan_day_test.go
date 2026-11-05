@@ -154,17 +154,27 @@ func TestGetWeeklyPlanDay_StrengthBlockPath(t *testing.T) {
 			MuscleGroup: activity.MuscleGroupLower,
 		},
 	}
-	strengthDay.Content = &usecase.SelectedContent{
-		StrengthBlock: &strengthsession.AssembledSession{
-			Exercises: []strengthsession.AssembledExercise{
-				{ExerciseID: "lower_back_squat", Slot: "Squat", Priority: strengthlibrary.PriorityMain, ExerciseName: "Back Squat", Equipment: []string{"Barbell", "Rack"}, PrescriptionText: "4 × 6-8 @ RIR 2-3", Sets: 4},
-				{ExerciseID: "lower_hip_thrust_a", Slot: "Hip Thrust", Priority: strengthlibrary.PriorityAccessory, ExerciseName: "Hip Thrust A", Equipment: []string{"Barbell"}, PrescriptionText: "3 × 10-12 @ RIR 2-3", Sets: 3},
-			},
-			Week:         3,
-			BlockNumber:  2,
-			ConfigStatus: "draft_not_reviewed_by_sport_scientist",
-			TierChanges:  []strengthsession.TierChange{{Lever: strengthsession.LeverLoadReduced, Detail: "using week 1's prescription for every exercise, regardless of the actual current week"}},
+	assembled := &strengthsession.AssembledSession{
+		Exercises: []strengthsession.AssembledExercise{
+			{ExerciseID: "lower_back_squat", Slot: "Squat", Priority: strengthlibrary.PriorityMain, ExerciseName: "Back Squat", Equipment: []string{"Barbell", "Rack"}, PrescriptionText: "4 × 6-8 @ RIR 2-3", Sets: 4},
+			{ExerciseID: "lower_hip_thrust_a", Slot: "Hip Thrust", Priority: strengthlibrary.PriorityAccessory, ExerciseName: "Hip Thrust A", Equipment: []string{"Barbell"}, PrescriptionText: "3 × 10-12 @ RIR 2-3", Sets: 3},
 		},
+		Week:                 3,
+		BlockNumber:          2,
+		ConfigStatus:         "draft_not_reviewed_by_sport_scientist",
+		TierChanges:          []strengthsession.TierChange{{Lever: strengthsession.LeverLoadReduced, Detail: "using week 1's prescription for every exercise, regardless of the actual current week"}},
+		Warmup:               strengthsession.AssembledWarmupCooldown{DurationMinutes: 7, Movements: []string{"Glute bridges", "Bodyweight squats"}},
+		Cooldown:             strengthsession.AssembledWarmupCooldown{DurationMinutes: 5, Movements: []string{"Hamstring stretch"}},
+		RampUpNote:           "Before the first Main exercise, do 1-2 light sets at about half the working load.",
+		WarmupCooldownStatus: "draft_llm_generated_unreviewed",
+	}
+	strengthDay.Content = &usecase.SelectedContent{
+		StrengthBlock: assembled,
+		// Mirrors exactly what usecase.selectStrengthBlock derives from
+		// the same AssembledSession — this test builds the draft by hand
+		// rather than running SessionContentSelector.
+		Warmup:   &content.ContentBlock{DurationMinutes: assembled.Warmup.DurationMinutes, Movements: assembled.Warmup.Movements},
+		Cooldown: &content.ContentBlock{DurationMinutes: assembled.Cooldown.DurationMinutes, Movements: assembled.Cooldown.Movements},
 	}
 	seedDraft(t, drafts, "u1", monday, goal.StrengthMuscle, [7]usecase.DayPlan{
 		strengthDay, restDay(), restDay(), restDay(), restDay(), restDay(), restDay(),
@@ -215,6 +225,18 @@ func TestGetWeeklyPlanDay_StrengthBlockPath(t *testing.T) {
 	}
 	if d.MainExercises[0].Reps != "" {
 		t.Errorf("expected Reps to stay empty for the Strength assembly path, got %+v", d.MainExercises[0])
+	}
+	if d.Warmup == nil || len(d.Warmup.Movements) != 2 || d.Warmup.DurationMinutes != 7 {
+		t.Errorf("Warmup = %+v, want the zone's own warm-up (2 movements, 7 minutes)", d.Warmup)
+	}
+	if d.Cooldown == nil || len(d.Cooldown.Movements) != 1 || d.Cooldown.DurationMinutes != 5 {
+		t.Errorf("Cooldown = %+v, want the zone's own cool-down (1 movement, 5 minutes)", d.Cooldown)
+	}
+	if d.StrengthRampUpNote != "Before the first Main exercise, do 1-2 light sets at about half the working load." {
+		t.Errorf("StrengthRampUpNote = %q, want the config's ramp_up_note verbatim", d.StrengthRampUpNote)
+	}
+	if d.StrengthWarmupCooldownStatus != "draft_llm_generated_unreviewed" {
+		t.Errorf("StrengthWarmupCooldownStatus = %q, want warmup_cooldown._status verbatim", d.StrengthWarmupCooldownStatus)
 	}
 }
 

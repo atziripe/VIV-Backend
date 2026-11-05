@@ -480,6 +480,79 @@
     ]
   },
   "rir_note": "RIR = reps in reserve",
+  "warmup_cooldown": {
+    "_status": "DRAFT. Taken from the most frequent warm-up and cool-down movements in the old Strength sessions (LLM-generated, never reviewed by Lina or a sport scientist). Lina removed Bird Dog and Hip Hinge Drill as main exercises; here they appear only as warm-up movements, which she has not seen.",
+    "applies_to_all_tiers": true,
+    "ramp_up_note": "Before the first Main exercise, do 1–2 light sets of 5–8 reps at about half the working load.",
+    "zones": {
+      "Lower body": {
+        "warmup_minutes": 7,
+        "cooldown_minutes": 5,
+        "warmup": [
+          "Glute bridges × 12",
+          "Bodyweight squats × 12",
+          "Hip hinges (bodyweight) × 12",
+          "Walking lunges × 10 per leg",
+          "Ankle mobility rocks × 10 per side"
+        ],
+        "cooldown": [
+          "Seated hamstring stretch × 30 s per side",
+          "Kneeling hip flexor stretch × 30 s per side",
+          "Figure-4 glute stretch × 30 s per side",
+          "Deep squat hold (supported if needed) × 60 s"
+        ]
+      },
+      "Upper body": {
+        "warmup_minutes": 6,
+        "cooldown_minutes": 4,
+        "warmup": [
+          "Arm circles × 20 forward + 20 backward",
+          "Resistance band pull-aparts × 15",
+          "Scapular push-ups × 10",
+          "Resistance band external rotations × 12 per side"
+        ],
+        "cooldown": [
+          "Chest stretch against wall × 30 s per side",
+          "Child’s pose with arms extended × 45 s",
+          "Cross-body shoulder stretch × 30 s per side",
+          "Overhead triceps stretch × 30 s per side"
+        ]
+      },
+      "Full body": {
+        "warmup_minutes": 7,
+        "cooldown_minutes": 4,
+        "warmup": [
+          "Bodyweight squats × 12",
+          "Hip hinges (bodyweight) × 10",
+          "Resistance band rows × 12",
+          "Dead bugs × 10 per side",
+          "Hip openers × 8 per side"
+        ],
+        "cooldown": [
+          "Standing forward fold × 45 s",
+          "Child’s pose × 60 s",
+          "Hip flexor stretch × 30 s per side",
+          "Spinal twist × 30 s per side"
+        ]
+      },
+      "Core": {
+        "warmup_minutes": 5,
+        "cooldown_minutes": 4,
+        "warmup": [
+          "Dead bug × 10 per side (slow and controlled)",
+          "Bird dog × 10 per side (pause at full extension)",
+          "Glute bridge march × 10 per side",
+          "World’s greatest stretch × 5 per side"
+        ],
+        "cooldown": [
+          "Cobra stretch × 45 s",
+          "Supine spinal twist × 45 s per side",
+          "Child’s pose × 60 s with deep breathing",
+          "Hip flexor stretch × 45 s per side"
+        ]
+      }
+    }
+  },
   "variant_rules": {
     "_status": "DRAFT. Conservative defaults by the founding team. Not reviewed by a sport scientist.",
     "short": {

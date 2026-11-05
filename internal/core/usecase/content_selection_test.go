@@ -155,6 +155,16 @@ func TestSessionContentSelector_StandardTierSlotSelectsNormally(t *testing.T) {
 	if got.Days[0].Content.Exercises != nil {
 		t.Error("expected Content.Exercises to stay nil for a non-mesocycle activity")
 	}
+	if got.Days[0].Content.StrengthBlock != nil {
+		t.Error("expected Content.StrengthBlock to stay nil for a non-Strength activity")
+	}
+	// The real VIV-112 Strength assembly path's warm-up/cool-down
+	// wiring must never touch the plain session-library path — a
+	// session's own nested warmup/cooldown (inside Content.Session)
+	// is untouched here, exactly as before that path existed.
+	if got.Days[0].Content.Warmup != nil || got.Days[0].Content.Cooldown != nil {
+		t.Error("expected Content.Warmup/Cooldown to stay nil for the session-library path — unaffected by Strength's warmup_cooldown wiring")
+	}
 }
 
 // ============================================================================

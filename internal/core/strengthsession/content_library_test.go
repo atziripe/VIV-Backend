@@ -34,6 +34,14 @@ func TestContentLibraryAdapter_StrengthSimplifiedReadsConfig(t *testing.T) {
 			"reduced_load": {"rule": "use_week_1_prescription_of_each_exercise_type"},
 			"simplified": {"active": true},
 			"intensity_mapping": {"Low": {"extra_rir": 2, "sets_delta": -1, "min_sets": 2}, "Medium": "as_written", "High": "treated_as_Medium_until_reviewed"}
+		},
+		"warmup_cooldown": {
+			"_status": "test_fixture",
+			"applies_to_all_tiers": true,
+			"ramp_up_note": "Before the first Main exercise, do 1-2 light sets.",
+			"zones": {
+				"Lower body": {"warmup_minutes": 5, "cooldown_minutes": 5, "warmup": ["Leg swings"], "cooldown": ["Quad stretch"]}
+			}
 		}
 	}`))
 	if err != nil {

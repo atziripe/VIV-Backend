@@ -119,12 +119,10 @@ type SelectedContent struct {
 	StrengthBlock *strengthsession.AssembledSession
 
 	// Warmup/Cooldown are populated for the OLD mesocycle-pinned path
-	// (Exercises) only — session-library days carry their own
-	// warmup/cooldown nested inside Session.Content instead, and the
-	// real Strength assembly path (StrengthBlock) doesn't model
-	// warmup/cooldown at all (out of this task's scope) — so these stay
-	// nil there rather than fabricating something not actually sourced
-	// from anywhere.
+	// (Exercises) AND the real VIV-112 Strength assembly path
+	// (StrengthBlock, from AssembledSession.Warmup/Cooldown) — only
+	// session-library days carry their own warmup/cooldown nested
+	// inside Session.Content instead, so these stay nil only there.
 	Warmup   *content.ContentBlock
 	Cooldown *content.ContentBlock
 }
@@ -257,5 +255,8 @@ func (s *SessionContentSelector) selectStrengthBlock(ctx context.Context, userID
 		log.Printf("[content_selection] High intensity downgraded to Medium for user=%s muscle_group=%s (Strength High isn't reviewed yet)", userID, a.MuscleGroup)
 	}
 
-	return SelectedContent{StrengthBlock: &assembled}, nil
+	warmup := content.ContentBlock{DurationMinutes: assembled.Warmup.DurationMinutes, Movements: assembled.Warmup.Movements}
+	cooldown := content.ContentBlock{DurationMinutes: assembled.Cooldown.DurationMinutes, Movements: assembled.Cooldown.Movements}
+
+	return SelectedContent{StrengthBlock: &assembled, Warmup: &warmup, Cooldown: &cooldown}, nil
 }

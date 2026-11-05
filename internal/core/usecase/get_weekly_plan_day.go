@@ -110,10 +110,12 @@ type WeeklyPlanDayDetail struct {
 	DurationIsEstimated bool
 
 	// Warmup/Cooldown come from the session library for session-library
-	// days, or from a generic per-muscle-group pair for mesocycle-pinned
-	// days (see content.MesocycleWarmupCooldownLibrary) — nil only if
-	// Content was never hydrated at all (shouldn't happen once
-	// generation completes, but never fabricated to fill the gap).
+	// days, from a generic per-muscle-group pair for mesocycle-pinned
+	// days (see content.MesocycleWarmupCooldownLibrary), or from the
+	// config's own per-zone warmup_cooldown for a real VIV-112 Strength
+	// assembly day — nil only if Content was never hydrated at all
+	// (shouldn't happen once generation completes, but never
+	// fabricated to fill the gap).
 	Warmup        *WeeklyPlanDayBlock
 	MainExercises []WeeklyPlanDayExercise
 	Cooldown      *WeeklyPlanDayBlock
@@ -130,6 +132,15 @@ type WeeklyPlanDayDetail struct {
 	StrengthWeek         int
 	StrengthConfigStatus string
 	StrengthTierChanges  []WeeklyPlanTierChange
+
+	// StrengthRampUpNote is warmup_cooldown.ramp_up_note verbatim,
+	// shown once per session before the first Main exercise — never
+	// per-exercise. StrengthWarmupCooldownStatus is
+	// warmup_cooldown._status verbatim, passed through next to
+	// StrengthConfigStatus so it stays just as traceable. Both empty
+	// outside the real Strength assembly path.
+	StrengthRampUpNote           string
+	StrengthWarmupCooldownStatus string
 
 	// Session is the in-progress or completed real-time log for this day
 	// — nil when Loggable is false, or when Loggable is true but the user
@@ -247,6 +258,8 @@ func (uc *GetWeeklyPlanDayUseCase) Execute(ctx context.Context, in GetWeeklyPlan
 		detail.StrengthBlockNumber = sb.BlockNumber
 		detail.StrengthWeek = sb.Week
 		detail.StrengthConfigStatus = sb.ConfigStatus
+		detail.StrengthRampUpNote = sb.RampUpNote
+		detail.StrengthWarmupCooldownStatus = sb.WarmupCooldownStatus
 		for _, tc := range sb.TierChanges {
 			detail.StrengthTierChanges = append(detail.StrengthTierChanges, WeeklyPlanTierChange{Lever: tc.Lever, Detail: tc.Detail})
 		}
@@ -260,6 +273,24 @@ func (uc *GetWeeklyPlanDayUseCase) Execute(ctx context.Context, in GetWeeklyPlan
 				Equipment:        e.Equipment,
 				PrescriptionText: e.PrescriptionText,
 			})
+		}
+		// Warmup/Cooldown come from day.Content.Warmup/Cooldown (set by
+		// usecase.selectStrengthBlock from this same AssembledSession) —
+		// applies_to_all_tiers is validated true at config load time, so
+		// this is never shortened for a Short-tier session either.
+		if day.Content.Warmup != nil {
+			detail.Warmup = &WeeklyPlanDayBlock{
+				DurationMinutes: day.Content.Warmup.DurationMinutes,
+				Description:     day.Content.Warmup.Description,
+				Movements:       day.Content.Warmup.Movements,
+			}
+		}
+		if day.Content.Cooldown != nil {
+			detail.Cooldown = &WeeklyPlanDayBlock{
+				DurationMinutes: day.Content.Cooldown.DurationMinutes,
+				Description:     day.Content.Cooldown.Description,
+				Movements:       day.Content.Cooldown.Movements,
+			}
 		}
 	}
 
