@@ -12,6 +12,7 @@ import (
 	"viv/internal/core/domain"
 	"viv/internal/core/goal"
 	"viv/internal/core/mesocycle"
+	"viv/internal/core/strengthlibrary"
 	"viv/internal/core/usecase"
 	weeklytarget "viv/internal/core/weekly_target"
 )
@@ -48,9 +49,47 @@ func (f *fakeExercisePinRepo) Save(_ context.Context, userID string, pin mesocyc
 	return nil
 }
 
-func newTestPinService(repo *fakeExercisePinRepo, today time.Time) *usecase.ExercisePinService {
+// testFixtureLibrary/testFixtureConfig give every muscle group at least
+// one slot with 2+ approved exercises, so these integration-level tests
+// don't need to care about thin-slot/rotation specifics — those are
+// mesocycle's own tests' job. Here we only care about create/reuse/rotate
+// and that a cascade adjustment never re-triggers selection.
+func testFixtureLibrary(t *testing.T) *strengthlibrary.Library {
+	t.Helper()
+	lib, err := strengthlibrary.NewLibraryFromJSON([]byte(`[
+		{"id":"lower_a","activity_type":"strength","name":"Lower A","zone":"lower","movement_group":"Squat","review_status":"approved"},
+		{"id":"lower_b","activity_type":"strength","name":"Lower B","zone":"lower","movement_group":"Squat","review_status":"approved"},
+		{"id":"upper_a","activity_type":"strength","name":"Upper A","zone":"upper","movement_group":"Horizontal push","review_status":"approved"},
+		{"id":"upper_b","activity_type":"strength","name":"Upper B","zone":"upper","movement_group":"Horizontal push","review_status":"approved"},
+		{"id":"core_a","activity_type":"strength","name":"Core A","zone":"core","movement_group":"Anti-extension","review_status":"approved"},
+		{"id":"core_b","activity_type":"strength","name":"Core B","zone":"core","movement_group":"Anti-extension","review_status":"approved"}
+	]`))
+	if err != nil {
+		t.Fatalf("testFixtureLibrary: %v", err)
+	}
+	return lib
+}
+
+func testFixtureConfig(t *testing.T) *strengthlibrary.BlockConfig {
+	t.Helper()
+	cfg, err := strengthlibrary.NewBlockConfigFromJSON([]byte(`{
+		"zones": {
+			"lower": {"slots": [{"name": "Squat", "priority": "Main", "movement_groups": ["Squat"]}]},
+			"upper": {"slots": [{"name": "Push", "priority": "Accessory", "movement_groups": ["Horizontal push"]}]},
+			"full":  {"slots": [{"name": "Squat", "priority": "Main", "movement_groups": ["Squat"]}]},
+			"core":  {"slots": [{"name": "Anti-Extension", "priority": "Main", "movement_groups": ["Anti-extension"]}]}
+		},
+		"rotation_policy": {"Main": "hold", "Accessory": 1, "Optional": 1}
+	}`))
+	if err != nil {
+		t.Fatalf("testFixtureConfig: %v", err)
+	}
+	return cfg
+}
+
+func newTestPinService(t *testing.T, repo *fakeExercisePinRepo, today time.Time) *usecase.ExercisePinService {
 	return usecase.NewExercisePinServiceWithClock(
-		repo, mesocycle.StubExerciseSetSelector{}, mesocycle.StubExerciseLibrary{},
+		repo, mesocycle.DefaultBlockExerciseSelector{}, testFixtureLibrary(t), testFixtureConfig(t),
 		func() time.Time { return today },
 	)
 }
@@ -62,7 +101,7 @@ func newTestPinService(repo *fakeExercisePinRepo, today time.Time) *usecase.Exer
 func TestExercisePinService_FirstSessionCreatesAndPersistsPin(t *testing.T) {
 	repo := newFakeExercisePinRepo()
 	today := time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC)
-	svc := newTestPinService(repo, today)
+	svc := newTestPinService(t, repo, today)
 
 	ids, err := svc.ResolvePinnedExercises(context.Background(), "u1", activity.Strength, activity.MuscleGroupLower)
 	if err != nil {
@@ -82,8 +121,11 @@ func TestExercisePinService_FirstSessionCreatesAndPersistsPin(t *testing.T) {
 	if stored == nil {
 		t.Fatal("expected a persisted pin")
 	}
-	if !reflect.DeepEqual(stored.ExerciseIDs, ids) {
-		t.Errorf("persisted ExerciseIDs = %v, want %v", stored.ExerciseIDs, ids)
+	if stored.BlockNumber != 1 {
+		t.Errorf("BlockNumber = %d, want 1", stored.BlockNumber)
+	}
+	if len(stored.ActiveExercises) != 1 || stored.ActiveExercises["Squat"] != "lower_a" {
+		t.Errorf("ActiveExercises = %v, want {Squat: lower_a} (block 1 = pool[0])", stored.ActiveExercises)
 	}
 	if !stored.ActivatedOn.Equal(today) {
 		t.Errorf("ActivatedOn = %v, want %v", stored.ActivatedOn, today)
@@ -101,14 +143,14 @@ func TestExercisePinService_SubsequentSessionsReuseSameSet(t *testing.T) {
 	repo := newFakeExercisePinRepo()
 	day0 := time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC)
 
-	first, err := newTestPinService(repo, day0).ResolvePinnedExercises(context.Background(), "u1", activity.Strength, activity.MuscleGroupUpper)
+	first, err := newTestPinService(t, repo, day0).ResolvePinnedExercises(context.Background(), "u1", activity.Strength, activity.MuscleGroupUpper)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
 	// Three more "sessions" on different days, all still inside the cycle.
 	for _, day := range []time.Time{day0.AddDate(0, 0, 2), day0.AddDate(0, 0, 10), day0.AddDate(0, 0, 27)} {
-		got, err := newTestPinService(repo, day).ResolvePinnedExercises(context.Background(), "u1", activity.Strength, activity.MuscleGroupUpper)
+		got, err := newTestPinService(t, repo, day).ResolvePinnedExercises(context.Background(), "u1", activity.Strength, activity.MuscleGroupUpper)
 		if err != nil {
 			t.Fatalf("day=%v: unexpected error: %v", day, err)
 		}
@@ -130,7 +172,7 @@ func TestExercisePinService_RotatesOnDay29(t *testing.T) {
 	repo := newFakeExercisePinRepo()
 	day0 := time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC)
 
-	svc0 := newTestPinService(repo, day0)
+	svc0 := newTestPinService(t, repo, day0)
 	if _, err := svc0.ResolvePinnedExercises(context.Background(), "u1", activity.Strength, activity.MuscleGroupCore); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -140,7 +182,7 @@ func TestExercisePinService_RotatesOnDay29(t *testing.T) {
 	}
 
 	day29 := day0.AddDate(0, 0, mesocycle.StrengthMesocycleLengthDays)
-	svc29 := newTestPinService(repo, day29)
+	svc29 := newTestPinService(t, repo, day29)
 	if _, err := svc29.ResolvePinnedExercises(context.Background(), "u1", activity.Strength, activity.MuscleGroupCore); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -159,6 +201,15 @@ func TestExercisePinService_RotatesOnDay29(t *testing.T) {
 	if !after.RotatesOn.Equal(day29.AddDate(0, 0, mesocycle.StrengthMesocycleLengthDays)) {
 		t.Errorf("new RotatesOn = %v, want 28 days after day 29", after.RotatesOn)
 	}
+	if after.BlockNumber != before.BlockNumber+1 {
+		t.Errorf("BlockNumber = %d, want %d (before+1)", after.BlockNumber, before.BlockNumber+1)
+	}
+	// Core's "Anti-Extension" slot is Main (holds) in the fixture config,
+	// per-group members in this test's library are both approved, but a
+	// Main slot stays at pool[0] regardless — same exercise before/after.
+	if after.ActiveExercises["Anti-extension"] != before.ActiveExercises["Anti-extension"] {
+		t.Errorf("Main slot exercise changed on rotation: before=%v after=%v", before.ActiveExercises, after.ActiveExercises)
+	}
 	// Rotation is a real write, distinct from a same-cycle reuse: creation
 	// (day 0) + rotation (day 29) = 2 saves.
 	if repo.saveCalls != 2 {
@@ -172,7 +223,7 @@ func TestExercisePinService_RotatesOnDay29(t *testing.T) {
 
 func TestExercisePinService_NonEligibleActivityReturnsNilWithoutTouchingRepo(t *testing.T) {
 	repo := newFakeExercisePinRepo()
-	svc := newTestPinService(repo, time.Now())
+	svc := newTestPinService(t, repo, time.Now())
 
 	ids, err := svc.ResolvePinnedExercises(context.Background(), "u1", activity.HIIT, activity.MuscleGroupFullBody)
 	if err != nil {
@@ -201,7 +252,7 @@ func TestExercisePinService_NonEligibleActivityReturnsNilWithoutTouchingRepo(t *
 func TestExercisePinService_CascadeAdjustmentNeverChangesPinnedExercises(t *testing.T) {
 	repo := newFakeExercisePinRepo()
 	today := time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC)
-	svc := newTestPinService(repo, today)
+	svc := newTestPinService(t, repo, today)
 
 	original := cascade.Activity{
 		ActivityType: activity.Strength,

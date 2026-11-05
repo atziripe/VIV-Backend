@@ -45,16 +45,15 @@ type Exercise struct {
 	Reduced  ExercisePrescription `json:"reduced"`
 }
 
-// ExerciseLibrary is the loaded set of exercise content. Implements
-// mesocycle.ExerciseLibrary directly (ExercisesFor), so this can replace
-// mesocycle.StubExerciseLibrary wherever that's wired in, in addition to
-// serving VIV-112's own Lookup-by-ID hydration.
+// ExerciseLibrary is the loaded set of exercise content — VIV-112's
+// Lookup-by-ID hydration step for whichever exercise IDs VIV-108 pinned.
+// It no longer doubles as a mesocycle.ExerciseLibrary (that interface,
+// and the StubExerciseLibrary it existed to stand in for, were removed
+// once VIV-108's real selector started drawing from strengthlibrary
+// instead — see mesocycle/pin.go).
 type ExerciseLibrary struct {
-	byID          map[mesocycle.ExerciseID]Exercise
-	byMuscleGroup map[activity.MuscleGroup][]mesocycle.ExerciseID
+	byID map[mesocycle.ExerciseID]Exercise
 }
-
-var _ mesocycle.ExerciseLibrary = (*ExerciseLibrary)(nil)
 
 // LoadExerciseLibrary reads every *.json file under dir (recursively).
 // Each file holds a JSON array of Exercise entries — one file per muscle
@@ -62,10 +61,7 @@ var _ mesocycle.ExerciseLibrary = (*ExerciseLibrary)(nil)
 // internal/content/training_v2/exercises/ follows, but this loader
 // doesn't require that split; it just collects every entry it finds.
 func LoadExerciseLibrary(dir string) (*ExerciseLibrary, error) {
-	lib := &ExerciseLibrary{
-		byID:          map[mesocycle.ExerciseID]Exercise{},
-		byMuscleGroup: map[activity.MuscleGroup][]mesocycle.ExerciseID{},
-	}
+	lib := &ExerciseLibrary{byID: map[mesocycle.ExerciseID]Exercise{}}
 
 	err := filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
@@ -93,7 +89,6 @@ func LoadExerciseLibrary(dir string) (*ExerciseLibrary, error) {
 				return fmt.Errorf("duplicate exercise id %q in %s (already loaded as %q)", e.ID, path, existing.Name)
 			}
 			lib.byID[e.ID] = e
-			lib.byMuscleGroup[e.MuscleGroup] = append(lib.byMuscleGroup[e.MuscleGroup], e.ID)
 		}
 		return nil
 	})
@@ -102,11 +97,6 @@ func LoadExerciseLibrary(dir string) (*ExerciseLibrary, error) {
 	}
 
 	return lib, nil
-}
-
-// ExercisesFor implements mesocycle.ExerciseLibrary.
-func (l *ExerciseLibrary) ExercisesFor(mg activity.MuscleGroup) []mesocycle.ExerciseID {
-	return l.byMuscleGroup[mg]
 }
 
 // Lookup finds an exercise's content by ID — VIV-112's hydration step for

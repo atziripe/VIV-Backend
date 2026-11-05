@@ -39,6 +39,26 @@ const (
 // importer to validate a workbook tab name and to iterate deterministically.
 var AllZones = []Zone{ZoneLower, ZoneUpper, ZoneFull, ZoneCore}
 
+// ZoneFromMuscleGroup is MuscleGroup's inverse — VIV-108's exercise
+// pinning resolves a user's slot by activity.MuscleGroup (the key its
+// repository and ExercisePinResolver interface already use) and needs
+// this package's Zone to look up block config / approved exercises.
+// ok is false for a MuscleGroup with no corresponding Strength zone.
+func ZoneFromMuscleGroup(mg activity.MuscleGroup) (Zone, bool) {
+	switch mg {
+	case activity.MuscleGroupLower:
+		return ZoneLower, true
+	case activity.MuscleGroupUpper:
+		return ZoneUpper, true
+	case activity.MuscleGroupFullBody:
+		return ZoneFull, true
+	case activity.MuscleGroupCore:
+		return ZoneCore, true
+	default:
+		return "", false
+	}
+}
+
 // MuscleGroup maps this package's Zone to VIV-101's activity.MuscleGroup.
 // Returns "" for an invalid Zone — callers that need a hard guarantee
 // should validate the Zone first (the loader does, at startup).

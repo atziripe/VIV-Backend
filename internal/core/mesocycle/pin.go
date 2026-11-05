@@ -3,8 +3,16 @@
 // user starts a strength block for a given muscle-group slot, the specific
 // exercises stay the same for a few weeks (a "mesocycle") rather than
 // being re-picked every session, so progressive overload has something
-// stable to build on. Depends on VIV-101 (internal/core/activity) for
-// activity.ID and activity.MuscleGroup — explored before writing this.
+// stable to build on.
+//
+// VIV-108 real implementation. Explored VIV-101 (internal/core/activity,
+// for activity.ID/activity.MuscleGroup), VIV-106 (usecase.GenerateWeeklyPlanUsecase)
+// and VIV-117 (internal/core/strengthlibrary — the reviewed Strength
+// movement catalog: Zone/MovementGroup/ReviewStatus) before writing this.
+// Replaces the original StubExerciseLibrary/StubExerciseSetSelector
+// placeholder (three deterministically-named fake IDs per muscle group)
+// with real selection driven by strengthlibrary's approved catalog and
+// VIV_Strength_Block_Config.json's slot/rotation-policy config.
 //
 // This package is pure logic: no persistence, no I/O. Loading/saving the
 // pinned state per user lives in the usecase layer (ExercisePinService),
@@ -16,6 +24,7 @@ import (
 	"time"
 
 	"viv/internal/core/activity"
+	"viv/internal/core/strengthlibrary"
 )
 
 // StrengthMesocycleLengthDays is how long a pinned exercise set stays
@@ -58,8 +67,10 @@ func mesocycleLengthDays(activityType activity.ID) int {
 	return StrengthMesocycleLengthDays
 }
 
-// ExerciseID identifies one exercise in the (not-yet-fully-built) content
-// library.
+// ExerciseID identifies one exercise — a strengthlibrary.Exercise.ID
+// string, wrapped in this package's own named type so a caller (e.g.
+// usecase.ExercisePinResolver) depends on mesocycle, not on
+// strengthlibrary directly, for this value's type.
 type ExerciseID string
 
 // PinnedExerciseSet is the persisted state for one user's one
@@ -68,109 +79,190 @@ type ExerciseID string
 type PinnedExerciseSet struct {
 	ActivityType activity.ID
 	MuscleGroup  activity.MuscleGroup
-	ExerciseIDs  []ExerciseID
-	ActivatedOn  time.Time
-	RotatesOn    time.Time
+
+	// ActiveExercises holds exactly one exercise ID per MovementGroup —
+	// keyed by the SELECTED exercise's own native MovementGroup, not by
+	// Slot name, so a slot that merges several groups (e.g. Full body's
+	// "Pull") still produces an unambiguous, single-exercise entry per
+	// group it actually picked from this block. See BlockExerciseSelector.
+	ActiveExercises map[strengthlibrary.MovementGroup]ExerciseID
+
+	// BlockNumber starts at 1 and increments by exactly 1 every time
+	// ResolvePin rotates — rotation (round-robin position in a slot's
+	// pool) is derived from this number, never stored per exercise.
+	BlockNumber int
+
+	ActivatedOn time.Time
+	RotatesOn   time.Time
 }
 
-// ExerciseLibrary is what SelectExerciseSet needs from the content
-// library — real curated exercise content doesn't exist yet (the same gap
-// cascade.ContentLibrary's stub documents for session variants), so this
-// is deliberately minimal: just "what exercises exist for this muscle
-// group."
-type ExerciseLibrary interface {
-	ExercisesFor(muscleGroup activity.MuscleGroup) []ExerciseID
+// BlockExerciseSelector picks one exercise per configured slot for
+// (zone, blockNumber) — Block 1 always takes each slot's first approved
+// exercise; later blocks hold (Main) or round-robin-advance (Accessory/
+// Optional, or any slot with an explicit override) per config's
+// rotation_policy. Modeled as an interface so the policy can change (or
+// be swapped entirely) without touching ResolvePin.
+//
+// thinSlots lists every slot whose approved pool has exactly one
+// exercise (so it necessarily repeats every block) — purely
+// informational, for the caller to log; never an error by itself.
+type BlockExerciseSelector interface {
+	SelectBlockExercises(
+		zone strengthlibrary.Zone,
+		blockNumber int,
+		library *strengthlibrary.Library,
+		config *strengthlibrary.BlockConfig,
+	) (bySlot map[string]strengthlibrary.Exercise, thinSlots []string, err error)
 }
 
-// ExerciseSetSelector picks which exercises make up a pinned set for a
-// muscle-group slot. Modeled as an interface specifically so real curated
-// selection logic (progression, equipment, variety-vs-repetition
-// trade-offs) can replace StubExerciseSetSelector later without touching
-// ResolvePin or its callers.
-type ExerciseSetSelector interface {
-	SelectExerciseSet(muscleGroup activity.MuscleGroup, library ExerciseLibrary) []ExerciseID
-}
+// DefaultBlockExerciseSelector is the real (non-stub) selection policy:
+// deterministic, config-driven slot-pool rotation — never random, never
+// a hand-curated set. See SelectBlockExercises.
+type DefaultBlockExerciseSelector struct{}
 
-// StubExerciseLibrary is a placeholder: three deterministically-named
-// exercise IDs per muscle group, just enough for the pinning logic to be
-// exercised end-to-end and tested today. Real content curation is a
-// separate, not-yet-scoped piece of work — swap this out then.
-type StubExerciseLibrary struct{}
-
-func (StubExerciseLibrary) ExercisesFor(mg activity.MuscleGroup) []ExerciseID {
-	return []ExerciseID{
-		ExerciseID(string(mg) + "_exercise_1"),
-		ExerciseID(string(mg) + "_exercise_2"),
-		ExerciseID(string(mg) + "_exercise_3"),
+// SelectBlockExercises implements BlockExerciseSelector.
+//
+// For each of zone's configured slots: build its candidate pool by
+// concatenating the approved exercises of every movement group the slot
+// lists, IN THE CONFIG'S OWN GROUP ORDER (never re-sorted) and, within
+// each group, in the library's own (already deterministic) order. Then:
+//
+//   - a Main slot (or any slot BlockConfig.HoldsForever says holds)
+//     always takes pool[0], for every block — "the Block 1 exercise
+//     stays in every later block."
+//   - any other slot takes pool[((blockNumber-1)/period) % len(pool)],
+//     where period is BlockConfig.RotationPeriodBlocks(slot) — this is
+//     exactly round-robin, advancing one pool position every `period`
+//     blocks, wrapping back to the start once the pool is exhausted.
+//
+// An empty pool (no approved exercises at all for the slot) is a hard
+// error — nothing to pin. A single-exercise pool is NOT an error: index
+// math above always lands on 0, so it simply repeats; its slot name is
+// added to thinSlots instead.
+func (DefaultBlockExerciseSelector) SelectBlockExercises(
+	zone strengthlibrary.Zone,
+	blockNumber int,
+	library *strengthlibrary.Library,
+	config *strengthlibrary.BlockConfig,
+) (map[string]strengthlibrary.Exercise, []string, error) {
+	slots := config.SlotsForZone(zone)
+	if len(slots) == 0 {
+		return nil, nil, fmt.Errorf("mesocycle: no block-config slots defined for zone %q", zone)
 	}
-}
 
-// StubExerciseSetSelector takes everything the library offers for the
-// muscle group — no real curation exists yet.
-type StubExerciseSetSelector struct{}
+	approvedByGroup := library.ApprovedExercises(zone)
 
-func (StubExerciseSetSelector) SelectExerciseSet(mg activity.MuscleGroup, library ExerciseLibrary) []ExerciseID {
-	return library.ExercisesFor(mg)
+	bySlot := make(map[string]strengthlibrary.Exercise, len(slots))
+	var thinSlots []string
+	for _, slot := range slots {
+		var pool []strengthlibrary.Exercise
+		for _, group := range slot.MovementGroups {
+			pool = append(pool, approvedByGroup[group]...)
+		}
+		if len(pool) == 0 {
+			return nil, nil, fmt.Errorf("mesocycle: slot %q (zone %q) has no approved exercises to select from", slot.Name, zone)
+		}
+		if len(pool) == 1 {
+			thinSlots = append(thinSlots, slot.Name)
+		}
+
+		idx := 0
+		if !config.HoldsForever(slot) {
+			period := config.RotationPeriodBlocks(slot)
+			idx = ((blockNumber - 1) / period) % len(pool)
+		}
+		bySlot[slot.Name] = pool[idx]
+	}
+
+	return bySlot, thinSlots, nil
 }
 
 // ResolvePin decides what a user's pin for (activityType, muscleGroup)
 // should be as of today, given whatever pin already exists (nil if none):
 //
-//   - existing == nil: create one — select a fresh set, ActivatedOn =
+//   - existing == nil: create one — block 1, select, ActivatedOn =
 //     today, RotatesOn = today + the type's mesocycle length.
-//   - today >= existing.RotatesOn: rotate — same as creating, a fresh
-//     selection with reset dates.
-//   - otherwise: reuse existing completely unchanged.
+//   - today >= existing.RotatesOn: rotate — select the NEXT block (never
+//     re-select block 1), reset ActivatedOn/RotatesOn.
+//   - otherwise: reuse existing completely unchanged — this is the path
+//     every ordinary session takes, regardless of whether it came from
+//     weekly generation (VIV-106) or daily adaptation (VIV-107): an
+//     Intensity/Impact/LoadTier adjustment from the cascade (VIV-105)
+//     never reaches this function at all, since this lookup key is only
+//     (activityType, muscleGroup).
 //
 // changed is true exactly when a new PinnedExerciseSet was produced
 // (created or rotated) — the caller's signal that this needs to be
 // persisted; reuse never returns changed=true, so a caller can skip a
-// write on every ordinary session.
+// write on every ordinary session. thinSlots is only populated when
+// changed is true (nothing was (re)selected on a pure reuse).
 //
-// Pure/no I/O: loading `existing` and persisting the result are the
-// caller's job (see usecase.ExercisePinService).
+// Pure/no I/O: loading `existing` and persisting the result, and any
+// logging of thinSlots, are the caller's job (see
+// usecase.ExercisePinService).
 func ResolvePin(
 	existing *PinnedExerciseSet,
 	activityType activity.ID,
 	muscleGroup activity.MuscleGroup,
 	today time.Time,
-	selector ExerciseSetSelector,
-	library ExerciseLibrary,
-) (pin PinnedExerciseSet, changed bool, err error) {
+	selector BlockExerciseSelector,
+	library *strengthlibrary.Library,
+	config *strengthlibrary.BlockConfig,
+) (pin PinnedExerciseSet, changed bool, thinSlots []string, err error) {
 	if !IsMesocycleEligible(activityType) {
-		return PinnedExerciseSet{}, false, fmt.Errorf("mesocycle: %q is not mesocycle-eligible", activityType)
+		return PinnedExerciseSet{}, false, nil, fmt.Errorf("mesocycle: %q is not mesocycle-eligible", activityType)
+	}
+	zone, ok := strengthlibrary.ZoneFromMuscleGroup(muscleGroup)
+	if !ok {
+		return PinnedExerciseSet{}, false, nil, fmt.Errorf("mesocycle: muscle group %q has no corresponding strength zone", muscleGroup)
 	}
 
 	if existing == nil {
-		return newPin(activityType, muscleGroup, today, selector, library), true, nil
+		pin, thin, err := newPin(activityType, muscleGroup, zone, 1, today, selector, library, config)
+		return pin, true, thin, err
 	}
 
 	if existing.ActivityType != activityType || existing.MuscleGroup != muscleGroup {
-		return PinnedExerciseSet{}, false, fmt.Errorf(
+		return PinnedExerciseSet{}, false, nil, fmt.Errorf(
 			"mesocycle: existing pin is for %s/%s, not %s/%s",
 			existing.ActivityType, existing.MuscleGroup, activityType, muscleGroup,
 		)
 	}
 
 	if !today.Before(existing.RotatesOn) { // today >= RotatesOn
-		return newPin(activityType, muscleGroup, today, selector, library), true, nil
+		pin, thin, err := newPin(activityType, muscleGroup, zone, existing.BlockNumber+1, today, selector, library, config)
+		return pin, true, thin, err
 	}
 
-	return *existing, false, nil
+	return *existing, false, nil, nil
 }
 
 func newPin(
 	activityType activity.ID,
 	muscleGroup activity.MuscleGroup,
+	zone strengthlibrary.Zone,
+	blockNumber int,
 	today time.Time,
-	selector ExerciseSetSelector,
-	library ExerciseLibrary,
-) PinnedExerciseSet {
-	return PinnedExerciseSet{
-		ActivityType: activityType,
-		MuscleGroup:  muscleGroup,
-		ExerciseIDs:  selector.SelectExerciseSet(muscleGroup, library),
-		ActivatedOn:  today,
-		RotatesOn:    today.AddDate(0, 0, mesocycleLengthDays(activityType)),
+	selector BlockExerciseSelector,
+	library *strengthlibrary.Library,
+	config *strengthlibrary.BlockConfig,
+) (PinnedExerciseSet, []string, error) {
+	bySlot, thinSlots, err := selector.SelectBlockExercises(zone, blockNumber, library, config)
+	if err != nil {
+		return PinnedExerciseSet{}, nil, fmt.Errorf("mesocycle: selecting block %d exercises for zone %q: %w", blockNumber, zone, err)
 	}
+
+	active := make(map[strengthlibrary.MovementGroup]ExerciseID, len(bySlot))
+	for _, exercise := range bySlot {
+		active[exercise.MovementGroup] = ExerciseID(exercise.ID)
+	}
+
+	return PinnedExerciseSet{
+		ActivityType:    activityType,
+		MuscleGroup:     muscleGroup,
+		ActiveExercises: active,
+		BlockNumber:     blockNumber,
+		ActivatedOn:     today,
+		RotatesOn:       today.AddDate(0, 0, mesocycleLengthDays(activityType)),
+	}, thinSlots, nil
 }

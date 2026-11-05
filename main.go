@@ -256,22 +256,30 @@ func main() {
 	}
 	log.Printf("weekly-plan content loaded: session library + exercise library + mesocycle warmup/cooldown library")
 
-	// VIV-101's reviewed Strength movement catalog — a separate, new
-	// library (internal/core/strengthlibrary) loaded and validated here
-	// purely so a broken catalog fails the boot the same way every other
-	// content library's does. Nothing consumes it yet: VIV-108's real
-	// curated exercise-set selector (today still mesocycle.StubExerciseSetSelector,
-	// wired above) is what will call strengthlib.ApprovedExercises once
-	// it's ready — wiring that in is explicitly out of scope for this change.
-	if _, err := strengthlibrary.Load(); err != nil {
+	// VIV-101/117's reviewed Strength movement catalog, plus VIV-108's
+	// block/slot config — both loaded and validated here so a broken
+	// catalog or config fails the boot the same way every other content
+	// library's does.
+	strengthLib, err := strengthlibrary.Load()
+	if err != nil {
 		fatal("failed to load strength movement library: %v", err)
+	}
+	strengthBlockConfig, err := strengthlibrary.LoadBlockConfig()
+	if err != nil {
+		fatal("failed to load strength block config: %v", err)
 	}
 	log.Printf("strength movement library loaded (include_pending_exercises=%v)", cfg.IncludePendingExercises)
 
-	// StubExerciseSetSelector: real curated exercise-set selection logic
-	// (VIV-108) doesn't exist yet — this just offers everything the
-	// exercise library has for a muscle group. Swap when that lands.
-	exercisePinService := usecase.NewExercisePinService(exercisePinRepo, mesocycle.StubExerciseSetSelector{}, weeklyExerciseLib)
+	// VIV-108 real selector: deterministic, config-driven slot-pool
+	// rotation over the approved catalog above — replaces the old
+	// StubExerciseSetSelector/StubExerciseLibrary placeholder entirely.
+	// NOTE: content_selection.go (VIV-112) still hydrates pinned IDs
+	// against weeklyExerciseLib (internal/content/training_v2/exercises/,
+	// 3 placeholder exercises per muscle group) — those IDs won't match
+	// strengthLib's real ones (e.g. "lower_goblet_squat") until that
+	// content is replaced with real prescriptions for the 113-exercise
+	// catalog. Known, accepted gap — see the commit that wired this in.
+	exercisePinService := usecase.NewExercisePinService(exercisePinRepo, mesocycle.DefaultBlockExerciseSelector{}, strengthLib, strengthBlockConfig)
 
 	weeklyScheduler := openai.NewWeeklyScheduler(oaClient)                                                                                                // VIV-109, real LLM-backed Layer 1
 	ruleEngineValidator := usecase.NewRuleEngineValidator(weeklyScheduler)                                                                                // VIV-110, retries Layer 1 once on a spacing violation

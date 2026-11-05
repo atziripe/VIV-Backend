@@ -34,6 +34,14 @@ func Load() (*Library, error) {
 	return loadFromJSON(exercisesJSON)
 }
 
+// NewLibraryFromJSON builds a Library from arbitrary JSON instead of the
+// embedded catalog — for other packages' tests (e.g. mesocycle's block
+// pinning tests) that need a small, controlled fixture catalog rather
+// than the real 113-exercise one. Production code always uses Load.
+func NewLibraryFromJSON(data []byte) (*Library, error) {
+	return loadFromJSON(data)
+}
+
 func loadFromJSON(data []byte) (*Library, error) {
 	var exercises []Exercise
 	if err := json.Unmarshal(data, &exercises); err != nil {
@@ -89,6 +97,14 @@ func (l *Library) ExercisesForZone(zone Zone, includePending bool) map[MovementG
 		}
 	}
 	return out
+}
+
+// Lookup finds one exercise by ID, approved or pending — VIV-108's
+// block pinning needs this to recover an exercise's own MovementGroup
+// (the ActiveExercises map's key) from the ID a selection picked.
+func (l *Library) Lookup(id string) (Exercise, bool) {
+	e, ok := l.byID[id]
+	return e, ok
 }
 
 // ApprovedExercises is the only entry point any production selection

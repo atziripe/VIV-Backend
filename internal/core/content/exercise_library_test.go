@@ -1,7 +1,6 @@
 package content_test
 
 import (
-	"sort"
 	"testing"
 
 	"viv/internal/core/activity"
@@ -21,21 +20,10 @@ func TestLoadExerciseLibrary_LoadsRealDummyContent(t *testing.T) {
 	for _, mg := range []activity.MuscleGroup{
 		activity.MuscleGroupLower, activity.MuscleGroupUpper, activity.MuscleGroupFullBody, activity.MuscleGroupCore,
 	} {
-		ids := lib.ExercisesFor(mg)
-		if len(ids) != 3 {
-			t.Errorf("ExercisesFor(%s) = %d exercises, want 3", mg, len(ids))
-		}
-
-		got := make([]string, len(ids))
-		for i, id := range ids {
-			got[i] = string(id)
-		}
-		sort.Strings(got)
-		want := []string{string(mg) + "_exercise_1", string(mg) + "_exercise_2", string(mg) + "_exercise_3"}
-		for i := range want {
-			if got[i] != want[i] {
-				t.Errorf("ExercisesFor(%s) = %v, want %v (matching mesocycle.StubExerciseLibrary's naming)", mg, got, want)
-				break
+		for _, n := range []string{"1", "2", "3"} {
+			id := mesocycle.ExerciseID(string(mg) + "_exercise_" + n)
+			if _, ok := lib.Lookup(id); !ok {
+				t.Errorf("expected to find %s in the real dummy content", id)
 			}
 		}
 	}

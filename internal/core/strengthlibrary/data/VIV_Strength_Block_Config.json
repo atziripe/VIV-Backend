@@ -1,0 +1,213 @@
+{
+  "zones": {
+    "lower": {
+      "slots": [
+        {
+          "name": "Squat",
+          "priority": "Main",
+          "movement_groups": [
+            "Squat"
+          ]
+        },
+        {
+          "name": "Hip Hinge",
+          "priority": "Main",
+          "movement_groups": [
+            "Hip hinge",
+            "Hip hinge / power"
+          ]
+        },
+        {
+          "name": "Lunge",
+          "priority": "Accessory",
+          "movement_groups": [
+            "Lunge / single-leg"
+          ]
+        },
+        {
+          "name": "Hip Thrust / Bridge",
+          "priority": "Accessory",
+          "movement_groups": [
+            "Hip thrust / bridge"
+          ]
+        },
+        {
+          "name": "Calves",
+          "priority": "Optional",
+          "movement_groups": [
+            "Calves"
+          ]
+        }
+      ]
+    },
+    "upper": {
+      "slots": [
+        {
+          "name": "Horizontal Push",
+          "priority": "Main",
+          "movement_groups": [
+            "Horizontal push"
+          ]
+        },
+        {
+          "name": "Vertical Pull",
+          "priority": "Main",
+          "movement_groups": [
+            "Vertical pull"
+          ]
+        },
+        {
+          "name": "Horizontal Pull",
+          "priority": "Accessory",
+          "movement_groups": [
+            "Horizontal pull"
+          ]
+        },
+        {
+          "name": "Vertical Push",
+          "priority": "Accessory",
+          "movement_groups": [
+            "Vertical push"
+          ]
+        },
+        {
+          "name": "Shoulders",
+          "priority": "Accessory",
+          "movement_groups": [
+            "Shoulders"
+          ]
+        },
+        {
+          "name": "Arms",
+          "priority": "Optional",
+          "movement_groups": [
+            "Arms — elbow flexion",
+            "Arms — elbow extension"
+          ]
+        }
+      ]
+    },
+    "full": {
+      "slots": [
+        {
+          "name": "Squat",
+          "priority": "Main",
+          "movement_groups": [
+            "Squat",
+            "Squat / lateral",
+            "Squat + vertical push"
+          ]
+        },
+        {
+          "name": "Hip Hinge",
+          "priority": "Main",
+          "movement_groups": [
+            "Hip hinge"
+          ]
+        },
+        {
+          "name": "Push",
+          "priority": "Accessory",
+          "movement_groups": [
+            "Horizontal push",
+            "Vertical push / power"
+          ]
+        },
+        {
+          "name": "Pull",
+          "priority": "Accessory",
+          "movement_groups": [
+            "Vertical pull",
+            "Horizontal pull",
+            "Horizontal pull + core anti-rotation"
+          ]
+        },
+        {
+          "name": "Lunge",
+          "priority": "Accessory",
+          "movement_groups": [
+            "Lunge / single-leg"
+          ]
+        },
+        {
+          "name": "Carry",
+          "priority": "Optional",
+          "movement_groups": [
+            "Carry"
+          ]
+        },
+        {
+          "name": "Core",
+          "priority": "Optional",
+          "movement_groups": [
+            "Core — anti-extension",
+            "Core — anti-lateral flexion",
+            "Core — anti-rotation",
+            "Core — controlled trunk / hip flexion"
+          ]
+        }
+      ]
+    },
+    "core": {
+      "slots": [
+        {
+          "name": "Anti-Extension",
+          "priority": "Main",
+          "movement_groups": [
+            "Anti-extension"
+          ]
+        },
+        {
+          "name": "Anti-Rotation",
+          "priority": "Main",
+          "movement_groups": [
+            "Anti-rotation",
+            "Anti-rotation + horizontal pull"
+          ]
+        },
+        {
+          "name": "Rotation",
+          "priority": "Accessory",
+          "movement_groups": [
+            "Rotation"
+          ]
+        },
+        {
+          "name": "Lateral Stability",
+          "priority": "Accessory",
+          "movement_groups": [
+            "Lateral stability / anti-lateral flexion",
+            "Lateral stability + hip abduction"
+          ]
+        },
+        {
+          "name": "Hip Flexion",
+          "priority": "Accessory",
+          "movement_groups": [
+            "Hip flexion / pelvic control"
+          ]
+        },
+        {
+          "name": "Trunk Flexion",
+          "priority": "Optional",
+          "movement_groups": [
+            "Trunk flexion",
+            "Trunk flexion / pelvic curl"
+          ]
+        },
+        {
+          "name": "Carry",
+          "priority": "Optional",
+          "movement_groups": [
+            "Carry"
+          ]
+        }
+      ]
+    }
+  },
+  "rotation_policy": {
+    "Main": "hold",
+    "Accessory": 1,
+    "Optional": 1
+  }
+}
