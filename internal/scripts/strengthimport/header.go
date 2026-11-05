@@ -53,24 +53,48 @@ func normalizeHeader(s string) string {
 // documented layout, so this sheet can't be imported as-is).
 func findHeaderRow(sh sheet) (int, columnIndex, error) {
 	for rowIdx, row := range sh.rows {
-		byHeader := make(map[string]int, len(row))
+		// First pass, unrestricted: just confirm this row carries both
+		// signature headers somewhere. Real workbooks (not just the
+		// hypothetical "old table in cols A-D" from the task
+		// description) repeat "Exercise" as a header in BOTH the old
+		// left-side table and the real one — e.g. "Exercise | How it's
+		// prescribed now | Your call | Comment (optional) | | Movement
+		// group | Exercise | Equipment required | ...". So this pass
+		// only answers "is this a header row at all," never which
+		// column anything lives in.
+		firstOccurrence := make(map[string]int, len(row))
 		for col, cell := range row {
 			h := normalizeHeader(cell)
 			if h == "" {
 				continue
 			}
-			// First occurrence wins — guards against an unrelated
-			// column coincidentally repeating a header word further
-			// right in the same row.
-			if _, exists := byHeader[h]; !exists {
-				byHeader[h] = col
+			if _, exists := firstOccurrence[h]; !exists {
+				firstOccurrence[h] = col
 			}
 		}
 
-		_, hasGroup := byHeader["movement group"]
-		_, hasExercise := byHeader["exercise"]
+		mgCol, hasGroup := firstOccurrence["movement group"]
+		_, hasExercise := firstOccurrence["exercise"]
 		if !hasGroup || !hasExercise {
 			continue
+		}
+
+		// Second pass, restricted to columns >= mgCol: "Movement
+		// group" never appears in the old table (per the task's own
+		// description of it), so its column anchors where the REAL
+		// table starts. Resolving every other header from that point
+		// on — instead of globally-first-occurrence — is what
+		// correctly skips the old table's own "Exercise" column
+		// sitting to its left.
+		byHeader := make(map[string]int, len(row)-mgCol)
+		for col := mgCol; col < len(row); col++ {
+			h := normalizeHeader(row[col])
+			if h == "" {
+				continue
+			}
+			if _, exists := byHeader[h]; !exists {
+				byHeader[h] = col
+			}
 		}
 
 		var missing []string
@@ -81,8 +105,8 @@ func findHeaderRow(sh sheet) (int, columnIndex, error) {
 		}
 		if len(missing) > 0 {
 			return 0, columnIndex{}, fmt.Errorf(
-				"tab %q: found a header row (row %d) but it's missing required column(s) %v — "+
-					"this doesn't match either documented layout",
+				"tab %q: found a header row (row %d) but it's missing required column(s) %v at or after "+
+					"the \"Movement group\" column — this doesn't match either documented layout",
 				sh.tabName, rowIdx+1, missing,
 			)
 		}
