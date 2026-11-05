@@ -13,6 +13,7 @@ import (
 	"viv/internal/core/domain"
 	"viv/internal/core/goal"
 	"viv/internal/core/mesocycle"
+	"viv/internal/core/strengthsession"
 	"viv/internal/core/usecase"
 )
 
@@ -91,6 +92,31 @@ func seedLoggableDay(t *testing.T, sessionMonday time.Time) *fakeDraftRepo {
 }
 
 var sessionMonday = time.Date(2026, time.May, 4, 0, 0, 0, 0, time.UTC)
+
+// seedStrengthBlockLoggableDay seeds a draft with a single real VIV-112
+// Strength-assembly day (StrengthBlock, not the old Exercises path) at
+// sessionMonday, with two assembled exercises (4 and 3 sets).
+func seedStrengthBlockLoggableDay(t *testing.T, sessionMonday time.Time) *fakeDraftRepo {
+	t.Helper()
+	drafts := &fakeDraftRepo{}
+	day := usecase.DayPlan{
+		Assignment: cascade.SlotAssignment{
+			ActivityType: activity.Strength, Intensity: activity.IntensityM, Impact: activity.ImpactL,
+			MuscleGroup: activity.MuscleGroupLower,
+		},
+		Content: &usecase.SelectedContent{StrengthBlock: &strengthsession.AssembledSession{
+			Exercises: []strengthsession.AssembledExercise{
+				{ExerciseID: "lower_back_squat", ExerciseName: "Back Squat", Slot: "Squat", PrescriptionText: "4 × 6-8 @ RIR 2-3", Sets: 4},
+				{ExerciseID: "lower_rdl", ExerciseName: "RDL", Slot: "Hip Hinge", PrescriptionText: "3 × 8-10 @ RIR 2-3", Sets: 3},
+			},
+			Week: 1, BlockNumber: 1, ConfigStatus: "draft_not_reviewed_by_sport_scientist",
+		}},
+	}
+	seedDraft(t, drafts, "u1", sessionMonday, goal.StrengthMuscle, [7]usecase.DayPlan{
+		day, restDay(), restDay(), restDay(), restDay(), restDay(), restDay(),
+	})
+	return drafts
+}
 
 // ============================================================================
 // Start
@@ -333,5 +359,102 @@ func TestCompleteSession_AlreadyDoneRejected(t *testing.T) {
 	_, err := completeUC.Execute(context.Background(), usecase.CompleteSessionInput{UserID: "u1", Date: sessionMonday})
 	if err == nil {
 		t.Fatal("expected an error when completing an already-done session again")
+	}
+}
+
+// ============================================================================
+// Real VIV-112 Strength assembly path (StrengthBlock) — every set is
+// loggable here too, not just the old mesocycle-pinned (Exercises) path.
+// ============================================================================
+
+func TestStartSession_StrengthBlockPathAccepted(t *testing.T) {
+	drafts := seedStrengthBlockLoggableDay(t, sessionMonday)
+	uc := usecase.NewStartSessionUseCase(drafts, &fakeSessionLogRepo{})
+
+	out, err := uc.Execute(context.Background(), usecase.StartSessionInput{UserID: "u1", Date: sessionMonday})
+	if err != nil {
+		t.Fatalf("Execute returned error: %v", err)
+	}
+	if out.Log.Status != domain.SessionLogInProgress {
+		t.Errorf("Status = %q, want %q", out.Log.Status, domain.SessionLogInProgress)
+	}
+}
+
+func TestLogSet_StrengthBlockPathRecordsRIR(t *testing.T) {
+	drafts := seedStrengthBlockLoggableDay(t, sessionMonday)
+	logs := &fakeSessionLogRepo{}
+	startUC := usecase.NewStartSessionUseCase(drafts, logs)
+	logSetUC := usecase.NewLogSetUseCase(drafts, logs)
+	if _, err := startUC.Execute(context.Background(), usecase.StartSessionInput{UserID: "u1", Date: sessionMonday}); err != nil {
+		t.Fatalf("start returned error: %v", err)
+	}
+
+	rir := 2
+	out, err := logSetUC.Execute(context.Background(), usecase.LogSetInput{
+		UserID: "u1", Date: sessionMonday, ExerciseID: "lower_back_squat", SetNumber: 1, WeightKg: 80, Reps: 6, RIR: &rir,
+	})
+	if err != nil {
+		t.Fatalf("Execute returned error: %v", err)
+	}
+	if len(out.Log.Sets) != 1 {
+		t.Fatalf("Sets = %+v, want 1 entry", out.Log.Sets)
+	}
+	if out.Log.Sets[0].RIR == nil || *out.Log.Sets[0].RIR != 2 {
+		t.Errorf("RIR = %v, want 2", out.Log.Sets[0].RIR)
+	}
+}
+
+func TestLogSet_StrengthBlockPathSetNumberOutOfRangeRejected(t *testing.T) {
+	drafts := seedStrengthBlockLoggableDay(t, sessionMonday)
+	logs := &fakeSessionLogRepo{}
+	startUC := usecase.NewStartSessionUseCase(drafts, logs)
+	logSetUC := usecase.NewLogSetUseCase(drafts, logs)
+	_, _ = startUC.Execute(context.Background(), usecase.StartSessionInput{UserID: "u1", Date: sessionMonday})
+
+	// lower_rdl is assembled with 3 sets (parsed from "3 × 8-10 @ RIR
+	// 2-3") — set 4 doesn't exist.
+	_, err := logSetUC.Execute(context.Background(), usecase.LogSetInput{
+		UserID: "u1", Date: sessionMonday, ExerciseID: "lower_rdl", SetNumber: 4, WeightKg: 40, Reps: 8,
+	})
+	if err == nil {
+		t.Fatal("expected an error for a set number beyond the assembled count")
+	}
+}
+
+func TestLogSet_NegativeRIRRejected(t *testing.T) {
+	drafts := seedStrengthBlockLoggableDay(t, sessionMonday)
+	logs := &fakeSessionLogRepo{}
+	startUC := usecase.NewStartSessionUseCase(drafts, logs)
+	logSetUC := usecase.NewLogSetUseCase(drafts, logs)
+	_, _ = startUC.Execute(context.Background(), usecase.StartSessionInput{UserID: "u1", Date: sessionMonday})
+
+	negative := -1
+	_, err := logSetUC.Execute(context.Background(), usecase.LogSetInput{
+		UserID: "u1", Date: sessionMonday, ExerciseID: "lower_back_squat", SetNumber: 1, WeightKg: 80, Reps: 6, RIR: &negative,
+	})
+	if err == nil {
+		t.Fatal("expected an error for a negative rir")
+	}
+}
+
+func TestCompleteSession_StrengthBlockPathComputesStats(t *testing.T) {
+	drafts := seedStrengthBlockLoggableDay(t, sessionMonday)
+	logs := &fakeSessionLogRepo{}
+	startUC := usecase.NewStartSessionUseCase(drafts, logs)
+	logSetUC := usecase.NewLogSetUseCase(drafts, logs)
+	completeUC := usecase.NewCompleteSessionUseCase(drafts, logs)
+
+	_, _ = startUC.Execute(context.Background(), usecase.StartSessionInput{UserID: "u1", Date: sessionMonday})
+	_, _ = logSetUC.Execute(context.Background(), usecase.LogSetInput{UserID: "u1", Date: sessionMonday, ExerciseID: "lower_back_squat", SetNumber: 1, WeightKg: 80, Reps: 6})
+
+	out, err := completeUC.Execute(context.Background(), usecase.CompleteSessionInput{UserID: "u1", Date: sessionMonday})
+	if err != nil {
+		t.Fatalf("Execute returned error: %v", err)
+	}
+	if out.SetsCompleted != 1 {
+		t.Errorf("SetsCompleted = %d, want 1", out.SetsCompleted)
+	}
+	if out.SetsTotal != 7 { // 4 (Back Squat) + 3 (RDL), assembled
+		t.Errorf("SetsTotal = %d, want 7", out.SetsTotal)
 	}
 }

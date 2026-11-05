@@ -229,7 +229,7 @@ func TestAssemble_ShortNeverDropsBelowMinExercisesEvenIfOnlyMainLeft(t *testing.
 		},
 		"rotation_policy": {"Main": "hold", "Accessory": 1, "Optional": 1},
 		"exercise_types": {"Squat A": {"type": "C", "per_side": false}, "Hip Thrust A": {"type": "C", "per_side": false}},
-		"weekly_prescription_by_type": {"C": ["w1", "w2", "w3", "w4"]},
+		"weekly_prescription_by_type": {"C": ["3 × 8", "3 × 8", "3 × 8", "3 × 8"]},
 		"variant_rules": {
 			"short": {"drop_order": ["Optional", "Accessory"], "never_drop": ["Main"], "min_exercises": 2},
 			"reduced_load": {"rule": "use_week_1_prescription_of_each_exercise_type"},
@@ -349,6 +349,27 @@ func TestAssemble_LowIntensityAdjustsSetsAndRIR(t *testing.T) {
 	}
 	if !strings.Contains(sq.PrescriptionText, "RIR 5") {
 		t.Errorf("expected RIR increased to 5, got %q", sq.PrescriptionText)
+	}
+	if sq.Sets != 2 {
+		t.Errorf("Sets = %d, want 2 (parsed from the adjusted text, not the base 3)", sq.Sets)
+	}
+}
+
+func TestAssemble_PopulatesExerciseIDAndSets(t *testing.T) {
+	lib, cfg := fixtureLibrary(t), fixtureConfig(t)
+	activatedOn := time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC)
+
+	got, err := Assemble(baseAssignment(), pinForBlock(1, activatedOn), activatedOn, lib, cfg, mesocycle.DefaultBlockExerciseSelector{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	sq := findExercise(t, got.Exercises, "Squat")
+	if sq.ExerciseID == "" {
+		t.Error("expected a non-empty ExerciseID so a client can log sets against it")
+	}
+	if sq.Sets != 3 {
+		t.Errorf("Sets = %d, want 3 (parsed from base week-1 text \"3 × 8–10 @ RIR 3\")", sq.Sets)
 	}
 }
 

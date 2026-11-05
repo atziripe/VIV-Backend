@@ -33,11 +33,25 @@ import (
 // doc comment) — real-time set-by-set logging against this shape is a
 // separate, not-yet-scoped concern.
 type AssembledExercise struct {
+	// ExerciseID is strengthlibrary.Exercise.ID — stable across blocks
+	// and re-imports, and the same identity usecase.LogSetUseCase
+	// expects in its exercise_id — so a client can log sets against
+	// this exercise with no extra lookup.
+	ExerciseID       string
 	Slot             string
 	Priority         strengthlibrary.SlotPriority
 	ExerciseName     string
 	Equipment        []string
 	PrescriptionText string
+
+	// Sets is the leading set count parsed from PrescriptionText's own
+	// "N ×" opening (after any tier adjustment — e.g. Intensity=Low's
+	// SetsDelta already applied) — never a separate, independently
+	// authored number. It exists so a client knows how many set rows to
+	// render, and so LogSetUseCase has an integer to validate
+	// SetNumber against, without the client (or the log-set gate)
+	// parsing PrescriptionText itself.
+	Sets int
 }
 
 // TierChange is one plain-data record of a cascade (VIV-105) tier
@@ -192,16 +206,24 @@ func Assemble(
 				return AssembledSession{}, fmt.Errorf("strengthsession: exercise %q: %w", e.exercise.Name, err)
 			}
 		}
+
+		sets, err := parseLeadingSetCount(text)
+		if err != nil {
+			return AssembledSession{}, fmt.Errorf("strengthsession: exercise %q: %w", e.exercise.Name, err)
+		}
+
 		if perSide {
 			text += " per side"
 		}
 
 		exercises = append(exercises, AssembledExercise{
+			ExerciseID:       e.exercise.ID,
 			Slot:             e.slot.Name,
 			Priority:         e.slot.Priority,
 			ExerciseName:     e.exercise.Name,
 			Equipment:        e.exercise.Equipment,
 			PrescriptionText: text,
+			Sets:             sets,
 		})
 	}
 

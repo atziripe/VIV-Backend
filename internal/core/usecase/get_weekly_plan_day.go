@@ -43,11 +43,16 @@ type WeeklyPlanDayExercise struct {
 	LoadGuidance string
 	FormCue      string
 
-	// Slot/Priority/Equipment/PrescriptionText are populated for the real
-	// VIV-112 Strength assembly path only (StrengthBlock) — that path's
-	// prescription is a single piece of config-authored text, kept as
-	// written rather than decomposed back into Sets/Reps/RestSeconds/
-	// LoadGuidance/FormCue, so those fields stay zero there. See
+	// Slot/Priority/Equipment/PrescriptionText are populated for the
+	// real VIV-112 Strength assembly path only (StrengthBlock) — that
+	// path's prescription is a single piece of config-authored text,
+	// kept as written rather than decomposed back into Reps/
+	// RestSeconds/LoadGuidance/FormCue, so those stay zero there. ID
+	// and Sets ARE populated for this path too (ID from
+	// strengthlibrary.Exercise.ID, Sets parsed off the leading "N ×" of
+	// PrescriptionText) — the same two numbers usecase.LogSetUseCase
+	// needs to accept a logged set, so a Strength day is just as
+	// loggable as the old mesocycle-pinned path. See
 	// strengthsession.AssembledExercise.
 	Slot             string
 	Priority         string
@@ -82,11 +87,12 @@ type WeeklyPlanDayDetail struct {
 	Substituted  bool
 	Warning      string
 
-	// Loggable is true for a mesocycle-pinned day (Strength, and
-	// Functional if ever enabled) — the only days with discrete
-	// sets/reps/weight to log in real time today. Derived from which
-	// half of Content was actually populated at generation time (never
-	// both), so it always matches what MainExercises actually is.
+	// Loggable is true for a mesocycle-pinned day (old path, or
+	// Functional if ever enabled) or a real VIV-112 Strength assembly
+	// day (StrengthBlock) — the days with discrete sets to log in real
+	// time. Derived from which part of Content was actually populated
+	// at generation time (never more than one), so it always matches
+	// what MainExercises actually is.
 	Loggable bool
 
 	// Title and LoadLabel are mechanical taxonomy labels ("Lower" +
@@ -236,6 +242,7 @@ func (uc *GetWeeklyPlanDayUseCase) Execute(ctx context.Context, in GetWeeklyPlan
 		}
 
 	case day.Content != nil && day.Content.StrengthBlock != nil:
+		detail.Loggable = true
 		sb := day.Content.StrengthBlock
 		detail.StrengthBlockNumber = sb.BlockNumber
 		detail.StrengthWeek = sb.Week
@@ -245,7 +252,9 @@ func (uc *GetWeeklyPlanDayUseCase) Execute(ctx context.Context, in GetWeeklyPlan
 		}
 		for _, e := range sb.Exercises {
 			detail.MainExercises = append(detail.MainExercises, WeeklyPlanDayExercise{
+				ID:               e.ExerciseID,
 				Name:             e.ExerciseName,
+				Sets:             e.Sets,
 				Slot:             e.Slot,
 				Priority:         string(e.Priority),
 				Equipment:        e.Equipment,

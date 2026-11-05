@@ -157,8 +157,8 @@ func TestGetWeeklyPlanDay_StrengthBlockPath(t *testing.T) {
 	strengthDay.Content = &usecase.SelectedContent{
 		StrengthBlock: &strengthsession.AssembledSession{
 			Exercises: []strengthsession.AssembledExercise{
-				{Slot: "Squat", Priority: strengthlibrary.PriorityMain, ExerciseName: "Back Squat", Equipment: []string{"Barbell", "Rack"}, PrescriptionText: "4 × 6-8 @ RIR 2-3"},
-				{Slot: "Hip Thrust", Priority: strengthlibrary.PriorityAccessory, ExerciseName: "Hip Thrust A", Equipment: []string{"Barbell"}, PrescriptionText: "3 × 10-12 @ RIR 2-3"},
+				{ExerciseID: "lower_back_squat", Slot: "Squat", Priority: strengthlibrary.PriorityMain, ExerciseName: "Back Squat", Equipment: []string{"Barbell", "Rack"}, PrescriptionText: "4 × 6-8 @ RIR 2-3", Sets: 4},
+				{ExerciseID: "lower_hip_thrust_a", Slot: "Hip Thrust", Priority: strengthlibrary.PriorityAccessory, ExerciseName: "Hip Thrust A", Equipment: []string{"Barbell"}, PrescriptionText: "3 × 10-12 @ RIR 2-3", Sets: 3},
 			},
 			Week:         3,
 			BlockNumber:  2,
@@ -177,6 +177,9 @@ func TestGetWeeklyPlanDay_StrengthBlockPath(t *testing.T) {
 	}
 
 	d := out.Day
+	if !d.Loggable {
+		t.Error("expected a real VIV-112 Strength assembly day to be Loggable")
+	}
 	if d.StrengthBlockNumber != 2 {
 		t.Errorf("StrengthBlockNumber = %d, want 2", d.StrengthBlockNumber)
 	}
@@ -201,10 +204,17 @@ func TestGetWeeklyPlanDay_StrengthBlockPath(t *testing.T) {
 	if len(d.MainExercises[0].Equipment) != 2 {
 		t.Errorf("Equipment = %+v, want 2 entries", d.MainExercises[0].Equipment)
 	}
-	// This path never decomposes the prescription back into structured
-	// numbers — Sets/Reps/RestSeconds/LoadGuidance/FormCue stay zero.
-	if d.MainExercises[0].Sets != 0 || d.MainExercises[0].Reps != "" {
-		t.Errorf("expected Sets/Reps to stay zero for the Strength assembly path, got %+v", d.MainExercises[0])
+	// This path never decomposes the prescription text itself, but ID
+	// and Sets ARE populated (needed to log sets against this day) —
+	// Reps/RestSeconds/LoadGuidance/FormCue stay zero/empty.
+	if d.MainExercises[0].ID != "lower_back_squat" {
+		t.Errorf("ID = %q, want the stable exercise ID so a client can log sets against it", d.MainExercises[0].ID)
+	}
+	if d.MainExercises[0].Sets != 4 {
+		t.Errorf("Sets = %d, want 4 (parsed off the prescription text's leading \"N ×\")", d.MainExercises[0].Sets)
+	}
+	if d.MainExercises[0].Reps != "" {
+		t.Errorf("expected Reps to stay empty for the Strength assembly path, got %+v", d.MainExercises[0])
 	}
 }
 

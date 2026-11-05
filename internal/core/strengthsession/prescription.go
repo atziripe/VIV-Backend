@@ -35,14 +35,27 @@ var rirPattern = regexp.MustCompile(`RIR\s*(\d+)(–(\d+))?`)
 // unreachable against real data; it exists so a future malformed
 // config entry fails loudly instead of silently skipping the
 // adjustment.
-func applyLowIntensity(text string, rule strengthlibrary.IntensityLowRule) (string, error) {
+// parseLeadingSetCount reads the leading "N" off a prescription text's
+// universal "N ×" opening — the same number Assemble exposes as
+// AssembledExercise.Sets, so a client knows how many set rows to render
+// (and LogSetUseCase has something to validate SetNumber against)
+// without parsing the display text itself.
+func parseLeadingSetCount(text string) (int, error) {
 	m := leadingSetsPattern.FindStringSubmatch(text)
 	if m == nil {
-		return "", fmt.Errorf("prescription text %q has no leading \"N ×\" set count to adjust", text)
+		return 0, fmt.Errorf("prescription text %q has no leading \"N ×\" set count", text)
 	}
 	sets, err := strconv.Atoi(m[1])
 	if err != nil {
-		return "", fmt.Errorf("parsing set count from %q: %w", text, err)
+		return 0, fmt.Errorf("parsing set count from %q: %w", text, err)
+	}
+	return sets, nil
+}
+
+func applyLowIntensity(text string, rule strengthlibrary.IntensityLowRule) (string, error) {
+	sets, err := parseLeadingSetCount(text)
+	if err != nil {
+		return "", err
 	}
 	newSets := sets + rule.SetsDelta
 	if newSets < rule.MinSets {

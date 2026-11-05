@@ -14,8 +14,8 @@ import (
 )
 
 // SessionLogHandler is the write side of real-time set-by-set logging
-// for Loggable (mesocycle-pinned) days — Strength today, and Functional
-// if that's ever enabled. It has no read endpoint of its own: the
+// for Loggable days — the old mesocycle-pinned path, and VIV-112's real
+// Strength assembly. It has no read endpoint of its own: the
 // current session state (if any) is already returned by
 // GET /training/weekly-plan/day, so a client resumes by reading that,
 // not by polling here. There is deliberately no rest-timer endpoint —
@@ -40,6 +40,7 @@ type setLogResponse struct {
 	SetNumber  int     `json:"set_number"`
 	WeightKg   float64 `json:"weight_kg"`
 	Reps       int     `json:"reps"`
+	RIR        *int    `json:"rir,omitempty"`
 }
 
 type sessionLogResponse struct {
@@ -124,6 +125,11 @@ type logSetRequest struct {
 	SetNumber  int     `json:"set_number"`
 	WeightKg   float64 `json:"weight_kg"`
 	Reps       int     `json:"reps"`
+
+	// RIR is optional — only Strength's real assembly path (VIV-112)
+	// prescribes an RIR target; the old mesocycle-pinned path has none,
+	// so a client logging against it simply omits this field.
+	RIR *int `json:"rir,omitempty"`
 }
 
 // POST /training/weekly-plan/day/log-set
@@ -152,7 +158,7 @@ func (h *SessionLogHandler) LogSet(w http.ResponseWriter, r *http.Request) {
 
 	out, err := h.LogSetUC.Execute(ctx, usecase.LogSetInput{
 		UserID: userID, Date: date, ExerciseID: req.ExerciseID,
-		SetNumber: req.SetNumber, WeightKg: req.WeightKg, Reps: req.Reps,
+		SetNumber: req.SetNumber, WeightKg: req.WeightKg, Reps: req.Reps, RIR: req.RIR,
 	})
 	if err != nil {
 		handleSessionLoggingError(w, r, "session.log-set", err)
@@ -221,7 +227,7 @@ func (h *SessionLogHandler) Complete(w http.ResponseWriter, r *http.Request) {
 func toSessionLogResponse(log domain.SessionLog) sessionLogResponse {
 	sets := make([]setLogResponse, len(log.Sets))
 	for i, s := range log.Sets {
-		sets[i] = setLogResponse{ExerciseID: s.ExerciseID, SetNumber: s.SetNumber, WeightKg: s.WeightKg, Reps: s.Reps}
+		sets[i] = setLogResponse{ExerciseID: s.ExerciseID, SetNumber: s.SetNumber, WeightKg: s.WeightKg, Reps: s.Reps, RIR: s.RIR}
 	}
 	return sessionLogResponse{
 		Status:    string(log.Status),
