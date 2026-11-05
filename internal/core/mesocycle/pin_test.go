@@ -63,13 +63,11 @@ func fixtureConfig(t *testing.T) *strengthlibrary.BlockConfig {
 	t.Helper()
 	cfg, err := strengthlibrary.NewBlockConfigFromJSON([]byte(`{
 		"zones": {
-			"lower": {
-				"slots": [
-					{"name": "Squat", "priority": "Main", "movement_groups": ["Squat"]},
-					{"name": "Hip Thrust", "priority": "Accessory", "movement_groups": ["Hip thrust / bridge"]},
-					{"name": "Calves", "priority": "Optional", "movement_groups": ["Calves"]}
-				]
-			}
+			"Lower body": [
+				{"slot": "Squat", "priority": "Main", "source_groups": ["Squat"]},
+				{"slot": "Hip Thrust", "priority": "Accessory", "source_groups": ["Hip thrust / bridge"]},
+				{"slot": "Calves", "priority": "Optional", "source_groups": ["Calves"]}
+			]
 		},
 		"rotation_policy": {"Main": "hold", "Accessory": 1, "Optional": 1}
 	}`))
@@ -85,13 +83,11 @@ func fixtureConfigWithOverride(t *testing.T) *strengthlibrary.BlockConfig {
 	t.Helper()
 	cfg, err := strengthlibrary.NewBlockConfigFromJSON([]byte(`{
 		"zones": {
-			"lower": {
-				"slots": [
-					{"name": "Squat", "priority": "Main", "movement_groups": ["Squat"]},
-					{"name": "Hip Thrust", "priority": "Accessory", "movement_groups": ["Hip thrust / bridge"], "rotation_period_blocks": 2},
-					{"name": "Calves", "priority": "Optional", "movement_groups": ["Calves"]}
-				]
-			}
+			"Lower body": [
+				{"slot": "Squat", "priority": "Main", "source_groups": ["Squat"]},
+				{"slot": "Hip Thrust", "priority": "Accessory", "source_groups": ["Hip thrust / bridge"], "rotation_period_blocks": 2},
+				{"slot": "Calves", "priority": "Optional", "source_groups": ["Calves"]}
+			]
 		},
 		"rotation_policy": {"Main": "hold", "Accessory": 1, "Optional": 1}
 	}`))

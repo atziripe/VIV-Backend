@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 // SlotPriority is how important a slot is within a zone's block —
@@ -71,18 +72,46 @@ func NewBlockConfigFromJSON(data []byte) (*BlockConfig, error) {
 	return loadBlockConfigFromJSON(data)
 }
 
+// rawBlockConfig mirrors VIV_Strength_Block_Config.json's real shape —
+// each zone is a bare array of slots (not {"slots": [...]}), a slot's
+// name/group-list keys are "slot"/"source_groups", and zone keys are
+// the long, human-readable names ("Lower body") matching the reviewer
+// workbook's own tab names, not this package's short Zone values
+// ("lower") — see zoneFromConfigKey. The file also carries
+// status/week_4/exercise_types/type_names/weekly_prescription_by_type/
+// rir_note — all prescription/session-assembly concerns for a later
+// ticket, deliberately not modeled here; encoding/json ignores unknown
+// fields by default, so they just pass through unparsed.
 type rawBlockConfig struct {
-	Zones map[string]struct {
-		Slots []rawSlot `json:"slots"`
-	} `json:"zones"`
+	Zones          map[string][]rawSlot       `json:"zones"`
 	RotationPolicy map[string]json.RawMessage `json:"rotation_policy"`
 }
 
 type rawSlot struct {
-	Name                 string   `json:"name"`
+	Name                 string   `json:"slot"`
 	Priority             string   `json:"priority"`
-	MovementGroups       []string `json:"movement_groups"`
+	MovementGroups       []string `json:"source_groups"`
 	RotationPeriodBlocks *int     `json:"rotation_period_blocks,omitempty"`
+}
+
+// zoneFromConfigKey maps the config's long zone names to this package's
+// short Zone values — case-insensitive, trimmed, same leniency as
+// internal/scripts/strengthimport's zoneForTabName, which this
+// deliberately mirrors (both ultimately key off the same reviewer
+// workbook tab names).
+func zoneFromConfigKey(key string) (Zone, bool) {
+	switch strings.ToLower(strings.TrimSpace(key)) {
+	case "lower body", "lower":
+		return ZoneLower, true
+	case "upper body", "upper":
+		return ZoneUpper, true
+	case "full body", "full":
+		return ZoneFull, true
+	case "core":
+		return ZoneCore, true
+	default:
+		return "", false
+	}
 }
 
 func loadBlockConfigFromJSON(data []byte) (*BlockConfig, error) {
@@ -96,40 +125,35 @@ func loadBlockConfigFromJSON(data []byte) (*BlockConfig, error) {
 		rotationPolicy: make(map[SlotPriority]rotationSpec, len(raw.RotationPolicy)),
 	}
 
-	validZone := make(map[string]bool, len(AllZones))
-	for _, z := range AllZones {
-		validZone[string(z)] = true
-	}
-
-	for zoneName, zoneRaw := range raw.Zones {
-		if !validZone[zoneName] {
-			return nil, fmt.Errorf("strengthlibrary: block config: unknown zone %q", zoneName)
+	for zoneKey, rawSlots := range raw.Zones {
+		zone, ok := zoneFromConfigKey(zoneKey)
+		if !ok {
+			return nil, fmt.Errorf("strengthlibrary: block config: unknown zone %q", zoneKey)
 		}
-		zone := Zone(zoneName)
-		if len(zoneRaw.Slots) == 0 {
-			return nil, fmt.Errorf("strengthlibrary: block config: zone %q has no slots", zoneName)
+		if len(rawSlots) == 0 {
+			return nil, fmt.Errorf("strengthlibrary: block config: zone %q has no slots", zoneKey)
 		}
 
-		seenSlotName := make(map[string]bool, len(zoneRaw.Slots))
-		slots := make([]Slot, 0, len(zoneRaw.Slots))
-		for _, s := range zoneRaw.Slots {
+		seenSlotName := make(map[string]bool, len(rawSlots))
+		slots := make([]Slot, 0, len(rawSlots))
+		for _, s := range rawSlots {
 			if s.Name == "" {
-				return nil, fmt.Errorf("strengthlibrary: block config: zone %q has a slot with no name", zoneName)
+				return nil, fmt.Errorf("strengthlibrary: block config: zone %q has a slot with no name", zoneKey)
 			}
 			if seenSlotName[s.Name] {
-				return nil, fmt.Errorf("strengthlibrary: block config: zone %q has a duplicate slot name %q", zoneName, s.Name)
+				return nil, fmt.Errorf("strengthlibrary: block config: zone %q has a duplicate slot name %q", zoneKey, s.Name)
 			}
 			seenSlotName[s.Name] = true
 
 			priority := SlotPriority(s.Priority)
 			if priority != PriorityMain && priority != PriorityAccessory && priority != PriorityOptional {
-				return nil, fmt.Errorf("strengthlibrary: block config: zone %q slot %q has unknown priority %q", zoneName, s.Name, s.Priority)
+				return nil, fmt.Errorf("strengthlibrary: block config: zone %q slot %q has unknown priority %q", zoneKey, s.Name, s.Priority)
 			}
 			if len(s.MovementGroups) == 0 {
-				return nil, fmt.Errorf("strengthlibrary: block config: zone %q slot %q has no movement_groups", zoneName, s.Name)
+				return nil, fmt.Errorf("strengthlibrary: block config: zone %q slot %q has no source_groups", zoneKey, s.Name)
 			}
 			if s.RotationPeriodBlocks != nil && *s.RotationPeriodBlocks < 1 {
-				return nil, fmt.Errorf("strengthlibrary: block config: zone %q slot %q has rotation_period_blocks < 1", zoneName, s.Name)
+				return nil, fmt.Errorf("strengthlibrary: block config: zone %q slot %q has rotation_period_blocks < 1", zoneKey, s.Name)
 			}
 
 			groups := make([]MovementGroup, len(s.MovementGroups))

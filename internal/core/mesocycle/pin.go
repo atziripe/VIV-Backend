@@ -122,10 +122,11 @@ type DefaultBlockExerciseSelector struct{}
 
 // SelectBlockExercises implements BlockExerciseSelector.
 //
-// For each of zone's configured slots: build its candidate pool by
-// concatenating the approved exercises of every movement group the slot
-// lists, IN THE CONFIG'S OWN GROUP ORDER (never re-sorted) and, within
-// each group, in the library's own (already deterministic) order. Then:
+// For each of zone's configured slots: build its candidate pool via
+// strengthlibrary.BuildSlotPool, which implements
+// VIV_Strength_Block_Config.json's real ordering_rule (ascending by
+// (technical, balance) demand, ties interleaved across the slot's
+// source movement groups) — never re-sorted here. Then:
 //
 //   - a Main slot (or any slot BlockConfig.HoldsForever says holds)
 //     always takes pool[0], for every block — "the Block 1 exercise
@@ -155,10 +156,7 @@ func (DefaultBlockExerciseSelector) SelectBlockExercises(
 	bySlot := make(map[string]strengthlibrary.Exercise, len(slots))
 	var thinSlots []string
 	for _, slot := range slots {
-		var pool []strengthlibrary.Exercise
-		for _, group := range slot.MovementGroups {
-			pool = append(pool, approvedByGroup[group]...)
-		}
+		pool := strengthlibrary.BuildSlotPool(slot, approvedByGroup)
 		if len(pool) == 0 {
 			return nil, nil, fmt.Errorf("mesocycle: slot %q (zone %q) has no approved exercises to select from", slot.Name, zone)
 		}

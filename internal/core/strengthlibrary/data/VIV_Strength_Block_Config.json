@@ -1,213 +1,483 @@
 {
-  "zones": {
-    "lower": {
-      "slots": [
-        {
-          "name": "Squat",
-          "priority": "Main",
-          "movement_groups": [
-            "Squat"
-          ]
-        },
-        {
-          "name": "Hip Hinge",
-          "priority": "Main",
-          "movement_groups": [
-            "Hip hinge",
-            "Hip hinge / power"
-          ]
-        },
-        {
-          "name": "Lunge",
-          "priority": "Accessory",
-          "movement_groups": [
-            "Lunge / single-leg"
-          ]
-        },
-        {
-          "name": "Hip Thrust / Bridge",
-          "priority": "Accessory",
-          "movement_groups": [
-            "Hip thrust / bridge"
-          ]
-        },
-        {
-          "name": "Calves",
-          "priority": "Optional",
-          "movement_groups": [
-            "Calves"
-          ]
-        }
-      ]
-    },
-    "upper": {
-      "slots": [
-        {
-          "name": "Horizontal Push",
-          "priority": "Main",
-          "movement_groups": [
-            "Horizontal push"
-          ]
-        },
-        {
-          "name": "Vertical Pull",
-          "priority": "Main",
-          "movement_groups": [
-            "Vertical pull"
-          ]
-        },
-        {
-          "name": "Horizontal Pull",
-          "priority": "Accessory",
-          "movement_groups": [
-            "Horizontal pull"
-          ]
-        },
-        {
-          "name": "Vertical Push",
-          "priority": "Accessory",
-          "movement_groups": [
-            "Vertical push"
-          ]
-        },
-        {
-          "name": "Shoulders",
-          "priority": "Accessory",
-          "movement_groups": [
-            "Shoulders"
-          ]
-        },
-        {
-          "name": "Arms",
-          "priority": "Optional",
-          "movement_groups": [
-            "Arms — elbow flexion",
-            "Arms — elbow extension"
-          ]
-        }
-      ]
-    },
-    "full": {
-      "slots": [
-        {
-          "name": "Squat",
-          "priority": "Main",
-          "movement_groups": [
-            "Squat",
-            "Squat / lateral",
-            "Squat + vertical push"
-          ]
-        },
-        {
-          "name": "Hip Hinge",
-          "priority": "Main",
-          "movement_groups": [
-            "Hip hinge"
-          ]
-        },
-        {
-          "name": "Push",
-          "priority": "Accessory",
-          "movement_groups": [
-            "Horizontal push",
-            "Vertical push / power"
-          ]
-        },
-        {
-          "name": "Pull",
-          "priority": "Accessory",
-          "movement_groups": [
-            "Vertical pull",
-            "Horizontal pull",
-            "Horizontal pull + core anti-rotation"
-          ]
-        },
-        {
-          "name": "Lunge",
-          "priority": "Accessory",
-          "movement_groups": [
-            "Lunge / single-leg"
-          ]
-        },
-        {
-          "name": "Carry",
-          "priority": "Optional",
-          "movement_groups": [
-            "Carry"
-          ]
-        },
-        {
-          "name": "Core",
-          "priority": "Optional",
-          "movement_groups": [
-            "Core — anti-extension",
-            "Core — anti-lateral flexion",
-            "Core — anti-rotation",
-            "Core — controlled trunk / hip flexion"
-          ]
-        }
-      ]
-    },
-    "core": {
-      "slots": [
-        {
-          "name": "Anti-Extension",
-          "priority": "Main",
-          "movement_groups": [
-            "Anti-extension"
-          ]
-        },
-        {
-          "name": "Anti-Rotation",
-          "priority": "Main",
-          "movement_groups": [
-            "Anti-rotation",
-            "Anti-rotation + horizontal pull"
-          ]
-        },
-        {
-          "name": "Rotation",
-          "priority": "Accessory",
-          "movement_groups": [
-            "Rotation"
-          ]
-        },
-        {
-          "name": "Lateral Stability",
-          "priority": "Accessory",
-          "movement_groups": [
-            "Lateral stability / anti-lateral flexion",
-            "Lateral stability + hip abduction"
-          ]
-        },
-        {
-          "name": "Hip Flexion",
-          "priority": "Accessory",
-          "movement_groups": [
-            "Hip flexion / pelvic control"
-          ]
-        },
-        {
-          "name": "Trunk Flexion",
-          "priority": "Optional",
-          "movement_groups": [
-            "Trunk flexion",
-            "Trunk flexion / pelvic curl"
-          ]
-        },
-        {
-          "name": "Carry",
-          "priority": "Optional",
-          "movement_groups": [
-            "Carry"
-          ]
-        }
-      ]
-    }
-  },
+  "status": "draft_not_reviewed_by_sport_scientist",
   "rotation_policy": {
     "Main": "hold",
     "Accessory": 1,
-    "Optional": 1
-  }
+    "Optional": 1,
+    "_note": "Number = rotate every N blocks. 'hold' = never rotate. Block length = 4 weeks."
+  },
+  "week_4": "consolidation (not a deload)",
+  "ordering_rule": "pool ordered by (technical, balance) ratings ascending, ties interleaved across source groups; ratings unreviewed, used for ordering only",
+  "zones": {
+    "Lower body": [
+      {
+        "slot": "Squat",
+        "priority": "Main",
+        "source_groups": [
+          "Squat"
+        ]
+      },
+      {
+        "slot": "Hip hinge",
+        "priority": "Main",
+        "source_groups": [
+          "Hip hinge"
+        ]
+      },
+      {
+        "slot": "Lunge / single-leg",
+        "priority": "Main",
+        "source_groups": [
+          "Lunge / single-leg"
+        ]
+      },
+      {
+        "slot": "Hip thrust / bridge",
+        "priority": "Accessory",
+        "source_groups": [
+          "Hip thrust / bridge"
+        ]
+      },
+      {
+        "slot": "Calves",
+        "priority": "Accessory",
+        "source_groups": [
+          "Calves"
+        ]
+      },
+      {
+        "slot": "Power finisher",
+        "priority": "Optional",
+        "source_groups": [
+          "Hip hinge / power"
+        ]
+      }
+    ],
+    "Upper body": [
+      {
+        "slot": "Horizontal push",
+        "priority": "Main",
+        "source_groups": [
+          "Horizontal push"
+        ]
+      },
+      {
+        "slot": "Horizontal pull",
+        "priority": "Main",
+        "source_groups": [
+          "Horizontal pull"
+        ]
+      },
+      {
+        "slot": "Vertical push",
+        "priority": "Main",
+        "source_groups": [
+          "Vertical push"
+        ]
+      },
+      {
+        "slot": "Vertical pull",
+        "priority": "Main",
+        "source_groups": [
+          "Vertical pull"
+        ]
+      },
+      {
+        "slot": "Shoulders",
+        "priority": "Accessory",
+        "source_groups": [
+          "Shoulders"
+        ]
+      },
+      {
+        "slot": "Arms — elbow extension",
+        "priority": "Optional",
+        "source_groups": [
+          "Arms — elbow extension"
+        ]
+      },
+      {
+        "slot": "Arms — elbow flexion",
+        "priority": "Optional",
+        "source_groups": [
+          "Arms — elbow flexion"
+        ]
+      }
+    ],
+    "Full body": [
+      {
+        "slot": "Squat / lunge",
+        "priority": "Main",
+        "source_groups": [
+          "Squat",
+          "Squat / lateral",
+          "Squat + vertical push",
+          "Lunge / single-leg"
+        ]
+      },
+      {
+        "slot": "Hip hinge",
+        "priority": "Main",
+        "source_groups": [
+          "Hip hinge"
+        ]
+      },
+      {
+        "slot": "Push",
+        "priority": "Main",
+        "source_groups": [
+          "Horizontal push",
+          "Vertical push / power"
+        ]
+      },
+      {
+        "slot": "Pull",
+        "priority": "Main",
+        "source_groups": [
+          "Vertical pull",
+          "Horizontal pull",
+          "Horizontal pull + core anti-rotation"
+        ]
+      },
+      {
+        "slot": "Carry",
+        "priority": "Accessory",
+        "source_groups": [
+          "Carry"
+        ]
+      },
+      {
+        "slot": "Core",
+        "priority": "Optional",
+        "source_groups": [
+          "Core — controlled trunk / hip flexion"
+        ]
+      }
+    ],
+    "Core": [
+      {
+        "slot": "Anti-extension",
+        "priority": "Accessory",
+        "source_groups": [
+          "Anti-extension"
+        ]
+      },
+      {
+        "slot": "Anti-rotation",
+        "priority": "Accessory",
+        "source_groups": [
+          "Anti-rotation",
+          "Anti-rotation + horizontal pull"
+        ]
+      },
+      {
+        "slot": "Rotation",
+        "priority": "Accessory",
+        "source_groups": [
+          "Rotation"
+        ]
+      },
+      {
+        "slot": "Hip flexion / pelvic control",
+        "priority": "Accessory",
+        "source_groups": [
+          "Hip flexion / pelvic control"
+        ]
+      },
+      {
+        "slot": "Lateral stability",
+        "priority": "Accessory",
+        "source_groups": [
+          "Lateral stability / anti-lateral flexion",
+          "Lateral stability + hip abduction"
+        ]
+      },
+      {
+        "slot": "Carry",
+        "priority": "Optional",
+        "source_groups": [
+          "Carry"
+        ]
+      }
+    ]
+  },
+  "exercise_types": {
+    "Assisted Pull-Up — Machine": {
+      "type": "B",
+      "per_side": false
+    },
+    "Barbell Back Squat": {
+      "type": "C",
+      "per_side": false
+    },
+    "Barbell Bench Press": {
+      "type": "C",
+      "per_side": false
+    },
+    "Barbell Front Squat": {
+      "type": "C",
+      "per_side": false
+    },
+    "Barbell Hip Thrust": {
+      "type": "C",
+      "per_side": false
+    },
+    "Barbell Push Press": {
+      "type": "C",
+      "per_side": false
+    },
+    "Barbell Romanian Deadlift": {
+      "type": "C",
+      "per_side": false
+    },
+    "Bench Dip": {
+      "type": "B",
+      "per_side": false
+    },
+    "Bent-Over Barbell Row": {
+      "type": "C",
+      "per_side": false
+    },
+    "Bodyweight Split Squat": {
+      "type": "B",
+      "per_side": true
+    },
+    "Captain’s Chair Knee Raise": {
+      "type": "K",
+      "per_side": false
+    },
+    "Conventional Barbell Deadlift": {
+      "type": "C",
+      "per_side": false
+    },
+    "Dumbbell Biceps Curl": {
+      "type": "A",
+      "per_side": false
+    },
+    "Dumbbell Farmer Carry": {
+      "type": "Cr",
+      "per_side": false
+    },
+    "Dumbbell Hammer Curl": {
+      "type": "A",
+      "per_side": false
+    },
+    "Dumbbell Hip Thrust": {
+      "type": "C",
+      "per_side": false
+    },
+    "Dumbbell Push Press": {
+      "type": "C",
+      "per_side": false
+    },
+    "Dumbbell Renegade Row — Feet Wide": {
+      "type": "U",
+      "per_side": true
+    },
+    "Dumbbell Reverse Lunge": {
+      "type": "U",
+      "per_side": true
+    },
+    "Dumbbell Romanian Deadlift": {
+      "type": "C",
+      "per_side": false
+    },
+    "Dumbbell Thruster": {
+      "type": "C",
+      "per_side": false
+    },
+    "Feet-Elevated Push-Up": {
+      "type": "B",
+      "per_side": false
+    },
+    "Floor Plank Shoulder Tap — Feet Wide": {
+      "type": "T",
+      "per_side": false
+    },
+    "Goblet Lateral Squat — Alternating Sides": {
+      "type": "U",
+      "per_side": true
+    },
+    "Goblet Squat — Dumbbell": {
+      "type": "C",
+      "per_side": false
+    },
+    "Goblet Squat — Kettlebell": {
+      "type": "C",
+      "per_side": false
+    },
+    "Half-Kneeling Cable Pallof Press": {
+      "type": "K",
+      "per_side": true
+    },
+    "Hanging Knee Raise": {
+      "type": "K",
+      "per_side": false
+    },
+    "Hanging Knee Raise — Strict": {
+      "type": "K",
+      "per_side": false
+    },
+    "Hanging Straight-Leg Raise — Strict": {
+      "type": "K",
+      "per_side": false
+    },
+    "Kneeling Ab Wheel Rollout": {
+      "type": "K",
+      "per_side": false
+    },
+    "Neutral-Grip Lat Pulldown": {
+      "type": "C",
+      "per_side": false
+    },
+    "Parallel-Bar Dip": {
+      "type": "B",
+      "per_side": false
+    },
+    "Seated Calf Raise — Machine": {
+      "type": "A",
+      "per_side": false
+    },
+    "Seated Dumbbell Overhead Press — Back-Supported": {
+      "type": "C",
+      "per_side": false
+    },
+    "Seated Overhead Dumbbell Triceps Extension": {
+      "type": "A",
+      "per_side": false
+    },
+    "Side Plank With Top-Leg Raise": {
+      "type": "K",
+      "per_side": true
+    },
+    "Single-Arm Dumbbell Row — Bench-Supported": {
+      "type": "U",
+      "per_side": true
+    },
+    "Standard Push-Up": {
+      "type": "B",
+      "per_side": false
+    },
+    "Standing Band External Rotation — Elbow at Side": {
+      "type": "A",
+      "per_side": false
+    },
+    "Standing Band Woodchop — High to Low, With Foot Pivot": {
+      "type": "K",
+      "per_side": true
+    },
+    "Standing Barbell Overhead Press": {
+      "type": "C",
+      "per_side": false
+    },
+    "Standing Cable Woodchop — High to Low, With Foot Pivot": {
+      "type": "K",
+      "per_side": true
+    },
+    "Standing Calf Raise — Machine": {
+      "type": "A",
+      "per_side": false
+    },
+    "Standing Dumbbell Lateral Raise": {
+      "type": "A",
+      "per_side": false
+    },
+    "Standing Landmine Rotation — With Foot Pivot": {
+      "type": "K",
+      "per_side": true
+    },
+    "Strict Pull-Up": {
+      "type": "B",
+      "per_side": false
+    },
+    "Toes-to-Bar — Strict": {
+      "type": "K",
+      "per_side": false
+    },
+    "Two-Handed Kettlebell Swing": {
+      "type": "P",
+      "per_side": false
+    },
+    "Unsupported Single-Leg Dumbbell Romanian Deadlift": {
+      "type": "U",
+      "per_side": true
+    },
+    "Wall-Supported Y-T Raises": {
+      "type": "A",
+      "per_side": false
+    },
+    "Weighted Dead Bug — Dumbbell Held Above Chest, Alternating Leg Extension": {
+      "type": "K",
+      "per_side": true
+    },
+    "Weighted Pull-Up": {
+      "type": "C",
+      "per_side": false
+    },
+    "Weighted-Vest Push-Up": {
+      "type": "B",
+      "per_side": false
+    }
+  },
+  "type_names": {
+    "C": "Loaded compound",
+    "U": "Single-side loaded",
+    "B": "Bodyweight",
+    "A": "Accessory (isolation)",
+    "P": "Power",
+    "K": "Core",
+    "T": "Core (taps)",
+    "Cr": "Carry (time)"
+  },
+  "weekly_prescription_by_type": {
+    "C": [
+      "3 × 8–10 @ RIR 3",
+      "3 × 8–10 @ RIR 2–3 · add load if all sets reach 10",
+      "3 × 6–8 @ RIR 2 · heavier load",
+      "3 × 6–8 @ RIR 2 · keep W3 load, aim +1 rep per set"
+    ],
+    "U": [
+      "3 × 8–10 @ RIR 3",
+      "3 × 8–10 @ RIR 2–3 · add load if all sets reach 10",
+      "3 × 6–8 @ RIR 2 · heavier load",
+      "3 × 6–8 @ RIR 2 · keep W3 load, aim +1 rep per set"
+    ],
+    "B": [
+      "3 × 8–10 @ RIR 3",
+      "3 × 10–12 @ RIR 2–3",
+      "3 × 10–12 @ RIR 2 · +1–2 reps or a harder variation",
+      "3 × 12–15 @ RIR 2"
+    ],
+    "A": [
+      "2 × 12–15 @ RIR 3",
+      "2 × 12–15 @ RIR 2–3 · add load at top of range",
+      "3 × 12–15 @ RIR 2",
+      "3 × 12–15 @ RIR 2 · +1–2 reps"
+    ],
+    "P": [
+      "3 × 10–12 · fast hip drive, stop before form slips",
+      "3 × 12–15",
+      "3 × 12–15 · heavier bell",
+      "3 × 12–15 · keep W3 bell"
+    ],
+    "K": [
+      "2 × 8–10",
+      "3 × 8–10",
+      "3 × 10–12",
+      "3 × 10–12 · slower tempo or add load"
+    ],
+    "T": [
+      "2 × 16–20 taps total",
+      "3 × 16–20 taps total",
+      "3 × 20–24 taps total",
+      "3 × 24 taps total"
+    ],
+    "Cr": [
+      "3 × 20–30 s · heavy, keep posture tall",
+      "3 × 30 s · heavier",
+      "3 × 30–40 s",
+      "3 × 40 s"
+    ]
+  },
+  "rir_note": "RIR = reps in reserve"
 }
