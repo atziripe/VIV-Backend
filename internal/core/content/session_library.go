@@ -203,8 +203,10 @@ func (l *SessionLibrary) Lookup(key SessionKey) (Session, bool) {
 // ResolveSlotConflict's coarser question ("is ReduceDuration/
 // SimplifyComplexity even worth trying for this activity type") —
 // Lookup's exact-key match is the finer-grained question VIV-112 itself
-// asks once a specific slot needs hydrating.
-func (l *SessionLibrary) HasVariant(id activity.ID, v cascade.Variant) bool {
+// asks once a specific slot needs hydrating. userID is unused: this
+// library's content isn't gated per user, unlike
+// strengthsession.ContentLibraryAdapter's rollout.
+func (l *SessionLibrary) HasVariant(_ string, id activity.ID, v cascade.Variant) bool {
 	for _, s := range l.byActivity[id] {
 		switch v {
 		case cascade.VariantShort:

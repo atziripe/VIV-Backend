@@ -165,6 +165,52 @@ func TestAdaptDailySlot_NonOverriddenSlot_GetsFullCascade(t *testing.T) {
 	}
 }
 
+// TestAdaptDailySlot_StampsRealUserIDOntoCatalogForCascade is
+// AdaptDailySlotUsecase's half of the same root-cause fix verified for
+// GenerateWeeklyPlanUsecase in generate_weekly_plan_test.go: Execute
+// must stamp its own validated userID onto the catalog it hands to
+// ResolveSlotConflict, never trusting a caller-supplied one.
+func TestAdaptDailySlot_StampsRealUserIDOntoCatalogForCascade(t *testing.T) {
+	spy := &spyContentLibrary{}
+	orig := cascade.DefaultContentLibrary
+	defer func() { cascade.DefaultContentLibrary = orig }()
+	cascade.DefaultContentLibrary = spy
+
+	drafts := &fakeDraftRepo{}
+	weekStart := time.Date(2026, time.May, 4, 0, 0, 0, 0, time.UTC)
+
+	// ConsistencyWellbeing's lever order starts with ReduceDuration, and
+	// Strength@H (EffectStrength) never matches this goal's Mobility/
+	// Recovery priorities, so this is never "still fits" and always
+	// reaches ReduceDuration first, regardless of readiness.
+	existing := trainingDay(activity.Strength, activity.IntensityH, activity.ImpactM, false)
+	seedDraft(t, drafts, "u1", weekStart, goal.ConsistencyWellbeing, [7]usecase.DayPlan{
+		existing, restDay(), restDay(), restDay(), restDay(), restDay(), restDay(),
+	})
+
+	uc := newAdaptUsecase(domain.PhaseFollicular, drafts)
+	_, err := uc.Execute(context.Background(), usecase.AdaptDailySlotInput{
+		UserID:  "u1",
+		Date:    weekStart,
+		Checkin: badReadinessCheckin,
+		// Deliberately wrong — proves Execute overrides this with its
+		// own validated input.UserID.
+		Catalog: cascade.UserCatalog{Activities: []activity.ID{activity.Strength}, UserID: "someone_else_entirely"},
+	})
+	if err != nil {
+		t.Fatalf("Execute returned error: %v", err)
+	}
+
+	if len(spy.seenUserIDs) == 0 {
+		t.Fatal("expected HasVariant to have been called at least once (ReduceDuration should run)")
+	}
+	for _, got := range spy.seenUserIDs {
+		if got != "u1" {
+			t.Errorf("HasVariant saw userID %q, want %q (Execute's own input.UserID, not the caller-supplied catalog.UserID)", got, "u1")
+		}
+	}
+}
+
 // ============================================================================
 // Overridden slot — only a safety suggestion, never a silent overwrite
 // ============================================================================

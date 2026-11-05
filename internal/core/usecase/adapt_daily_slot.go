@@ -85,6 +85,11 @@ func (uc *AdaptDailySlotUsecase) Execute(ctx context.Context, input AdaptDailySl
 	if len(catalog.Activities) == 0 {
 		catalog = DefaultCatalog()
 	}
+	// Same reasoning as GenerateWeeklyPlanUsecase: stamp this call's own
+	// userID onto the catalog so ResolveSlotConflict's per-user
+	// ContentLibrary.HasVariant check always sees the real caller, never
+	// a caller-supplied value.
+	catalog.UserID = userID
 
 	// ── Load the existing slot (VIV-106) — never regenerate the week ──
 	draft, err := uc.drafts.GetByDate(ctx, userID, input.Date)

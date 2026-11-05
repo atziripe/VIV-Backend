@@ -34,13 +34,13 @@ func TestLoadSessionLibrary_LoadsRealDummyContent(t *testing.T) {
 		t.Error("expected non-empty MainExercises")
 	}
 
-	if !lib.HasVariant(activity.Yoga, cascade.VariantShort) {
+	if !lib.HasVariant("u1", activity.Yoga, cascade.VariantShort) {
 		t.Error("expected HasVariant(yoga, short) = true — the dummy short yoga session exists")
 	}
-	if lib.HasVariant(activity.Yoga, cascade.VariantSimplified) {
+	if lib.HasVariant("u1", activity.Yoga, cascade.VariantSimplified) {
 		t.Error("expected HasVariant(yoga, simplified) = false — no dummy simplified yoga session exists")
 	}
-	if lib.HasVariant(activity.Running, cascade.VariantShort) {
+	if lib.HasVariant("u1", activity.Running, cascade.VariantShort) {
 		t.Error("expected HasVariant(running, short) = false — the dummy running session is standard-only")
 	}
 

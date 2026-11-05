@@ -6,6 +6,16 @@ import (
 	"viv/internal/core/strengthlibrary"
 )
 
+// UserRollout is the per-user decision ContentLibraryAdapter needs —
+// exactly usecase.StrengthSessionsRollout's shape, defined here instead
+// of imported to avoid a cycle (usecase already imports strengthsession
+// for the real assembly path): main.go passes a
+// usecase.StrengthSessionsRollout value in directly, which satisfies
+// this interface structurally.
+type UserRollout interface {
+	Enabled(userID string) bool
+}
+
 // ContentLibraryAdapter implements cascade.ContentLibrary — wired as
 // cascade.DefaultContentLibrary so the cascade's ReduceDuration lever
 // can actually fire for Strength. Before this, DefaultContentLibrary
@@ -13,20 +23,23 @@ import (
 // stub), so ReduceDuration/SimplifyComplexity were dead code for every
 // activity type, Strength included.
 //
-// Enabled gates the WHOLE adapter, not just the dispatch into the new
+// Rollout gates the WHOLE adapter, not just the dispatch into the new
 // assembly path — this must match usecase.SessionContentSelector's own
-// feature flag exactly. If HasVariant(Strength, Short) returned true
-// while the OLD content-selection path (content.ExerciseLibrary
-// hydration) were still active, the cascade could assign
-// DurationTier=Short to a Strength slot that the old path has no idea
-// how to handle (it already hard-errors on any non-Standard
-// DurationTier) — a real regression for "every other activity type
-// must keep being served exactly as it is today," since with the flag
-// off, Strength itself must also keep behaving exactly as today: HasVariant
-// always false, like the stub it replaces.
+// per-user rollout decision exactly (same Rollout value, wired from the
+// same usecase.StrengthSessionsRollout in main.go), evaluated for the
+// SAME userID (threaded through via cascade.UserCatalog.UserID ->
+// ResolveSlotConflict -> HasVariant's userID parameter). If
+// HasVariant(userID, Strength, Short) ever returned true for a user the
+// rollout doesn't cover, the cascade could assign DurationTier=Short to
+// their Strength slot, and the OLD content-selection path
+// (content.ExerciseLibrary hydration) has no idea how to handle that —
+// it already hard-errors on any non-Standard DurationTier. Keeping
+// Rollout.Enabled(userID) as the single source of truth for BOTH the
+// cascade adapter and the content-selection dispatch is what prevents
+// that split-brain.
 type ContentLibraryAdapter struct {
 	Config  *strengthlibrary.BlockConfig
-	Enabled bool
+	Rollout UserRollout
 }
 
 var _ cascade.ContentLibrary = ContentLibraryAdapter{}
@@ -34,18 +47,19 @@ var _ cascade.ContentLibrary = ContentLibraryAdapter{}
 // HasVariant implements cascade.ContentLibrary.
 //
 //   - Any activity type other than Strength: always false — "exactly
-//     what it returned before" (the stub), unconditionally, flag or no
-//     flag; this adapter never touches that path.
-//   - Strength + VariantShort: true whenever Enabled — a short variant
-//     genuinely exists (DurationTier=Short's slot-dropping behavior,
-//     see duration.go).
+//     what it returned before" (the stub), unconditionally; this
+//     adapter never touches that path.
+//   - Strength + VariantShort: true whenever Rollout.Enabled(userID) —
+//     a short variant genuinely exists for this user (DurationTier=Short's
+//     slot-dropping behavior, see duration.go).
 //   - Strength + VariantSimplified: Config.VariantRules().SimplifiedActive
-//     when Enabled, read from the config's own variant_rules.simplified.active
-//     rather than hardcoded — "not available... do not fake it" means
-//     reporting the real value, not a Go-level true/false the config
-//     can't override later once ratings are reviewed.
-func (a ContentLibraryAdapter) HasVariant(id activity.ID, v cascade.Variant) bool {
-	if !a.Enabled || id != activity.Strength {
+//     when Rollout.Enabled(userID), read from the config's own
+//     variant_rules.simplified.active rather than hardcoded — "not
+//     available... do not fake it" means reporting the real value, not
+//     a Go-level true/false the config can't override later once
+//     ratings are reviewed.
+func (a ContentLibraryAdapter) HasVariant(userID string, id activity.ID, v cascade.Variant) bool {
+	if a.Rollout == nil || !a.Rollout.Enabled(userID) || id != activity.Strength {
 		return false
 	}
 	switch v {

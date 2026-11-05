@@ -277,34 +277,34 @@ func main() {
 	// StubExerciseSetSelector/StubExerciseLibrary placeholder entirely.
 	exercisePinService := usecase.NewExercisePinService(exercisePinRepo, mesocycle.DefaultBlockExerciseSelector{}, strengthLib, strengthBlockConfig)
 
+	// strengthSessionsRollout is the single source of truth for "does
+	// THIS user get the real VIV-112 Strength assembly" — both the
+	// cascade wiring right below and weeklyContentSelector further down
+	// read the exact same value, for the exact same userID
+	// (cascade.UserCatalog.UserID, stamped by GenerateWeeklyPlanUsecase/
+	// AdaptDailySlotUsecase from their own validated input.UserID), so
+	// the two can never disagree about who's on the new path.
+	strengthSessionsRollout := usecase.NewStrengthSessionsRollout(cfg.UseRealStrengthSessions, cfg.StrengthSessionsAllowlist)
+
 	// VIV-105's ReduceDuration/SimplifyComplexity levers have never
 	// actually fired for ANY activity type before this — DefaultContentLibrary
 	// was never assigned anywhere, so it stayed the package's own
 	// always-false stub. This wires it for real, but ONLY for Strength
 	// (strengthsession.ContentLibraryAdapter.HasVariant returns false
-	// for every other activity type unconditionally) and only when
-	// cfg.UseRealStrengthSessions (the rollout's master switch) is on —
-	// with it off, Strength must behave exactly like the old stub too,
-	// since the OLD content selection path below has no idea how to
-	// handle a DurationTier=Short Strength slot.
-	//
-	// KNOWN GAP: this is keyed to the master switch only, never to the
-	// per-user allowlist below — cascade's tier resolution (VIV-105)
-	// has no per-user hook today. During a partial rollout
-	// (STRENGTH_SESSIONS_ALLOWLIST non-empty), a non-allowlisted user
-	// still gets routed here if the cascade happens to pick
-	// Short/Simplified for their Strength slot, and
-	// selectPinnedExercises below will then hard-error on that
-	// non-Standard tier. Safe for "everyone" and "nobody" (the only
-	// modes exercised so far); fixing the partial-rollout case needs
-	// threading userID into cascade.ResolveSlotConflict, which is out
-	// of scope here.
+	// for every other activity type unconditionally) and only for a
+	// user strengthSessionsRollout.Enabled(userID) actually covers —
+	// for anyone else, Strength must behave exactly like the old stub
+	// too, since the OLD content selection path below has no idea how
+	// to handle a DurationTier=Short Strength slot. This used to be
+	// keyed to the master switch alone (a real gap during a partial
+	// allowlist rollout); cascade.UserCatalog.UserID now carries the
+	// real per-user identity through ResolveSlotConflict into
+	// HasVariant, so this and weeklyContentSelector's own dispatch
+	// below are evaluated against the identical rollout decision.
 	cascade.DefaultContentLibrary = strengthsession.ContentLibraryAdapter{
 		Config:  strengthBlockConfig,
-		Enabled: cfg.UseRealStrengthSessions,
+		Rollout: strengthSessionsRollout,
 	}
-
-	strengthSessionsRollout := usecase.NewStrengthSessionsRollout(cfg.UseRealStrengthSessions, cfg.StrengthSessionsAllowlist)
 
 	weeklyScheduler := openai.NewWeeklyScheduler(oaClient)                 // VIV-109, real LLM-backed Layer 1
 	ruleEngineValidator := usecase.NewRuleEngineValidator(weeklyScheduler) // VIV-110, retries Layer 1 once on a spacing violation
