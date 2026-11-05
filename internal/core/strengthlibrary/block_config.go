@@ -28,6 +28,13 @@ type Slot struct {
 	Priority       SlotPriority
 	MovementGroups []MovementGroup
 
+	// PoolOrder is this slot's own explicit candidate order — exercise
+	// NAMEs, in the exact order the config author (not this package)
+	// wants them tried. BuildSlotPool resolves each name against the
+	// zone's approved exercises and never re-sorts this list by any
+	// rating or heuristic — see BuildSlotPool's doc comment.
+	PoolOrder []string
+
 	// RotationPeriodBlocks overrides BlockConfig's priority-level
 	// rotation_policy default for this slot alone — nil means "use the
 	// priority default". A non-nil value always means "rotate every N
@@ -106,6 +113,7 @@ type rawSlot struct {
 	Name                 string   `json:"slot"`
 	Priority             string   `json:"priority"`
 	MovementGroups       []string `json:"source_groups"`
+	PoolOrder            []string `json:"pool_order"`
 	RotationPeriodBlocks *int     `json:"rotation_period_blocks,omitempty"`
 }
 
@@ -167,6 +175,9 @@ func loadBlockConfigFromJSON(data []byte) (*BlockConfig, error) {
 			if len(s.MovementGroups) == 0 {
 				return nil, fmt.Errorf("strengthlibrary: block config: zone %q slot %q has no source_groups", zoneKey, s.Name)
 			}
+			if len(s.PoolOrder) == 0 {
+				return nil, fmt.Errorf("strengthlibrary: block config: zone %q slot %q has no pool_order", zoneKey, s.Name)
+			}
 			if s.RotationPeriodBlocks != nil && *s.RotationPeriodBlocks < 1 {
 				return nil, fmt.Errorf("strengthlibrary: block config: zone %q slot %q has rotation_period_blocks < 1", zoneKey, s.Name)
 			}
@@ -179,6 +190,7 @@ func loadBlockConfigFromJSON(data []byte) (*BlockConfig, error) {
 				Name:                 s.Name,
 				Priority:             priority,
 				MovementGroups:       groups,
+				PoolOrder:            s.PoolOrder,
 				RotationPeriodBlocks: s.RotationPeriodBlocks,
 			})
 		}

@@ -25,7 +25,7 @@ func TestContentLibraryAdapter_StrengthSimplifiedReadsConfig(t *testing.T) {
 
 	activeCfg, err := strengthlibrary.NewBlockConfigFromJSON([]byte(`{
 		"status": "x",
-		"zones": {"Lower body": [{"slot": "Squat", "priority": "Main", "source_groups": ["Squat"]}]},
+		"zones": {"Lower body": [{"slot": "Squat", "priority": "Main", "source_groups": ["Squat"], "pool_order": ["X"]}]},
 		"rotation_policy": {"Main": "hold", "Accessory": 1, "Optional": 1},
 		"exercise_types": {"X": {"type": "C", "per_side": false}},
 		"weekly_prescription_by_type": {"C": ["w1", "w2", "w3", "w4"]},

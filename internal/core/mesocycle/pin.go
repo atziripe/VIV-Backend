@@ -124,9 +124,9 @@ type DefaultBlockExerciseSelector struct{}
 //
 // For each of zone's configured slots: build its candidate pool via
 // strengthlibrary.BuildSlotPool, which implements
-// VIV_Strength_Block_Config.json's real ordering_rule (ascending by
-// (technical, balance) demand, ties interleaved across the slot's
-// source movement groups) — never re-sorted here. Then:
+// VIV_Strength_Block_Config.json's real ordering_rule — each slot's own
+// explicit pool_order list of exercise names, used as written, skipping
+// any name that isn't currently approved — never re-sorted here. Then:
 //
 //   - a Main slot (or any slot BlockConfig.HoldsForever says holds)
 //     always takes pool[0], for every block — "the Block 1 exercise

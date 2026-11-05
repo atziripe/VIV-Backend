@@ -74,10 +74,10 @@ func testFixtureConfig(t *testing.T) *strengthlibrary.BlockConfig {
 	t.Helper()
 	cfg, err := strengthlibrary.NewBlockConfigFromJSON([]byte(`{
 		"zones": {
-			"Lower body": [{"slot": "Squat", "priority": "Main", "source_groups": ["Squat"]}],
-			"Upper body": [{"slot": "Push", "priority": "Accessory", "source_groups": ["Horizontal push"]}],
-			"Full body":  [{"slot": "Squat", "priority": "Main", "source_groups": ["Squat"]}],
-			"Core":       [{"slot": "Anti-Extension", "priority": "Main", "source_groups": ["Anti-extension"]}]
+			"Lower body": [{"slot": "Squat", "priority": "Main", "source_groups": ["Squat"], "pool_order": ["Lower A", "Lower B"]}],
+			"Upper body": [{"slot": "Push", "priority": "Accessory", "source_groups": ["Horizontal push"], "pool_order": ["Upper A", "Upper B"]}],
+			"Full body":  [{"slot": "Squat", "priority": "Main", "source_groups": ["Squat"], "pool_order": ["Lower A", "Lower B"]}],
+			"Core":       [{"slot": "Anti-Extension", "priority": "Main", "source_groups": ["Anti-extension"], "pool_order": ["Core A", "Core B"]}]
 		},
 		"rotation_policy": {"Main": "hold", "Accessory": 1, "Optional": 1},
 		"status": "test_fixture",

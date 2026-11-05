@@ -63,6 +63,7 @@
   "wall or chair for support": "hand_support",
   "chair for support": "hand_support",
   "wall for support": "hand_support",
+  "wall": "hand_support",
   "stable hand support": "hand_support",
   "ab wheel": "ab_wheel",
   "resistance band": "resistance_band",

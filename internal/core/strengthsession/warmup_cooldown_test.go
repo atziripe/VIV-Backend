@@ -34,10 +34,10 @@ func allZonesFixtureConfig(t *testing.T) *strengthlibrary.BlockConfig {
 	cfg, err := strengthlibrary.NewBlockConfigFromJSON([]byte(`{
 		"status": "draft_not_reviewed_by_sport_scientist",
 		"zones": {
-			"Lower body": [{"slot": "Squat", "priority": "Main", "source_groups": ["Squat"]}],
-			"Upper body": [{"slot": "Push", "priority": "Main", "source_groups": ["Horizontal push"]}],
-			"Full body":  [{"slot": "Squat", "priority": "Main", "source_groups": ["Squat"]}],
-			"Core":       [{"slot": "Anti-Extension", "priority": "Main", "source_groups": ["Anti-extension"]}]
+			"Lower body": [{"slot": "Squat", "priority": "Main", "source_groups": ["Squat"], "pool_order": ["Lower Ex"]}],
+			"Upper body": [{"slot": "Push", "priority": "Main", "source_groups": ["Horizontal push"], "pool_order": ["Upper Ex"]}],
+			"Full body":  [{"slot": "Squat", "priority": "Main", "source_groups": ["Squat"], "pool_order": ["Full Ex"]}],
+			"Core":       [{"slot": "Anti-Extension", "priority": "Main", "source_groups": ["Anti-extension"], "pool_order": ["Core Ex"]}]
 		},
 		"rotation_policy": {"Main": "hold", "Accessory": 1, "Optional": 1},
 		"exercise_types": {
@@ -219,8 +219,8 @@ func TestAssemble_MissingWarmupCooldownZoneErrors(t *testing.T) {
 	cfg, err := strengthlibrary.NewBlockConfigFromJSON([]byte(`{
 		"status": "x",
 		"zones": {
-			"Lower body": [{"slot": "Squat", "priority": "Main", "source_groups": ["Squat"]}],
-			"Upper body": [{"slot": "Push", "priority": "Main", "source_groups": ["Horizontal push"]}]
+			"Lower body": [{"slot": "Squat", "priority": "Main", "source_groups": ["Squat"], "pool_order": ["Lower Ex"]}],
+			"Upper body": [{"slot": "Push", "priority": "Main", "source_groups": ["Horizontal push"], "pool_order": ["Upper Ex"]}]
 		},
 		"rotation_policy": {"Main": "hold", "Accessory": 1, "Optional": 1},
 		"exercise_types": {"Lower Ex": {"type": "C", "per_side": false}, "Upper Ex": {"type": "C", "per_side": false}},

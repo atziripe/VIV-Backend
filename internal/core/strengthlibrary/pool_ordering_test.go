@@ -2,8 +2,8 @@ package strengthlibrary
 
 import "testing"
 
-func demandExercise(id string, technical, balance DemandLevel) Exercise {
-	return Exercise{ID: id, TechnicalDemand: technical, BalanceDemand: balance, ReviewStatus: ReviewApproved}
+func namedExercise(id, name string) Exercise {
+	return Exercise{ID: id, Name: name, ReviewStatus: ReviewApproved}
 }
 
 func idsOf(exercises []Exercise) []string {
@@ -27,89 +27,63 @@ func assertOrder(t *testing.T, got []Exercise, want ...string) {
 	}
 }
 
-func TestBuildSlotPool_SingleGroupSortsAscendingByDemand(t *testing.T) {
-	slot := Slot{Name: "Squat", MovementGroups: []MovementGroup{"Squat"}}
+// TestBuildSlotPool_FollowsExplicitPoolOrderVerbatim is the core
+// contract: the pool is PoolOrder, resolved to Exercises, in that exact
+// order — never re-sorted by anything this package computes itself.
+func TestBuildSlotPool_FollowsExplicitPoolOrderVerbatim(t *testing.T) {
+	slot := Slot{Name: "Squat", MovementGroups: []MovementGroup{"Squat"}, PoolOrder: []string{"Goblet Squat", "Box Squat", "Back Squat"}}
 	approved := map[MovementGroup][]Exercise{
 		"Squat": {
-			demandExercise("high_high", DemandHigh, DemandHigh),
-			demandExercise("low_low", DemandLow, DemandLow),
-			demandExercise("moderate_low", DemandModerate, DemandLow),
+			namedExercise("back_squat", "Back Squat"),
+			namedExercise("box_squat", "Box Squat"),
+			namedExercise("goblet_squat", "Goblet Squat"),
 		},
 	}
-	assertOrder(t, BuildSlotPool(slot, approved), "low_low", "moderate_low", "high_high")
+	// approvedByGroup lists Back/Box/Goblet in that (file) order, but
+	// PoolOrder says Goblet, Box, Back — the pool must follow PoolOrder,
+	// proving this is never re-sorted by file order either.
+	assertOrder(t, BuildSlotPool(slot, approved), "goblet_squat", "box_squat", "back_squat")
 }
 
-func TestBuildSlotPool_TiebreakIsBalanceAscending(t *testing.T) {
-	slot := Slot{Name: "Squat", MovementGroups: []MovementGroup{"Squat"}}
+// TestBuildSlotPool_SkipsNamesNotApproved covers "skip any exercise
+// that is not approved in the catalog" — a PoolOrder entry with no
+// matching approved exercise (pending, rejected, or simply absent) is
+// silently omitted, never an error.
+func TestBuildSlotPool_SkipsNamesNotApproved(t *testing.T) {
+	slot := Slot{Name: "Squat", MovementGroups: []MovementGroup{"Squat"}, PoolOrder: []string{"Goblet Squat", "Not Yet Reviewed Squat", "Back Squat"}}
 	approved := map[MovementGroup][]Exercise{
 		"Squat": {
-			demandExercise("mod_high", DemandModerate, DemandHigh),
-			demandExercise("mod_low", DemandModerate, DemandLow),
-			demandExercise("mod_moderate", DemandModerate, DemandModerate),
+			namedExercise("back_squat", "Back Squat"),
+			namedExercise("goblet_squat", "Goblet Squat"),
+			// "Not Yet Reviewed Squat" deliberately absent — e.g. still
+			// pending, so Library.ApprovedExercises never included it.
 		},
 	}
-	assertOrder(t, BuildSlotPool(slot, approved), "mod_low", "mod_moderate", "mod_high")
+	assertOrder(t, BuildSlotPool(slot, approved), "goblet_squat", "back_squat")
 }
 
-// TestBuildSlotPool_TiesInterleaveAcrossSourceGroups is the behavior
-// the real ordering_rule exists for: a slot merging two source groups
-// must not list all of one group's tied exercises before the other's.
-func TestBuildSlotPool_TiesInterleaveAcrossSourceGroups(t *testing.T) {
-	slot := Slot{Name: "Pull", MovementGroups: []MovementGroup{"Vertical pull", "Horizontal pull"}}
+// TestBuildSlotPool_ResolvesAcrossAllOfSlotsMovementGroups confirms a
+// slot merging several source groups (e.g. Full body's "Pull") still
+// resolves PoolOrder names regardless of which group they came from.
+func TestBuildSlotPool_ResolvesAcrossAllOfSlotsMovementGroups(t *testing.T) {
+	slot := Slot{Name: "Pull", MovementGroups: []MovementGroup{"Vertical pull", "Horizontal pull"}, PoolOrder: []string{"Row", "Pulldown", "Pull-Up"}}
 	approved := map[MovementGroup][]Exercise{
-		"Vertical pull": {
-			demandExercise("vp_1", DemandLow, DemandLow),
-			demandExercise("vp_2", DemandLow, DemandLow),
-		},
-		"Horizontal pull": {
-			demandExercise("hp_1", DemandLow, DemandLow),
-			demandExercise("hp_2", DemandLow, DemandLow),
-		},
+		"Vertical pull":   {namedExercise("pulldown", "Pulldown"), namedExercise("pullup", "Pull-Up")},
+		"Horizontal pull": {namedExercise("row", "Row")},
 	}
-	// All 4 tie at (Low, Low) — must interleave by source group
-	// (Vertical pull listed first in MovementGroups), not list both
-	// Vertical pull exercises before either Horizontal pull one.
-	assertOrder(t, BuildSlotPool(slot, approved), "vp_1", "hp_1", "vp_2", "hp_2")
+	assertOrder(t, BuildSlotPool(slot, approved), "row", "pulldown", "pullup")
 }
 
-func TestBuildSlotPool_UnequalGroupSizesInterleaveThenDrain(t *testing.T) {
-	slot := Slot{Name: "Pull", MovementGroups: []MovementGroup{"A", "B"}}
-	approved := map[MovementGroup][]Exercise{
-		"A": {demandExercise("a1", DemandLow, DemandLow)},
-		"B": {
-			demandExercise("b1", DemandLow, DemandLow),
-			demandExercise("b2", DemandLow, DemandLow),
-			demandExercise("b3", DemandLow, DemandLow),
-		},
+func TestBuildSlotPool_EmptyWhenNoPoolOrderEntryResolves(t *testing.T) {
+	slot := Slot{Name: "Squat", MovementGroups: []MovementGroup{"Squat"}, PoolOrder: []string{"Ghost Exercise"}}
+	pool := BuildSlotPool(slot, map[MovementGroup][]Exercise{"Squat": {namedExercise("back_squat", "Back Squat")}})
+	if len(pool) != 0 {
+		t.Errorf("expected an empty pool, got %v", idsOf(pool))
 	}
-	assertOrder(t, BuildSlotPool(slot, approved), "a1", "b1", "b2", "b3")
-}
-
-func TestBuildSlotPool_DistinctRatingsAcrossGroupsStillBucketByRatingFirst(t *testing.T) {
-	slot := Slot{Name: "Pull", MovementGroups: []MovementGroup{"A", "B"}}
-	approved := map[MovementGroup][]Exercise{
-		"A": {demandExercise("a_high", DemandHigh, DemandHigh)},
-		"B": {demandExercise("b_low", DemandLow, DemandLow)},
-	}
-	// b_low's rating bucket sorts before a_high's, regardless of which
-	// group is listed first in MovementGroups.
-	assertOrder(t, BuildSlotPool(slot, approved), "b_low", "a_high")
-}
-
-func TestBuildSlotPool_PendingNeverIncluded(t *testing.T) {
-	// BuildSlotPool trusts its approvedByGroup input completely — this
-	// just documents that contract: callers (mesocycle's selector) must
-	// pass Library.ApprovedExercises's output, never ExercisesForZone's
-	// includePending=true variant.
-	slot := Slot{Name: "Squat", MovementGroups: []MovementGroup{"Squat"}}
-	approvedOnlyOneEntry := map[MovementGroup][]Exercise{
-		"Squat": {demandExercise("approved_one", DemandLow, DemandLow)},
-	}
-	assertOrder(t, BuildSlotPool(slot, approvedOnlyOneEntry), "approved_one")
 }
 
 func TestBuildSlotPool_EmptyPoolForUnknownGroup(t *testing.T) {
-	slot := Slot{Name: "Squat", MovementGroups: []MovementGroup{"Nonexistent"}}
+	slot := Slot{Name: "Squat", MovementGroups: []MovementGroup{"Nonexistent"}, PoolOrder: []string{"Back Squat"}}
 	pool := BuildSlotPool(slot, map[MovementGroup][]Exercise{})
 	if len(pool) != 0 {
 		t.Errorf("expected an empty pool, got %v", idsOf(pool))

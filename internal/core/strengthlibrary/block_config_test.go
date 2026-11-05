@@ -79,9 +79,9 @@ func testBlockConfigJSON() []byte {
 	return []byte(`{
 		"zones": {
 			"Lower body": [
-				{"slot": "Squat", "priority": "Main", "source_groups": ["Squat"]},
-				{"slot": "Hip Thrust", "priority": "Accessory", "source_groups": ["Hip thrust / bridge"]},
-				{"slot": "Calves", "priority": "Optional", "source_groups": ["Calves"]}
+				{"slot": "Squat", "priority": "Main", "source_groups": ["Squat"], "pool_order": ["Placeholder Exercise"]},
+				{"slot": "Hip Thrust", "priority": "Accessory", "source_groups": ["Hip thrust / bridge"], "pool_order": ["Placeholder Exercise"]},
+				{"slot": "Calves", "priority": "Optional", "source_groups": ["Calves"], "pool_order": ["Placeholder Exercise"]}
 			]
 		},
 		"rotation_policy": {"Main": "hold", "Accessory": 1, "Optional": 1},` + minimalPrescriptionJSON + `
@@ -136,7 +136,7 @@ func TestBlockConfig_SlotOverrideChangesRotationPeriod(t *testing.T) {
 	withOverride := []byte(`{
 		"zones": {
 			"Lower body": [
-				{"slot": "Calves", "priority": "Optional", "source_groups": ["Calves"], "rotation_period_blocks": 2}
+				{"slot": "Calves", "priority": "Optional", "source_groups": ["Calves"], "pool_order": ["Placeholder Exercise"], "rotation_period_blocks": 2}
 			]
 		},
 		"rotation_policy": {"Main": "hold", "Accessory": 1, "Optional": 1},` + minimalPrescriptionJSON + `

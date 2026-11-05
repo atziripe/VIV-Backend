@@ -7,7 +7,7 @@
     "_note": "Number = rotate every N blocks. 'hold' = never rotate. Block length = 4 weeks."
   },
   "week_4": "consolidation (not a deload)",
-  "ordering_rule": "pool ordered by (technical, balance) ratings ascending, ties interleaved across source groups; ratings unreviewed, used for ordering only",
+  "ordering_rule": "Each slot has an explicit pool_order list: use it as is, and skip any exercise that is not approved in the catalog. Main slots start from Moderate technical demand (then Low, then High), because a Main lift never rotates and must not default to the easiest regression. Accessory and Optional slots go from lower to higher demand. Ratings are Stefy's and unreviewed; they only decide order.",
   "zones": {
     "Lower body": [
       {
@@ -15,6 +15,13 @@
         "priority": "Main",
         "source_groups": [
           "Squat"
+        ],
+        "pool_order": [
+          "Goblet Squat — Dumbbell",
+          "Goblet Squat — Kettlebell",
+          "Double Dumbbell Front Squat",
+          "Bodyweight Box Squat",
+          "Barbell Back Squat"
         ]
       },
       {
@@ -22,6 +29,12 @@
         "priority": "Main",
         "source_groups": [
           "Hip hinge"
+        ],
+        "pool_order": [
+          "Dumbbell Romanian Deadlift",
+          "Supported Single-Leg Dumbbell Romanian Deadlift",
+          "Barbell Romanian Deadlift",
+          "Unsupported Single-Leg Dumbbell Romanian Deadlift"
         ]
       },
       {
@@ -29,6 +42,12 @@
         "priority": "Main",
         "source_groups": [
           "Lunge / single-leg"
+        ],
+        "pool_order": [
+          "Bodyweight Split Squat",
+          "Dumbbell Reverse Lunge",
+          "Bodyweight Rear-Foot-Elevated Split Squat",
+          "Supported Bodyweight Split Squat"
         ]
       },
       {
@@ -36,6 +55,12 @@
         "priority": "Accessory",
         "source_groups": [
           "Hip thrust / bridge"
+        ],
+        "pool_order": [
+          "Bodyweight Glute Bridge",
+          "Dumbbell Glute Bridge",
+          "Dumbbell Hip Thrust",
+          "Barbell Hip Thrust"
         ]
       },
       {
@@ -43,6 +68,12 @@
         "priority": "Accessory",
         "source_groups": [
           "Calves"
+        ],
+        "pool_order": [
+          "Supported Bilateral Standing Calf Raise",
+          "Seated Calf Raise — Machine",
+          "Standing Calf Raise — Machine",
+          "Supported Single-Leg Standing Calf Raise"
         ]
       },
       {
@@ -50,6 +81,9 @@
         "priority": "Optional",
         "source_groups": [
           "Hip hinge / power"
+        ],
+        "pool_order": [
+          "Two-Handed Kettlebell Swing"
         ]
       }
     ],
@@ -59,6 +93,15 @@
         "priority": "Main",
         "source_groups": [
           "Horizontal push"
+        ],
+        "pool_order": [
+          "Standard Push-Up",
+          "Feet-Elevated Push-Up",
+          "Weighted-Vest Push-Up",
+          "Dumbbell Bench Press",
+          "Barbell Bench Press",
+          "Incline Push-Up",
+          "Seated Chest Press — Machine"
         ]
       },
       {
@@ -66,6 +109,12 @@
         "priority": "Main",
         "source_groups": [
           "Horizontal pull"
+        ],
+        "pool_order": [
+          "Single-Arm Dumbbell Row — Bench-Supported",
+          "Chest-Supported Dumbbell Row",
+          "Seated Cable Row",
+          "Bent-Over Barbell Row"
         ]
       },
       {
@@ -73,6 +122,12 @@
         "priority": "Main",
         "source_groups": [
           "Vertical push"
+        ],
+        "pool_order": [
+          "Seated Dumbbell Overhead Press — Back-Supported",
+          "Standing Dumbbell Overhead Press",
+          "Seated Shoulder Press — Machine",
+          "Standing Barbell Overhead Press"
         ]
       },
       {
@@ -80,6 +135,13 @@
         "priority": "Main",
         "source_groups": [
           "Vertical pull"
+        ],
+        "pool_order": [
+          "Assisted Pull-Up — Machine",
+          "Strict Pull-Up",
+          "Weighted Pull-Up",
+          "Neutral-Grip Lat Pulldown",
+          "Overhand-Grip Lat Pulldown"
         ]
       },
       {
@@ -87,6 +149,14 @@
         "priority": "Accessory",
         "source_groups": [
           "Shoulders"
+        ],
+        "pool_order": [
+          "Seated Dumbbell Lateral Raise",
+          "Standing Dumbbell Lateral Raise",
+          "Standing Band External Rotation — Elbow at Side",
+          "Prone Y Raise — Incline Bench",
+          "Prone T Raise — Incline Bench",
+          "Wall-Supported Y-T Raises"
         ]
       },
       {
@@ -94,6 +164,12 @@
         "priority": "Optional",
         "source_groups": [
           "Arms — elbow extension"
+        ],
+        "pool_order": [
+          "Cable Triceps Pushdown",
+          "Seated Overhead Dumbbell Triceps Extension",
+          "Bench Dip",
+          "Parallel-Bar Dip"
         ]
       },
       {
@@ -101,6 +177,10 @@
         "priority": "Optional",
         "source_groups": [
           "Arms — elbow flexion"
+        ],
+        "pool_order": [
+          "Dumbbell Hammer Curl",
+          "Dumbbell Biceps Curl"
         ]
       }
     ],
@@ -113,6 +193,16 @@
           "Squat / lateral",
           "Squat + vertical push",
           "Lunge / single-leg"
+        ],
+        "pool_order": [
+          "Goblet Squat — Dumbbell",
+          "Goblet Lateral Squat — Alternating Sides",
+          "Dumbbell Reverse Lunge",
+          "Bodyweight Step-Up",
+          "Dumbbell Step-Up",
+          "Supported Bodyweight Split Squat",
+          "Dumbbell Thruster",
+          "Barbell Front Squat"
         ]
       },
       {
@@ -120,6 +210,12 @@
         "priority": "Main",
         "source_groups": [
           "Hip hinge"
+        ],
+        "pool_order": [
+          "Dumbbell Romanian Deadlift",
+          "Kettlebell Deadlift",
+          "Elevated Kettlebell Deadlift",
+          "Conventional Barbell Deadlift"
         ]
       },
       {
@@ -128,6 +224,13 @@
         "source_groups": [
           "Horizontal push",
           "Vertical push / power"
+        ],
+        "pool_order": [
+          "Standard Push-Up",
+          "Barbell Bench Press",
+          "Incline Push-Up",
+          "Dumbbell Push Press",
+          "Barbell Push Press"
         ]
       },
       {
@@ -137,6 +240,14 @@
           "Vertical pull",
           "Horizontal pull",
           "Horizontal pull + core anti-rotation"
+        ],
+        "pool_order": [
+          "Assisted Pull-Up — Machine",
+          "Strict Pull-Up",
+          "Single-Arm Dumbbell Row — Bench-Supported",
+          "Weighted Pull-Up",
+          "Seated Cable Row",
+          "Dumbbell Renegade Row — Feet Wide"
         ]
       },
       {
@@ -144,13 +255,28 @@
         "priority": "Accessory",
         "source_groups": [
           "Carry"
+        ],
+        "pool_order": [
+          "Dumbbell Farmer Carry",
+          "Dumbbell Suitcase Carry",
+          "Double Dumbbell Front-Rack Carry",
+          "Single-Arm Dumbbell Overhead Carry"
         ]
       },
       {
         "slot": "Core",
         "priority": "Optional",
         "source_groups": [
-          "Core — controlled trunk / hip flexion"
+          "Core — controlled trunk / hip flexion",
+          "Core — anti-extension",
+          "Core — anti-rotation",
+          "Core — anti-lateral flexion"
+        ],
+        "pool_order": [
+          "Side Plank — Knees Bent",
+          "Hanging Knee Raise",
+          "Dead Bug — Alternating Arm and Leg Extension",
+          "Standing Pallof Press"
         ]
       }
     ],
@@ -160,6 +286,13 @@
         "priority": "Accessory",
         "source_groups": [
           "Anti-extension"
+        ],
+        "pool_order": [
+          "Supine Alternating Heel Tap — From Tabletop",
+          "Forearm Plank",
+          "Dead Bug — Alternating Arm and Leg Extension",
+          "Weighted Dead Bug — Dumbbell Held Above Chest, Alternating Leg Extension",
+          "Kneeling Ab Wheel Rollout"
         ]
       },
       {
@@ -168,6 +301,13 @@
         "source_groups": [
           "Anti-rotation",
           "Anti-rotation + horizontal pull"
+        ],
+        "pool_order": [
+          "Standing Cable Pallof Press",
+          "Incline Plank Shoulder Tap",
+          "Floor Plank Shoulder Tap — Feet Wide",
+          "Half-Kneeling Cable Pallof Press",
+          "Dumbbell Renegade Row — Feet Wide"
         ]
       },
       {
@@ -175,6 +315,12 @@
         "priority": "Accessory",
         "source_groups": [
           "Rotation"
+        ],
+        "pool_order": [
+          "Standing Cable Woodchop — High to Low, With Foot Pivot",
+          "Standing Band Woodchop — High to Low, With Foot Pivot",
+          "Standing Cable Rotation — Chest Height, With Foot Pivot",
+          "Standing Landmine Rotation — With Foot Pivot"
         ]
       },
       {
@@ -182,6 +328,13 @@
         "priority": "Accessory",
         "source_groups": [
           "Hip flexion / pelvic control"
+        ],
+        "pool_order": [
+          "Supine Bent-Knee Leg Raise",
+          "Captain’s Chair Knee Raise",
+          "Hanging Knee Raise — Strict",
+          "Hanging Straight-Leg Raise — Strict",
+          "Toes-to-Bar — Strict"
         ]
       },
       {
@@ -190,6 +343,12 @@
         "source_groups": [
           "Lateral stability / anti-lateral flexion",
           "Lateral stability + hip abduction"
+        ],
+        "pool_order": [
+          "Side Plank — Knees Bent",
+          "Side Plank — Legs Straight, Feet Staggered",
+          "Side Plank — Legs Straight, Feet Stacked",
+          "Side Plank With Top-Leg Raise"
         ]
       },
       {
@@ -197,6 +356,24 @@
         "priority": "Optional",
         "source_groups": [
           "Carry"
+        ],
+        "pool_order": [
+          "Dumbbell Farmer Carry",
+          "Dumbbell Suitcase Carry",
+          "Double Dumbbell Front-Rack Carry",
+          "Single-Arm Dumbbell Overhead Carry"
+        ]
+      },
+      {
+        "slot": "Trunk flexion",
+        "priority": "Optional",
+        "source_groups": [
+          "Trunk flexion",
+          "Trunk flexion / pelvic curl"
+        ],
+        "pool_order": [
+          "Supine Crunch",
+          "Reverse Crunch"
         ]
       }
     ]
@@ -238,15 +415,55 @@
       "type": "C",
       "per_side": false
     },
+    "Bodyweight Box Squat": {
+      "type": "B",
+      "per_side": false
+    },
+    "Bodyweight Glute Bridge": {
+      "type": "B",
+      "per_side": false
+    },
+    "Bodyweight Rear-Foot-Elevated Split Squat": {
+      "type": "B",
+      "per_side": true
+    },
     "Bodyweight Split Squat": {
       "type": "B",
       "per_side": true
+    },
+    "Bodyweight Step-Up": {
+      "type": "B",
+      "per_side": true
+    },
+    "Cable Triceps Pushdown": {
+      "type": "A",
+      "per_side": false
     },
     "Captain’s Chair Knee Raise": {
       "type": "K",
       "per_side": false
     },
+    "Chest-Supported Dumbbell Row": {
+      "type": "C",
+      "per_side": false
+    },
     "Conventional Barbell Deadlift": {
+      "type": "C",
+      "per_side": false
+    },
+    "Dead Bug — Alternating Arm and Leg Extension": {
+      "type": "K",
+      "per_side": true
+    },
+    "Double Dumbbell Front Squat": {
+      "type": "C",
+      "per_side": false
+    },
+    "Double Dumbbell Front-Rack Carry": {
+      "type": "Cr",
+      "per_side": false
+    },
+    "Dumbbell Bench Press": {
       "type": "C",
       "per_side": false
     },
@@ -256,6 +473,10 @@
     },
     "Dumbbell Farmer Carry": {
       "type": "Cr",
+      "per_side": false
+    },
+    "Dumbbell Glute Bridge": {
+      "type": "C",
       "per_side": false
     },
     "Dumbbell Hammer Curl": {
@@ -282,7 +503,19 @@
       "type": "C",
       "per_side": false
     },
+    "Dumbbell Step-Up": {
+      "type": "U",
+      "per_side": true
+    },
+    "Dumbbell Suitcase Carry": {
+      "type": "Cr",
+      "per_side": true
+    },
     "Dumbbell Thruster": {
+      "type": "C",
+      "per_side": false
+    },
+    "Elevated Kettlebell Deadlift": {
       "type": "C",
       "per_side": false
     },
@@ -292,6 +525,10 @@
     },
     "Floor Plank Shoulder Tap — Feet Wide": {
       "type": "T",
+      "per_side": false
+    },
+    "Forearm Plank": {
+      "type": "H",
       "per_side": false
     },
     "Goblet Lateral Squat — Alternating Sides": {
@@ -322,6 +559,18 @@
       "type": "K",
       "per_side": false
     },
+    "Incline Plank Shoulder Tap": {
+      "type": "T",
+      "per_side": false
+    },
+    "Incline Push-Up": {
+      "type": "B",
+      "per_side": false
+    },
+    "Kettlebell Deadlift": {
+      "type": "C",
+      "per_side": false
+    },
     "Kneeling Ab Wheel Rollout": {
       "type": "K",
       "per_side": false
@@ -330,11 +579,39 @@
       "type": "C",
       "per_side": false
     },
+    "Overhand-Grip Lat Pulldown": {
+      "type": "C",
+      "per_side": false
+    },
     "Parallel-Bar Dip": {
       "type": "B",
       "per_side": false
     },
+    "Prone T Raise — Incline Bench": {
+      "type": "A",
+      "per_side": false
+    },
+    "Prone Y Raise — Incline Bench": {
+      "type": "A",
+      "per_side": false
+    },
+    "Reverse Crunch": {
+      "type": "K",
+      "per_side": false
+    },
+    "Seated Cable Row": {
+      "type": "C",
+      "per_side": false
+    },
     "Seated Calf Raise — Machine": {
+      "type": "A",
+      "per_side": false
+    },
+    "Seated Chest Press — Machine": {
+      "type": "C",
+      "per_side": false
+    },
+    "Seated Dumbbell Lateral Raise": {
       "type": "A",
       "per_side": false
     },
@@ -346,8 +623,28 @@
       "type": "A",
       "per_side": false
     },
+    "Seated Shoulder Press — Machine": {
+      "type": "C",
+      "per_side": false
+    },
     "Side Plank With Top-Leg Raise": {
       "type": "K",
+      "per_side": true
+    },
+    "Side Plank — Knees Bent": {
+      "type": "H",
+      "per_side": true
+    },
+    "Side Plank — Legs Straight, Feet Stacked": {
+      "type": "H",
+      "per_side": true
+    },
+    "Side Plank — Legs Straight, Feet Staggered": {
+      "type": "H",
+      "per_side": true
+    },
+    "Single-Arm Dumbbell Overhead Carry": {
+      "type": "Cr",
       "per_side": true
     },
     "Single-Arm Dumbbell Row — Bench-Supported": {
@@ -370,6 +667,14 @@
       "type": "C",
       "per_side": false
     },
+    "Standing Cable Pallof Press": {
+      "type": "K",
+      "per_side": true
+    },
+    "Standing Cable Rotation — Chest Height, With Foot Pivot": {
+      "type": "K",
+      "per_side": true
+    },
     "Standing Cable Woodchop — High to Low, With Foot Pivot": {
       "type": "K",
       "per_side": true
@@ -382,13 +687,49 @@
       "type": "A",
       "per_side": false
     },
+    "Standing Dumbbell Overhead Press": {
+      "type": "C",
+      "per_side": false
+    },
     "Standing Landmine Rotation — With Foot Pivot": {
+      "type": "K",
+      "per_side": true
+    },
+    "Standing Pallof Press": {
       "type": "K",
       "per_side": true
     },
     "Strict Pull-Up": {
       "type": "B",
       "per_side": false
+    },
+    "Supine Alternating Heel Tap — From Tabletop": {
+      "type": "K",
+      "per_side": true
+    },
+    "Supine Bent-Knee Leg Raise": {
+      "type": "K",
+      "per_side": false
+    },
+    "Supine Crunch": {
+      "type": "K",
+      "per_side": false
+    },
+    "Supported Bilateral Standing Calf Raise": {
+      "type": "A",
+      "per_side": false
+    },
+    "Supported Bodyweight Split Squat": {
+      "type": "B",
+      "per_side": true
+    },
+    "Supported Single-Leg Dumbbell Romanian Deadlift": {
+      "type": "U",
+      "per_side": true
+    },
+    "Supported Single-Leg Standing Calf Raise": {
+      "type": "A",
+      "per_side": true
     },
     "Toes-to-Bar — Strict": {
       "type": "K",
@@ -427,6 +768,7 @@
     "P": "Power",
     "K": "Core",
     "T": "Core (taps)",
+    "H": "Hold (time)",
     "Cr": "Carry (time)"
   },
   "weekly_prescription_by_type": {
@@ -471,6 +813,12 @@
       "3 × 16–20 taps total",
       "3 × 20–24 taps total",
       "3 × 24 taps total"
+    ],
+    "H": [
+      "2 × 20–30 s",
+      "3 × 20–30 s",
+      "3 × 30–40 s",
+      "3 × 40 s"
     ],
     "Cr": [
       "3 × 20–30 s · heavy, keep posture tall",

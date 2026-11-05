@@ -32,9 +32,9 @@ func fixtureConfig(t *testing.T) *strengthlibrary.BlockConfig {
 		"status": "draft_not_reviewed_by_sport_scientist",
 		"zones": {
 			"Lower body": [
-				{"slot": "Squat", "priority": "Main", "source_groups": ["Squat"]},
-				{"slot": "Hip Thrust", "priority": "Accessory", "source_groups": ["Hip thrust / bridge"]},
-				{"slot": "Calves", "priority": "Optional", "source_groups": ["Calves"]}
+				{"slot": "Squat", "priority": "Main", "source_groups": ["Squat"], "pool_order": ["Squat A", "Unregistered Exercise"]},
+				{"slot": "Hip Thrust", "priority": "Accessory", "source_groups": ["Hip thrust / bridge"], "pool_order": ["Hip Thrust A", "Hip Thrust B"]},
+				{"slot": "Calves", "priority": "Optional", "source_groups": ["Calves"], "pool_order": ["Calf A"]}
 			]
 		},
 		"rotation_policy": {"Main": "hold", "Accessory": 1, "Optional": 1},
@@ -231,8 +231,8 @@ func TestAssemble_ShortNeverDropsBelowMinExercisesEvenIfOnlyMainLeft(t *testing.
 		"status": "x",
 		"zones": {
 			"Lower body": [
-				{"slot": "Squat", "priority": "Main", "source_groups": ["Squat"]},
-				{"slot": "Hip Thrust", "priority": "Accessory", "source_groups": ["Hip thrust / bridge"]}
+				{"slot": "Squat", "priority": "Main", "source_groups": ["Squat"], "pool_order": ["Squat A"]},
+				{"slot": "Hip Thrust", "priority": "Accessory", "source_groups": ["Hip thrust / bridge"], "pool_order": ["Hip Thrust A"]}
 			]
 		},
 		"rotation_policy": {"Main": "hold", "Accessory": 1, "Optional": 1},
@@ -421,7 +421,7 @@ func TestAssemble_ExerciseWithNoTypeErrors(t *testing.T) {
 	}
 	cfg, err := strengthlibrary.NewBlockConfigFromJSON([]byte(`{
 		"status": "x",
-		"zones": {"Lower body": [{"slot": "Squat", "priority": "Main", "source_groups": ["Squat"]}]},
+		"zones": {"Lower body": [{"slot": "Squat", "priority": "Main", "source_groups": ["Squat"], "pool_order": ["Unregistered Exercise"]}]},
 		"rotation_policy": {"Main": "hold", "Accessory": 1, "Optional": 1},
 		"exercise_types": {"Some Other Exercise": {"type": "C", "per_side": false}},
 		"weekly_prescription_by_type": {"C": ["w1", "w2", "w3", "w4"]},
