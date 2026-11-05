@@ -13,6 +13,7 @@ require (
 	github.com/sashabaranov/go-openai v1.41.2
 	github.com/xuri/excelize/v2 v2.9.1
 	golang.org/x/sync v0.20.0
+	golang.org/x/time v0.15.0
 	google.golang.org/api v0.279.0
 )
 
@@ -65,7 +66,6 @@ require (
 	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sys v0.44.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
-	golang.org/x/time v0.15.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto v0.0.0-20260511170946-3700d4141b60 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260511170946-3700d4141b60 // indirect

@@ -507,9 +507,23 @@ func main() {
 		_, _ = w.Write([]byte(`{"status":"ok"}`))
 	})
 
+	// Rate limiting — a backstop against a runaway client or script
+	// hammering an endpoint; nothing stopped that before this. Two
+	// tiers: a generous per-user limit across every authenticated route
+	// (applied on `protected` below), and a much stricter one on the
+	// handful of routes that kick off an LLM-backed generation job
+	// (expensive, and meant to be called once per day/week, not polled —
+	// status checks go through a separate, cheap endpoint). In-process
+	// only (see PerUserRateLimiter's doc comment) — fine for a single
+	// backend instance.
+	generalRateLimiter := httpadapter.NewPerUserRateLimiter(10, 20)
+	generalRateLimiter.StartEvictionLoop(ctx, 10*time.Minute, 30*time.Minute)
+	generationRateLimiter := httpadapter.NewPerUserRateLimiter(1.0/15.0, 2)
+	generationRateLimiter.StartEvictionLoop(ctx, 10*time.Minute, 30*time.Minute)
+
 	api := chi.NewRouter()
 
-	api.Post("/onboarding", onboardingHandler.ServeHTTP)
+	api.With(generationRateLimiter.Middleware).Post("/onboarding", onboardingHandler.ServeHTTP)
 	api.Post("/onboarding/ineligibility", ineligibilityHandler.Report)
 
 	// VIV-103/106/107 daily check-in — distinct from the older /checkins
@@ -542,7 +556,7 @@ func main() {
 	api.Get("/plans/generate/status", plansHandler.GenerateStatus)
 
 	api.Post("/training/resume", trainingHandler.Resume)
-	api.Post("/training/generate", trainingHandler.Generate)
+	api.With(generationRateLimiter.Middleware).Post("/training/generate", trainingHandler.Generate)
 	api.Get("/training/generate/status", trainingHandler.GenerateStatus)
 	api.Post("/training/validate-arrangement", trainingHandler.ValidateArrangement)
 	api.Post("/training/complete-day", trainingHandler.CompleteDay)
@@ -550,7 +564,7 @@ func main() {
 
 	// New weekly-plan pipeline (VIV-106..113) — async job, same shape as
 	// /training/generate above.
-	api.Post("/training/weekly-plan/generate", weeklyPlanHandler.Generate)
+	api.With(generationRateLimiter.Middleware).Post("/training/weekly-plan/generate", weeklyPlanHandler.Generate)
 	api.Get("/training/weekly-plan/generate/status", weeklyPlanHandler.GenerateStatus)
 	api.Get("/training/weekly-plan/current", weeklyPlanHandler.CurrentWeek)
 	api.Get("/training/weekly-plan/day", weeklyPlanHandler.Day)
@@ -579,6 +593,7 @@ func main() {
 	protected.Use(httpadapter.AppCheckMiddleware(cfg.FirebaseProjectNumber, cfg.AppCheckEnforce))
 	protected.Use(httpadapter.FirebaseAuthMiddleware(authClient))
 	protected.Use(httpadapter.EnsureUserMiddleware(userRepo, recordActivityUC))
+	protected.Use(generalRateLimiter.Middleware)
 
 	rpcHandler := httpadapter.NewRPCHandler(api)
 	protected.Post("/rpc", rpcHandler.Handle)
