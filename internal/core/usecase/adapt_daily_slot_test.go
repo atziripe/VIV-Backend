@@ -487,6 +487,7 @@ func TestUserEditSlot_DoesNotTouchOtherDays(t *testing.T) {
 		Date:   weekStart.AddDate(0, 0, 3), // Thursday
 		NewAssignment: cascade.SlotAssignment{
 			ActivityType: activity.Pilates, Intensity: activity.IntensityL, Impact: activity.ImpactL,
+			MuscleGroup: activity.MuscleGroupFullBody,
 		},
 	})
 	if err != nil {
@@ -573,6 +574,7 @@ func TestUserEditSlot_ReselectsContentForTheEditedDay(t *testing.T) {
 		Date:   weekStart,
 		NewAssignment: cascade.SlotAssignment{
 			ActivityType: activity.Yoga, Intensity: activity.IntensityL, Impact: activity.ImpactL,
+			MuscleGroup: activity.MuscleGroupFullBody,
 		},
 	})
 	if err != nil {

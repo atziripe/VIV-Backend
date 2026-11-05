@@ -74,3 +74,103 @@ func TestUserEditSlot_ClearsCachedWeeklyNotes(t *testing.T) {
 		t.Errorf("generator calls after the post-edit request = %d, want 2 — the cache was invalidated, so this must hit the LLM again", gen.calls)
 	}
 }
+
+// ============================================================================
+// Manual edits are validated against the activity's own taxonomy entry
+// ============================================================================
+//
+// Regression coverage for the gap that surfaced alongside the Running/
+// Cycling/Swimming LoadTier=Reduced content gap: before this validation
+// existed, a syntactically valid-looking edit (a known activity ID with
+// an Intensity/Impact/MuscleGroup that activity never actually takes)
+// sailed past this usecase's only check and failed later, opaquely,
+// inside content selection's library lookup.
+
+func seedSimpleDraft(t *testing.T, drafts *fakeDraftRepo, weekStart time.Time) {
+	t.Helper()
+	monday := trainingDay(activity.Yoga, activity.IntensityL, activity.ImpactL, false)
+	seedDraft(t, drafts, "u1", weekStart, goal.ConsistencyWellbeing, [7]usecase.DayPlan{
+		monday, restDay(), restDay(), restDay(), restDay(), restDay(), restDay(),
+	})
+}
+
+func TestUserEditSlot_RejectsIntensityOutsideTaxonomyRange(t *testing.T) {
+	drafts := &fakeDraftRepo{}
+	weekStart := time.Date(2026, time.May, 4, 0, 0, 0, 0, time.UTC)
+	seedSimpleDraft(t, drafts, weekStart)
+
+	uc := usecase.NewUserEditSlotUsecase(drafts, usecase.NoopContentSelectionLayer{})
+	// HIIT's IntensityRange is fixed to [H] — Low is never valid for it.
+	_, err := uc.Execute(context.Background(), usecase.UserEditSlotInput{
+		UserID: "u1",
+		Date:   weekStart,
+		NewAssignment: cascade.SlotAssignment{
+			ActivityType: activity.HIIT, Intensity: activity.IntensityL, Impact: activity.ImpactH,
+			MuscleGroup: activity.MuscleGroupFullBody,
+		},
+	})
+	if err == nil {
+		t.Fatal("expected an error for an intensity outside HIIT's taxonomy range, got nil")
+	}
+}
+
+func TestUserEditSlot_RejectsImpactOutsideTaxonomyRange(t *testing.T) {
+	drafts := &fakeDraftRepo{}
+	weekStart := time.Date(2026, time.May, 4, 0, 0, 0, 0, time.UTC)
+	seedSimpleDraft(t, drafts, weekStart)
+
+	uc := usecase.NewUserEditSlotUsecase(drafts, usecase.NoopContentSelectionLayer{})
+	// Running's ImpactRange is fixed to [H] — Low is never valid for it.
+	_, err := uc.Execute(context.Background(), usecase.UserEditSlotInput{
+		UserID: "u1",
+		Date:   weekStart,
+		NewAssignment: cascade.SlotAssignment{
+			ActivityType: activity.Running, Intensity: activity.IntensityM, Impact: activity.ImpactL,
+			MuscleGroup: activity.MuscleGroupLower,
+		},
+	})
+	if err == nil {
+		t.Fatal("expected an error for an impact outside Running's taxonomy range, got nil")
+	}
+}
+
+func TestUserEditSlot_RejectsMuscleGroupOutsideTaxonomyDefault(t *testing.T) {
+	drafts := &fakeDraftRepo{}
+	weekStart := time.Date(2026, time.May, 4, 0, 0, 0, 0, time.UTC)
+	seedSimpleDraft(t, drafts, weekStart)
+
+	uc := usecase.NewUserEditSlotUsecase(drafts, usecase.NoopContentSelectionLayer{})
+	// HIIT is UserSelectable in the taxonomy, but no selection mechanism
+	// exists yet and content.SessionLibrary has no content for it outside
+	// full_body — so a non-default muscle group must still be rejected.
+	_, err := uc.Execute(context.Background(), usecase.UserEditSlotInput{
+		UserID: "u1",
+		Date:   weekStart,
+		NewAssignment: cascade.SlotAssignment{
+			ActivityType: activity.HIIT, Intensity: activity.IntensityH, Impact: activity.ImpactH,
+			MuscleGroup: activity.MuscleGroupLower,
+		},
+	})
+	if err == nil {
+		t.Fatal("expected an error for a non-default muscle group on a UserSelectable activity with no selection mechanism yet, got nil")
+	}
+}
+
+func TestUserEditSlot_AcceptsAssignmentMatchingTaxonomy(t *testing.T) {
+	drafts := &fakeDraftRepo{}
+	weekStart := time.Date(2026, time.May, 4, 0, 0, 0, 0, time.UTC)
+	seedSimpleDraft(t, drafts, weekStart)
+
+	uc := usecase.NewUserEditSlotUsecase(drafts, usecase.NoopContentSelectionLayer{})
+	_, err := uc.Execute(context.Background(), usecase.UserEditSlotInput{
+		UserID: "u1",
+		Date:   weekStart,
+		NewAssignment: cascade.SlotAssignment{
+			ActivityType: activity.HIIT, Intensity: activity.IntensityH, Impact: activity.ImpactH,
+			MuscleGroup: activity.MuscleGroupFullBody,
+		},
+	})
+	if err != nil {
+		t.Fatalf("expected a taxonomy-valid HIIT edit to succeed, got error: %v", err)
+	}
+}
