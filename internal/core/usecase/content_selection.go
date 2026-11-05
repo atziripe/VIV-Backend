@@ -26,20 +26,22 @@ import (
 // SessionContentSelector implements usecase.ContentSelectionLayer. It
 // dispatches per slot:
 //
-//  1. ActivityType == Strength AND UseRealStrengthSessions: the real
-//     VIV-112 assembly (internal/core/strengthsession.Assemble) — VIV-108's
-//     pinned block, hydrated against the real strengthlibrary catalog and
-//     VIV_Strength_Block_Config.json's exercise_types/
-//     weekly_prescription_by_type/variant_rules. See the commit that added
-//     this for why it's a feature flag (default on in dev, off in prod):
-//     the OLD path below hydrates against content.ExerciseLibrary's
+//  1. ActivityType == Strength AND strengthRollout.Enabled(userID): the
+//     real VIV-112 assembly (internal/core/strengthsession.Assemble) —
+//     VIV-108's pinned block, hydrated against the real strengthlibrary
+//     catalog and VIV_Strength_Block_Config.json's exercise_types/
+//     weekly_prescription_by_type/variant_rules. See StrengthSessionsRollout
+//     for why this is a per-user rollout rather than a single on/off
+//     switch: the OLD path below hydrates against content.ExerciseLibrary's
 //     placeholder seed data, which doesn't have real prescriptions for
-//     the 113-exercise catalog yet.
-//  2. Mesocycle-eligible otherwise (Strength with the flag off, or
-//     Functional-if-ever-enabled): the OLD path — fetch the pinned
-//     exercise set from VIV-108 (never free-select), hydrate each pinned
-//     ID from content.ExerciseLibrary, and pick Standard/Reduced
-//     prescription by the slot's LoadTier.
+//     the real catalog, so the rollout exists to move users over
+//     gradually (or pin it to a staging allowlist) rather than flipping
+//     everyone at once.
+//  2. Mesocycle-eligible otherwise (Strength for a user the rollout
+//     doesn't cover, or Functional-if-ever-enabled): the OLD path —
+//     fetch the pinned exercise set from VIV-108 (never free-select),
+//     hydrate each pinned ID from content.ExerciseLibrary, and pick
+//     Standard/Reduced prescription by the slot's LoadTier.
 //  3. Everything else — EVERY other activity type (Pilates, Cardio,
 //     HIIT, etc.) — untouched, exactly as before: look up one pre-built
 //     session keyed by the slot's full resolved attributes.
@@ -55,11 +57,11 @@ type SessionContentSelector struct {
 	warmupCooldown *content.MesocycleWarmupCooldownLibrary
 	pins           ExercisePinResolver
 
-	strengthLibrary         *strengthlibrary.Library
-	strengthConfig          *strengthlibrary.BlockConfig
-	strengthSelector        mesocycle.BlockExerciseSelector
-	useRealStrengthSessions bool
-	now                     func() time.Time
+	strengthLibrary  *strengthlibrary.Library
+	strengthConfig   *strengthlibrary.BlockConfig
+	strengthSelector mesocycle.BlockExerciseSelector
+	strengthRollout  StrengthSessionsRollout
+	now              func() time.Time
 }
 
 // ExercisePinResolver is the subset of *ExercisePinService content
@@ -77,18 +79,18 @@ func NewSessionContentSelector(
 	pins ExercisePinResolver,
 	strengthLib *strengthlibrary.Library,
 	strengthConfig *strengthlibrary.BlockConfig,
-	useRealStrengthSessions bool,
+	strengthRollout StrengthSessionsRollout,
 ) *SessionContentSelector {
 	return &SessionContentSelector{
-		sessions:                sessions,
-		exercises:               exercises,
-		warmupCooldown:          warmupCooldown,
-		pins:                    pins,
-		strengthLibrary:         strengthLib,
-		strengthConfig:          strengthConfig,
-		strengthSelector:        mesocycle.DefaultBlockExerciseSelector{},
-		useRealStrengthSessions: useRealStrengthSessions,
-		now:                     func() time.Time { return time.Now().UTC() },
+		sessions:         sessions,
+		exercises:        exercises,
+		warmupCooldown:   warmupCooldown,
+		pins:             pins,
+		strengthLibrary:  strengthLib,
+		strengthConfig:   strengthConfig,
+		strengthSelector: mesocycle.DefaultBlockExerciseSelector{},
+		strengthRollout:  strengthRollout,
+		now:              func() time.Time { return time.Now().UTC() },
 	}
 }
 
@@ -102,10 +104,10 @@ func NewSessionContentSelectorWithClock(
 	pins ExercisePinResolver,
 	strengthLib *strengthlibrary.Library,
 	strengthConfig *strengthlibrary.BlockConfig,
-	useRealStrengthSessions bool,
+	strengthRollout StrengthSessionsRollout,
 	now func() time.Time,
 ) *SessionContentSelector {
-	s := NewSessionContentSelector(sessions, exercises, warmupCooldown, pins, strengthLib, strengthConfig, useRealStrengthSessions)
+	s := NewSessionContentSelector(sessions, exercises, warmupCooldown, pins, strengthLib, strengthConfig, strengthRollout)
 	s.now = now
 	return s
 }
@@ -146,7 +148,7 @@ func (s *SessionContentSelector) SelectContent(ctx context.Context, draft WeekDr
 		var err error
 
 		switch {
-		case d.Assignment.ActivityType == activity.Strength && s.useRealStrengthSessions:
+		case d.Assignment.ActivityType == activity.Strength && s.strengthRollout.Enabled(draft.UserID):
 			selected, err = s.selectStrengthBlock(ctx, draft.UserID, d.Assignment)
 		case mesocycle.IsMesocycleEligible(d.Assignment.ActivityType):
 			selected, err = s.selectPinnedExercises(ctx, draft.UserID, d.Assignment)

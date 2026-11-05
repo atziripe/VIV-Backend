@@ -86,3 +86,31 @@ func TestLoad_UseRealStrengthSessions_ExplicitEnvVarAlwaysWins(t *testing.T) {
 		t.Error("expected an explicit USE_REAL_STRENGTH_SESSIONS=false to win even in development")
 	}
 }
+
+func TestLoad_StrengthSessionsAllowlist_UnsetIsNil(t *testing.T) {
+	t.Setenv("STRENGTH_SESSIONS_ALLOWLIST", "")
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load(): %v", err)
+	}
+	if cfg.StrengthSessionsAllowlist != nil {
+		t.Errorf("StrengthSessionsAllowlist = %v, want nil when unset", cfg.StrengthSessionsAllowlist)
+	}
+}
+
+func TestLoad_StrengthSessionsAllowlist_SplitsTrimsAndDropsEmpties(t *testing.T) {
+	t.Setenv("STRENGTH_SESSIONS_ALLOWLIST", " u1, u2 ,,u3")
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load(): %v", err)
+	}
+	want := []string{"u1", "u2", "u3"}
+	if len(cfg.StrengthSessionsAllowlist) != len(want) {
+		t.Fatalf("StrengthSessionsAllowlist = %v, want %v", cfg.StrengthSessionsAllowlist, want)
+	}
+	for i := range want {
+		if cfg.StrengthSessionsAllowlist[i] != want[i] {
+			t.Errorf("StrengthSessionsAllowlist[%d] = %q, want %q", i, cfg.StrengthSessionsAllowlist[i], want[i])
+		}
+	}
+}

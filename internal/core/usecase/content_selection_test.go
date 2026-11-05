@@ -136,7 +136,7 @@ func standardYogaSession() content.Session {
 func TestSessionContentSelector_StandardTierSlotSelectsNormally(t *testing.T) {
 	sessions := buildSessionLibrary(t, standardYogaSession())
 	exercises := buildExerciseLibrary(t)
-	selector := usecase.NewSessionContentSelector(sessions, exercises, buildWarmupCooldownLibrary(t), &fakePinResolver{}, nil, nil, false)
+	selector := usecase.NewSessionContentSelector(sessions, exercises, buildWarmupCooldownLibrary(t), &fakePinResolver{}, nil, nil, usecase.StrengthSessionsRollout{})
 
 	draft := oneDayDraft("u1", usecase.DayPlan{
 		Assignment: cascade.SlotAssignment{ActivityType: activity.Yoga, Intensity: activity.IntensityL, Impact: activity.ImpactL, MuscleGroup: activity.MuscleGroupFullBody},
@@ -176,7 +176,7 @@ func TestSessionContentSelector_MissingVariantErrorsLoudly(t *testing.T) {
 	// Library has ONLY the standard yoga session — no "short" variant.
 	sessions := buildSessionLibrary(t, standardYogaSession())
 	exercises := buildExerciseLibrary(t)
-	selector := usecase.NewSessionContentSelector(sessions, exercises, buildWarmupCooldownLibrary(t), &fakePinResolver{}, nil, nil, false)
+	selector := usecase.NewSessionContentSelector(sessions, exercises, buildWarmupCooldownLibrary(t), &fakePinResolver{}, nil, nil, usecase.StrengthSessionsRollout{})
 
 	draft := oneDayDraft("u1", usecase.DayPlan{
 		Assignment: cascade.SlotAssignment{
@@ -197,7 +197,7 @@ func TestSessionContentSelector_MissingVariantErrorsLoudly(t *testing.T) {
 func TestSessionContentSelector_MissingStandardContentErrors(t *testing.T) {
 	sessions := buildSessionLibrary(t) // empty library
 	exercises := buildExerciseLibrary(t)
-	selector := usecase.NewSessionContentSelector(sessions, exercises, buildWarmupCooldownLibrary(t), &fakePinResolver{}, nil, nil, false)
+	selector := usecase.NewSessionContentSelector(sessions, exercises, buildWarmupCooldownLibrary(t), &fakePinResolver{}, nil, nil, usecase.StrengthSessionsRollout{})
 
 	draft := oneDayDraft("u1", usecase.DayPlan{
 		Assignment: cascade.SlotAssignment{ActivityType: activity.Yoga, Intensity: activity.IntensityL, Impact: activity.ImpactL, MuscleGroup: activity.MuscleGroupFullBody},
@@ -226,7 +226,7 @@ func TestSessionContentSelector_StrengthSlotPullsFromPinnedSet(t *testing.T) {
 	sessions := buildSessionLibrary(t) // deliberately empty — Strength must never touch this
 	exercises := buildExerciseLibrary(t, lowerExercises()...)
 	pins := &fakePinResolver{ids: []mesocycle.ExerciseID{"lower_exercise_1", "lower_exercise_2"}}
-	selector := usecase.NewSessionContentSelector(sessions, exercises, buildWarmupCooldownLibrary(t, lowerWarmupCooldown()), pins, nil, nil, false)
+	selector := usecase.NewSessionContentSelector(sessions, exercises, buildWarmupCooldownLibrary(t, lowerWarmupCooldown()), pins, nil, nil, usecase.StrengthSessionsRollout{})
 
 	draft := oneDayDraft("u1", usecase.DayPlan{
 		Assignment: cascade.SlotAssignment{ActivityType: activity.Strength, Intensity: activity.IntensityM, Impact: activity.ImpactM, MuscleGroup: activity.MuscleGroupLower, LoadTier: cascade.LoadStandard},
@@ -267,11 +267,40 @@ func TestSessionContentSelector_StrengthSlotPullsFromPinnedSet(t *testing.T) {
 	}
 }
 
+// TestSessionContentSelector_UserNotOnAllowlistFallsBackToOldLibrary
+// covers StrengthSessionsRollout's partial-rollout mode end to end: the
+// master switch is on and the allowlist is non-empty, but "u1" isn't on
+// it — Strength must still route to the OLD mesocycle-pinned path
+// (Content.Exercises), never to the real VIV-112 assembly
+// (Content.StrengthBlock), exactly as if the rollout were off for u1.
+func TestSessionContentSelector_UserNotOnAllowlistFallsBackToOldLibrary(t *testing.T) {
+	sessions := buildSessionLibrary(t)
+	exercises := buildExerciseLibrary(t, lowerExercises()...)
+	pins := &fakePinResolver{ids: []mesocycle.ExerciseID{"lower_exercise_1", "lower_exercise_2"}}
+	rollout := usecase.NewStrengthSessionsRollout(true, []string{"someone_else"})
+	selector := usecase.NewSessionContentSelector(sessions, exercises, buildWarmupCooldownLibrary(t, lowerWarmupCooldown()), pins, nil, nil, rollout)
+
+	draft := oneDayDraft("u1", usecase.DayPlan{
+		Assignment: cascade.SlotAssignment{ActivityType: activity.Strength, Intensity: activity.IntensityM, Impact: activity.ImpactM, MuscleGroup: activity.MuscleGroupLower, LoadTier: cascade.LoadStandard},
+	})
+
+	got, err := selector.SelectContent(context.Background(), draft)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got.Days[0].Content.StrengthBlock != nil {
+		t.Error("expected Content.StrengthBlock to stay nil — u1 is not on the allowlist")
+	}
+	if len(got.Days[0].Content.Exercises) != 2 {
+		t.Fatalf("expected the OLD path's pinned exercises, got %+v", got.Days[0].Content.Exercises)
+	}
+}
+
 func TestSessionContentSelector_StrengthSlotUsesReducedPrescriptionForLoadTierReduced(t *testing.T) {
 	sessions := buildSessionLibrary(t)
 	exercises := buildExerciseLibrary(t, lowerExercises()...)
 	pins := &fakePinResolver{ids: []mesocycle.ExerciseID{"lower_exercise_1", "lower_exercise_2"}}
-	selector := usecase.NewSessionContentSelector(sessions, exercises, buildWarmupCooldownLibrary(t, lowerWarmupCooldown()), pins, nil, nil, false)
+	selector := usecase.NewSessionContentSelector(sessions, exercises, buildWarmupCooldownLibrary(t, lowerWarmupCooldown()), pins, nil, nil, usecase.StrengthSessionsRollout{})
 
 	draft := oneDayDraft("u1", usecase.DayPlan{
 		Assignment: cascade.SlotAssignment{ActivityType: activity.Strength, Intensity: activity.IntensityL, Impact: activity.ImpactL, MuscleGroup: activity.MuscleGroupLower, LoadTier: cascade.LoadReduced, AdjustmentLever: cascade.AdjustmentProtectType},
@@ -297,7 +326,7 @@ func TestSessionContentSelector_PinnedExerciseNotInLibraryErrors(t *testing.T) {
 	sessions := buildSessionLibrary(t)
 	exercises := buildExerciseLibrary(t) // empty — the pinned ID won't be found
 	pins := &fakePinResolver{ids: []mesocycle.ExerciseID{"ghost_exercise"}}
-	selector := usecase.NewSessionContentSelector(sessions, exercises, buildWarmupCooldownLibrary(t), pins, nil, nil, false)
+	selector := usecase.NewSessionContentSelector(sessions, exercises, buildWarmupCooldownLibrary(t), pins, nil, nil, usecase.StrengthSessionsRollout{})
 
 	draft := oneDayDraft("u1", usecase.DayPlan{
 		Assignment: cascade.SlotAssignment{ActivityType: activity.Strength, Intensity: activity.IntensityM, Impact: activity.ImpactM, MuscleGroup: activity.MuscleGroupLower, LoadTier: cascade.LoadStandard},
@@ -317,7 +346,7 @@ func TestSessionContentSelector_RestDaysSkipped(t *testing.T) {
 	sessions := buildSessionLibrary(t)
 	exercises := buildExerciseLibrary(t)
 	pins := &fakePinResolver{}
-	selector := usecase.NewSessionContentSelector(sessions, exercises, buildWarmupCooldownLibrary(t), pins, nil, nil, false)
+	selector := usecase.NewSessionContentSelector(sessions, exercises, buildWarmupCooldownLibrary(t), pins, nil, nil, usecase.StrengthSessionsRollout{})
 
 	draft := oneDayDraft("u1", usecase.DayPlan{IsRestDay: true})
 

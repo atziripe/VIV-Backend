@@ -283,23 +283,37 @@ func main() {
 	// always-false stub. This wires it for real, but ONLY for Strength
 	// (strengthsession.ContentLibraryAdapter.HasVariant returns false
 	// for every other activity type unconditionally) and only when
-	// cfg.UseRealStrengthSessions is on — with the flag off, Strength
-	// must behave exactly like the old stub too, since the OLD content
-	// selection path below has no idea how to handle a DurationTier=Short
-	// Strength slot.
+	// cfg.UseRealStrengthSessions (the rollout's master switch) is on —
+	// with it off, Strength must behave exactly like the old stub too,
+	// since the OLD content selection path below has no idea how to
+	// handle a DurationTier=Short Strength slot.
+	//
+	// KNOWN GAP: this is keyed to the master switch only, never to the
+	// per-user allowlist below — cascade's tier resolution (VIV-105)
+	// has no per-user hook today. During a partial rollout
+	// (STRENGTH_SESSIONS_ALLOWLIST non-empty), a non-allowlisted user
+	// still gets routed here if the cascade happens to pick
+	// Short/Simplified for their Strength slot, and
+	// selectPinnedExercises below will then hard-error on that
+	// non-Standard tier. Safe for "everyone" and "nobody" (the only
+	// modes exercised so far); fixing the partial-rollout case needs
+	// threading userID into cascade.ResolveSlotConflict, which is out
+	// of scope here.
 	cascade.DefaultContentLibrary = strengthsession.ContentLibraryAdapter{
 		Config:  strengthBlockConfig,
 		Enabled: cfg.UseRealStrengthSessions,
 	}
+
+	strengthSessionsRollout := usecase.NewStrengthSessionsRollout(cfg.UseRealStrengthSessions, cfg.StrengthSessionsAllowlist)
 
 	weeklyScheduler := openai.NewWeeklyScheduler(oaClient)                 // VIV-109, real LLM-backed Layer 1
 	ruleEngineValidator := usecase.NewRuleEngineValidator(weeklyScheduler) // VIV-110, retries Layer 1 once on a spacing violation
 	jointImpactWarnings := usecase.NewJointImpactWarningsLayer()           // VIV-111
 	weeklyContentSelector := usecase.NewSessionContentSelector(            // VIV-112
 		weeklySessionLib, weeklyExerciseLib, weeklyMesocycleWarmupCooldownLib, exercisePinService,
-		strengthLib, strengthBlockConfig, cfg.UseRealStrengthSessions,
+		strengthLib, strengthBlockConfig, strengthSessionsRollout,
 	)
-	log.Printf("strength session assembly: use_real_strength_sessions=%v", cfg.UseRealStrengthSessions)
+	log.Printf("strength session assembly rollout: %s", strengthSessionsRollout.Mode())
 
 	generateWeeklyPlanUC := usecase.NewGenerateWeeklyPlanUsecase(
 		cyclePhaseLookup,
