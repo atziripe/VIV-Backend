@@ -72,6 +72,15 @@ func TestGetWeeklyPlanDay_SessionLibraryPath(t *testing.T) {
 	if d.MainExercises[0].ID != "" {
 		t.Errorf("session-library exercises shouldn't have a stable ID, got %q", d.MainExercises[0].ID)
 	}
+	// A non-Strength activity is unchanged by the Strength path's
+	// rest_seconds_by_type feature: it keeps its own author-specified
+	// RestSeconds (content.ExerciseDetail.RestSeconds) verbatim.
+	if d.MainExercises[0].RestSeconds != 20 {
+		t.Errorf("RestSeconds = %d, want 20 (unchanged from the session library)", d.MainExercises[0].RestSeconds)
+	}
+	if d.StrengthRestSecondsStatus != "" {
+		t.Errorf("StrengthRestSecondsStatus = %q, want empty for a non-Strength-assembly day", d.StrengthRestSecondsStatus)
+	}
 }
 
 func TestGetWeeklyPlanDay_MesocyclePinnedPath(t *testing.T) {
@@ -156,8 +165,8 @@ func TestGetWeeklyPlanDay_StrengthBlockPath(t *testing.T) {
 	}
 	assembled := &strengthsession.AssembledSession{
 		Exercises: []strengthsession.AssembledExercise{
-			{ExerciseID: "lower_back_squat", Slot: "Squat", Priority: strengthlibrary.PriorityMain, ExerciseName: "Back Squat", Equipment: []string{"Barbell", "Rack"}, PrescriptionText: "4 × 6-8 @ RIR 2-3", Sets: 4},
-			{ExerciseID: "lower_hip_thrust_a", Slot: "Hip Thrust", Priority: strengthlibrary.PriorityAccessory, ExerciseName: "Hip Thrust A", Equipment: []string{"Barbell"}, PrescriptionText: "3 × 10-12 @ RIR 2-3", Sets: 3},
+			{ExerciseID: "lower_back_squat", Slot: "Squat", Priority: strengthlibrary.PriorityMain, ExerciseName: "Back Squat", Equipment: []string{"Barbell", "Rack"}, PrescriptionText: "4 × 6-8 @ RIR 2-3", Sets: 4, RestSeconds: 90},
+			{ExerciseID: "lower_hip_thrust_a", Slot: "Hip Thrust", Priority: strengthlibrary.PriorityAccessory, ExerciseName: "Hip Thrust A", Equipment: []string{"Barbell"}, PrescriptionText: "3 × 10-12 @ RIR 2-3", Sets: 3, RestSeconds: 75},
 		},
 		Week:                 3,
 		BlockNumber:          2,
@@ -167,6 +176,7 @@ func TestGetWeeklyPlanDay_StrengthBlockPath(t *testing.T) {
 		Cooldown:             strengthsession.AssembledWarmupCooldown{DurationMinutes: 5, Movements: []string{"Hamstring stretch"}},
 		RampUpNote:           "Before the first Main exercise, do 1-2 light sets at about half the working load.",
 		WarmupCooldownStatus: "draft_llm_generated_unreviewed",
+		RestSecondsStatus:    "draft_not_reviewed_by_sport_scientist",
 	}
 	strengthDay.Content = &usecase.SelectedContent{
 		StrengthBlock: assembled,
@@ -214,14 +224,23 @@ func TestGetWeeklyPlanDay_StrengthBlockPath(t *testing.T) {
 	if len(d.MainExercises[0].Equipment) != 2 {
 		t.Errorf("Equipment = %+v, want 2 entries", d.MainExercises[0].Equipment)
 	}
-	// This path never decomposes the prescription text itself, but ID
-	// and Sets ARE populated (needed to log sets against this day) —
-	// Reps/RestSeconds/LoadGuidance/FormCue stay zero/empty.
+	// This path never decomposes the prescription text itself, but ID,
+	// Sets and RestSeconds ARE populated (needed to log sets against
+	// this day) — Reps/LoadGuidance/FormCue stay zero/empty.
 	if d.MainExercises[0].ID != "lower_back_squat" {
 		t.Errorf("ID = %q, want the stable exercise ID so a client can log sets against it", d.MainExercises[0].ID)
 	}
 	if d.MainExercises[0].Sets != 4 {
 		t.Errorf("Sets = %d, want 4 (parsed off the prescription text's leading \"N ×\")", d.MainExercises[0].Sets)
+	}
+	if d.MainExercises[0].RestSeconds != 90 {
+		t.Errorf("RestSeconds = %d, want 90 (from rest_seconds_by_type)", d.MainExercises[0].RestSeconds)
+	}
+	if d.MainExercises[1].RestSeconds != 75 {
+		t.Errorf("MainExercises[1].RestSeconds = %d, want 75", d.MainExercises[1].RestSeconds)
+	}
+	if d.StrengthRestSecondsStatus != "draft_not_reviewed_by_sport_scientist" {
+		t.Errorf("StrengthRestSecondsStatus = %q, want the config's provisional rest-seconds status to come through verbatim", d.StrengthRestSecondsStatus)
 	}
 	if d.MainExercises[0].Reps != "" {
 		t.Errorf("expected Reps to stay empty for the Strength assembly path, got %+v", d.MainExercises[0])

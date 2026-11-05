@@ -69,6 +69,9 @@ type BlockConfig struct {
 	warmupCooldownStatus string
 	rampUpNote           string
 	warmupCooldownByZone map[Zone]WarmupCooldown
+
+	restSecondsStatus string
+	restSecondsByType map[string][4]int
 }
 
 //go:embed data/VIV_Strength_Block_Config.json
@@ -107,6 +110,7 @@ type rawBlockConfig struct {
 	WeeklyPrescriptionByType map[string][]string        `json:"weekly_prescription_by_type"`
 	VariantRules             rawVariantRules            `json:"variant_rules"`
 	WarmupCooldown           rawWarmupCooldownConfig    `json:"warmup_cooldown"`
+	RestSecondsByType        map[string]json.RawMessage `json:"rest_seconds_by_type"`
 }
 
 type rawSlot struct {
@@ -214,6 +218,10 @@ func loadBlockConfigFromJSON(data []byte) (*BlockConfig, error) {
 	}
 
 	if err := populateWarmupCooldownConfig(cfg, raw); err != nil {
+		return nil, err
+	}
+
+	if err := populateRestSecondsConfig(cfg, raw); err != nil {
 		return nil, err
 	}
 

@@ -56,6 +56,10 @@ func TestContentLibraryAdapter_StrengthSimplifiedReadsConfig(t *testing.T) {
 			"zones": {
 				"Lower body": {"warmup_minutes": 5, "cooldown_minutes": 5, "warmup": ["Leg swings"], "cooldown": ["Quad stretch"]}
 			}
+		},
+		"rest_seconds_by_type": {
+			"_status": "test_fixture",
+			"C": [90, 90, 120, 120]
 		}
 	}`))
 	if err != nil {

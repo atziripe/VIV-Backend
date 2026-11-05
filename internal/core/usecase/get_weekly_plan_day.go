@@ -47,13 +47,13 @@ type WeeklyPlanDayExercise struct {
 	// real VIV-112 Strength assembly path only (StrengthBlock) — that
 	// path's prescription is a single piece of config-authored text,
 	// kept as written rather than decomposed back into Reps/
-	// RestSeconds/LoadGuidance/FormCue, so those stay zero there. ID
-	// and Sets ARE populated for this path too (ID from
+	// LoadGuidance/FormCue, so those stay zero there. ID, Sets and
+	// RestSeconds ARE populated for this path too (ID from
 	// strengthlibrary.Exercise.ID, Sets parsed off the leading "N ×" of
-	// PrescriptionText) — the same two numbers usecase.LogSetUseCase
-	// needs to accept a logged set, so a Strength day is just as
-	// loggable as the old mesocycle-pinned path. See
-	// strengthsession.AssembledExercise.
+	// PrescriptionText, RestSeconds from rest_seconds_by_type) — the
+	// same numbers usecase.LogSetUseCase needs to accept a logged set,
+	// so a Strength day is just as loggable as the old mesocycle-pinned
+	// path. See strengthsession.AssembledExercise.
 	Slot             string
 	Priority         string
 	Equipment        []string
@@ -141,6 +141,12 @@ type WeeklyPlanDayDetail struct {
 	// outside the real Strength assembly path.
 	StrengthRampUpNote           string
 	StrengthWarmupCooldownStatus string
+
+	// StrengthRestSecondsStatus is rest_seconds_by_type._status
+	// verbatim, passed through next to StrengthConfigStatus/
+	// StrengthWarmupCooldownStatus so it stays just as traceable. Empty
+	// outside the real Strength assembly path.
+	StrengthRestSecondsStatus string
 
 	// Session is the in-progress or completed real-time log for this day
 	// — nil when Loggable is false, or when Loggable is true but the user
@@ -260,6 +266,7 @@ func (uc *GetWeeklyPlanDayUseCase) Execute(ctx context.Context, in GetWeeklyPlan
 		detail.StrengthConfigStatus = sb.ConfigStatus
 		detail.StrengthRampUpNote = sb.RampUpNote
 		detail.StrengthWarmupCooldownStatus = sb.WarmupCooldownStatus
+		detail.StrengthRestSecondsStatus = sb.RestSecondsStatus
 		for _, tc := range sb.TierChanges {
 			detail.StrengthTierChanges = append(detail.StrengthTierChanges, WeeklyPlanTierChange{Lever: tc.Lever, Detail: tc.Detail})
 		}
@@ -268,6 +275,7 @@ func (uc *GetWeeklyPlanDayUseCase) Execute(ctx context.Context, in GetWeeklyPlan
 				ID:               e.ExerciseID,
 				Name:             e.ExerciseName,
 				Sets:             e.Sets,
+				RestSeconds:      e.RestSeconds,
 				Slot:             e.Slot,
 				Priority:         string(e.Priority),
 				Equipment:        e.Equipment,

@@ -44,6 +44,12 @@ type AssembledExercise struct {
 	Equipment        []string
 	PrescriptionText string
 
+	// RestSeconds is rest_seconds_by_type[type][week] for this exercise's
+	// prescriptionWeek (the same week PrescriptionText was built for —
+	// forced to week 1 under LoadTier=Reduced, same as PrescriptionText).
+	// Never put inside PrescriptionText itself.
+	RestSeconds int
+
 	// Sets is the leading set count parsed from PrescriptionText's own
 	// "N ×" opening (after any tier adjustment — e.g. Intensity=Low's
 	// SetsDelta already applied) — never a separate, independently
@@ -120,6 +126,11 @@ type AssembledSession struct {
 	// through next to ConfigStatus so it stays just as traceable; never
 	// removed, never left out.
 	WarmupCooldownStatus string
+
+	// RestSecondsStatus is rest_seconds_by_type._status verbatim —
+	// passed through next to ConfigStatus/WarmupCooldownStatus so it
+	// stays just as traceable; never removed, never left out.
+	RestSecondsStatus string
 }
 
 // slotEntry pairs one configured slot with the exercise
@@ -252,6 +263,11 @@ func Assemble(
 			return AssembledSession{}, fmt.Errorf("strengthsession: exercise %q: %w", e.exercise.Name, err)
 		}
 
+		restSeconds, err := config.RestSeconds(code, prescriptionWeek)
+		if err != nil {
+			return AssembledSession{}, fmt.Errorf("strengthsession: exercise %q: %w", e.exercise.Name, err)
+		}
+
 		if perSide {
 			text += " per side"
 		}
@@ -264,6 +280,7 @@ func Assemble(
 			Equipment:        e.exercise.Equipment,
 			PrescriptionText: text,
 			Sets:             sets,
+			RestSeconds:      restSeconds,
 		})
 	}
 
@@ -284,6 +301,7 @@ func Assemble(
 		},
 		RampUpNote:           config.RampUpNote(),
 		WarmupCooldownStatus: config.WarmupCooldownStatus(),
+		RestSecondsStatus:    config.RestSecondsStatus(),
 	}, nil
 }
 

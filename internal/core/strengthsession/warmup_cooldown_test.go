@@ -63,6 +63,10 @@ func allZonesFixtureConfig(t *testing.T) *strengthlibrary.BlockConfig {
 				"Full body":  {"warmup_minutes": 7, "cooldown_minutes": 4, "warmup": ["Bodyweight squats"], "cooldown": ["Forward fold"]},
 				"Core":       {"warmup_minutes": 5, "cooldown_minutes": 4, "warmup": ["Dead bug"], "cooldown": ["Cobra stretch"]}
 			}
+		},
+		"rest_seconds_by_type": {
+			"_status": "test_fixture",
+			"C": [90, 90, 120, 120]
 		}
 	}`))
 	if err != nil {
@@ -238,6 +242,10 @@ func TestAssemble_MissingWarmupCooldownZoneErrors(t *testing.T) {
 			"zones": {
 				"Lower body": {"warmup_minutes": 5, "cooldown_minutes": 5, "warmup": ["Leg swings"], "cooldown": ["Quad stretch"]}
 			}
+		},
+		"rest_seconds_by_type": {
+			"_status": "test_fixture",
+			"C": [90, 90, 120, 120]
 		}
 	}`))
 	if err != nil {

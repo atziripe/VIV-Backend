@@ -828,6 +828,65 @@
     ]
   },
   "rir_note": "RIR = reps in reserve",
+  "rest_seconds_by_type": {
+    "_status": "DRAFT. Not reviewed by a sport scientist.",
+    "_basis": "Anchored on the rest times in the old Strength library, by rep range (median 120 s for 7 reps or fewer, 75 s for 8-10 reps, 60 s for 11+, 60 s for core). Adjusted by the founding team: loaded compounds use 90 s in weeks 1-2.",
+    "_note": "One value per week [W1, W2, W3, W4], in seconds. For per-side exercises, rest after finishing both sides.",
+    "C": [
+      90,
+      90,
+      120,
+      120
+    ],
+    "U": [
+      75,
+      75,
+      90,
+      90
+    ],
+    "B": [
+      60,
+      60,
+      60,
+      60
+    ],
+    "A": [
+      60,
+      60,
+      60,
+      60
+    ],
+    "P": [
+      75,
+      75,
+      75,
+      75
+    ],
+    "K": [
+      60,
+      60,
+      60,
+      60
+    ],
+    "T": [
+      60,
+      60,
+      60,
+      60
+    ],
+    "H": [
+      60,
+      60,
+      60,
+      60
+    ],
+    "Cr": [
+      60,
+      60,
+      60,
+      60
+    ]
+  },
   "warmup_cooldown": {
     "_status": "DRAFT. Taken from the most frequent warm-up and cool-down movements in the old Strength sessions (LLM-generated, never reviewed by Lina or a sport scientist). Lina removed Bird Dog and Hip Hinge Drill as main exercises; here they appear only as warm-up movements, which she has not seen.",
     "applies_to_all_tiers": true,

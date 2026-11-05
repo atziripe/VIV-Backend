@@ -328,6 +328,12 @@ type weeklyPlanDayDetailResponse struct {
 	StrengthRampUpNote           string `json:"strength_ramp_up_note,omitempty"`
 	StrengthWarmupCooldownStatus string `json:"strength_warmup_cooldown_status,omitempty"`
 
+	// StrengthRestSecondsStatus is populated for the real VIV-112
+	// Strength assembly path only — see usecase.WeeklyPlanDayDetail's
+	// doc comment. Passed through next to StrengthConfigStatus/
+	// StrengthWarmupCooldownStatus so it stays just as traceable.
+	StrengthRestSecondsStatus string `json:"strength_rest_seconds_status,omitempty"`
+
 	// Session is the in-progress or completed real-time log for a
 	// Loggable day, if one has been started — see SessionLogHandler
 	// (POST .../day/start, .../log-set, .../complete) for how it's
@@ -421,6 +427,7 @@ func (h *WeeklyPlanHandler) Day(w http.ResponseWriter, r *http.Request) {
 		resp.StrengthConfigStatus = d.StrengthConfigStatus
 		resp.StrengthRampUpNote = d.StrengthRampUpNote
 		resp.StrengthWarmupCooldownStatus = d.StrengthWarmupCooldownStatus
+		resp.StrengthRestSecondsStatus = d.StrengthRestSecondsStatus
 		for _, tc := range d.StrengthTierChanges {
 			resp.StrengthTierChanges = append(resp.StrengthTierChanges, weeklyPlanTierChangeResponse{Lever: tc.Lever, Detail: tc.Detail})
 		}
