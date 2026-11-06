@@ -1,0 +1,52 @@
+{
+  "id": "yoga_fullbody_l_l_standard_v1",
+  "version": 1,
+  "content_status": "draft_dummy",
+  "activity_type": "yoga",
+  "intensity": "L",
+  "impact": "L",
+  "muscle_group": "full_body",
+  "duration_tier": "standard",
+  "complexity_tier": "standard",
+  "load_tier": "standard",
+  "duration_minutes": 30,
+  "content": {
+    "warmup": {
+      "duration_minutes": 5,
+      "description": "Gentle breath-led warmup to settle into the practice.",
+      "movements": ["Seated breathing", "Cat-cow", "Neck rolls"]
+    },
+    "main_exercises": [
+      {
+        "name": "Sun salutation flow",
+        "sets": 3,
+        "reps": "1 flow",
+        "rest_seconds": 30,
+        "load_guidance": "Bodyweight, slow deliberate tempo",
+        "form_cue": "Lead every transition with the breath, not momentum"
+      },
+      {
+        "name": "Standing balance sequence",
+        "sets": 2,
+        "reps": "30-45 sec per side",
+        "rest_seconds": 20,
+        "load_guidance": "Bodyweight",
+        "form_cue": "Soft gaze on a fixed point, engage the standing leg"
+      }
+    ],
+    "cooldown": {
+      "duration_minutes": 5,
+      "description": "Seated stretch and stillness to close the session.",
+      "movements": ["Seated forward fold", "Supine twist", "Savasana"]
+    }
+  },
+  "phase_notes": {
+    "menstrual": "Extra restorative focus if energy is low today.",
+    "follicular": "",
+    "ovulatory": "",
+    "early_luteal": "",
+    "late_luteal": "A gentler pace can help if bloating or fatigue is present."
+  },
+  "author": null,
+  "created_at": "2026-01-01"
+}

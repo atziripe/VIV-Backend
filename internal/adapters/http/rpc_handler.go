@@ -149,10 +149,30 @@ func isAllowedRoute(method, path string) bool {
 		return true
 	case method == "PATCH" && path == "/me":
 		return true
+	case method == "DELETE" && path == "/me":
+		return true
+	case method == "POST" && path == "/me/cancel-deletion":
+		return true
+	case method == "POST" && path == "/me/apple-credentials":
+		return true
+
+	case method == "GET" && path == "/home/today":
+		return true
+
+	case method == "GET" && path == "/me/consents":
+		return true
+	case method == "POST" && path == "/me/consents":
+		return true
+	case method == "GET" && path == "/me/export":
+		return true
 
 	case method == "POST" && path == "/onboarding":
 		return true
+	case method == "POST" && path == "/onboarding/ineligibility":
+		return true
 
+	case method == "POST" && path == "/checkin":
+		return true
 	case method == "POST" && path == "/checkins":
 		return true
 	case method == "GET" && path == "/checkins/latest":
@@ -194,9 +214,13 @@ func isAllowedRoute(method, path string) bool {
 		return true
 	case method == "POST" && strings.HasPrefix(path, "/nutrition/"):
 		return true
-	case method == "GET" && path == "/recovery/today":
+	case method == "GET" && strings.HasPrefix(path, "/recovery/"):
+		return true
+	case method == "POST" && strings.HasPrefix(path, "/recovery/"):
 		return true
 	case method == "POST" && path == "/users/me/device-token":
+		return true
+	case method == "POST" && path == "/cycle/period-start":
 		return true
 	}
 	return false
@@ -408,6 +432,85 @@ func selectSubBody(path string, body map[string]any) any {
 		}
 		return out
 
+	case "/training/weekly-plan/day/start":
+		// body: { "day_start": { "date": "2026-05-04" } }
+		v, ok := body["day_start"]
+		if !ok || v == nil {
+			return map[string]any{}
+		}
+		m, ok := v.(map[string]any)
+		if !ok {
+			return map[string]any{}
+		}
+		out := map[string]any{}
+		if raw, exists := m["date"]; exists {
+			if s, ok := raw.(string); ok {
+				if t := strings.TrimSpace(s); t != "" {
+					out["date"] = t
+				}
+			}
+		}
+		return out
+
+	case "/training/weekly-plan/day/log-set":
+		// body: { "log_set": { "date": "...", "exercise_id": "...", "set_number": 2, "weight_kg": 18, "reps": 9 } }
+		v, ok := body["log_set"]
+		if !ok || v == nil {
+			return map[string]any{}
+		}
+		m, ok := v.(map[string]any)
+		if !ok {
+			return map[string]any{}
+		}
+		out := map[string]any{}
+		copyTrim := func(key string) {
+			raw, exists := m[key]
+			if !exists || raw == nil {
+				return
+			}
+			if s, ok := raw.(string); ok {
+				if t := strings.TrimSpace(s); t != "" {
+					out[key] = t
+				}
+				return
+			}
+			out[key] = raw
+		}
+		copyTrim("date")
+		copyTrim("exercise_id")
+		copyTrim("set_number")
+		copyTrim("weight_kg")
+		copyTrim("reps")
+		return out
+
+	case "/training/weekly-plan/day/complete":
+		// body: { "day_complete": { "date": "...", "feedback": "right" } }
+		v, ok := body["day_complete"]
+		if !ok || v == nil {
+			return map[string]any{}
+		}
+		m, ok := v.(map[string]any)
+		if !ok {
+			return map[string]any{}
+		}
+		out := map[string]any{}
+		copyTrim := func(key string) {
+			raw, exists := m[key]
+			if !exists || raw == nil {
+				return
+			}
+			if s, ok := raw.(string); ok {
+				if t := strings.TrimSpace(s); t != "" {
+					out[key] = t
+				}
+				return
+			}
+			out[key] = raw
+		}
+		copyTrim("date")
+		copyTrim("feedback")
+		return out
+
 	case "/training/save-arrangement":
 		v, ok := body["training_save_arrangement"]
 		if !ok || v == nil {
@@ -518,6 +621,47 @@ func selectSubBody(path string, body map[string]any) any {
 		copyTrim("weekday")
 		copyTrim("meal_slot")
 		copyTrim("option_index")
+
+		if len(out) == 0 {
+			return map[string]any{}
+		}
+		return out
+
+	case "/checkin":
+		// body: { "checkin": { "date": "2026-09-14", "sleep": "...", "body": "...", "demand": "...", "need": "..." } }
+		v, ok := body["checkin"]
+		if !ok || v == nil {
+			return map[string]any{}
+		}
+
+		m, ok := v.(map[string]any)
+		if !ok {
+			return map[string]any{}
+		}
+
+		out := map[string]any{}
+
+		copyTrim := func(key string) {
+			raw, exists := m[key]
+			if !exists || raw == nil {
+				return
+			}
+			if s, ok := raw.(string); ok {
+				t := strings.TrimSpace(s)
+				if t == "" {
+					return
+				}
+				out[key] = t
+				return
+			}
+			out[key] = raw
+		}
+
+		copyTrim("date")
+		copyTrim("sleep")
+		copyTrim("body")
+		copyTrim("demand")
+		copyTrim("need")
 
 		if len(out) == 0 {
 			return map[string]any{}
@@ -673,6 +817,98 @@ func selectSubBody(path string, body map[string]any) any {
 			return map[string]any{}
 		}
 		return out
+
+	case "/cycle/period-start":
+		// body: { "period_start": { "date": "2026-08-19" } } — date is
+		// optional, omitting it (or the whole key) logs today.
+		v, ok := body["period_start"]
+		if !ok || v == nil {
+			return map[string]any{}
+		}
+
+		m, ok := v.(map[string]any)
+		if !ok {
+			return map[string]any{}
+		}
+
+		out := map[string]any{}
+		if raw, exists := m["date"]; exists && raw != nil {
+			if s, ok := raw.(string); ok {
+				if t := strings.TrimSpace(s); t != "" {
+					out["date"] = t
+				}
+			}
+		}
+		return out
+
+	case "/me/apple-credentials":
+		// body: { "apple": { "authorization_code": "..." } }
+		v, ok := body["apple"]
+		if !ok || v == nil {
+			return map[string]any{}
+		}
+		m, ok := v.(map[string]any)
+		if !ok {
+			return map[string]any{}
+		}
+
+		out := map[string]any{}
+		if raw, exists := m["authorization_code"]; exists {
+			if s, ok := raw.(string); ok {
+				if t := strings.TrimSpace(s); t != "" {
+					out["authorization_code"] = t
+				}
+			}
+		}
+		return out
+
+	case "/onboarding/ineligibility":
+		// body: { "ineligibility": { "reason": "pregnant_or_postpartum" } }
+		v, ok := body["ineligibility"]
+		if !ok || v == nil {
+			return map[string]any{}
+		}
+		m, ok := v.(map[string]any)
+		if !ok {
+			return map[string]any{}
+		}
+
+		out := map[string]any{}
+		if raw, exists := m["reason"]; exists {
+			if s, ok := raw.(string); ok {
+				if t := strings.TrimSpace(s); t != "" {
+					out["reason"] = t
+				}
+			}
+		}
+		return out
+
+	case "/me/consents":
+		// body: { "consent": { "purpose": "ai_processing", "granted": true } }
+		v, ok := body["consent"]
+		if !ok || v == nil {
+			return map[string]any{}
+		}
+		m, ok := v.(map[string]any)
+		if !ok {
+			return map[string]any{}
+		}
+
+		out := map[string]any{}
+		if raw, exists := m["purpose"]; exists {
+			if s, ok := raw.(string); ok {
+				if t := strings.TrimSpace(s); t != "" {
+					out["purpose"] = t
+				}
+			}
+		}
+		if raw, exists := m["granted"]; exists {
+			if b, ok := raw.(bool); ok {
+				out["granted"] = b
+			}
+		}
+		return out
+
 	default:
 		return map[string]any{}
 	}

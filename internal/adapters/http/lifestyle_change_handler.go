@@ -2,9 +2,12 @@ package http
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/getsentry/sentry-go"
 
 	"viv/internal/core/usecase"
 )
@@ -89,6 +92,12 @@ func (h *LifestyleHandler) Report(w http.ResponseWriter, r *http.Request) {
 	out, err := h.ReportUC.Execute(ctx, in)
 	if err != nil {
 		// aquí podrías checar si es ErrUserNotFound para devolver 404
+		log.Printf("[lifestyle-change.report] error: %v", err)
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
 		http.Error(w, "failed to report lifestyle change", http.StatusInternalServerError)
 		return
 	}
@@ -147,6 +156,12 @@ func (h *LifestyleHandler) List(w http.ResponseWriter, r *http.Request) {
 
 	out, err := h.ListUC.Execute(ctx, in)
 	if err != nil {
+		log.Printf("[lifestyle-change.list] error: %v", err)
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
 		http.Error(w, "failed to list lifestyle changes", http.StatusInternalServerError)
 		return
 	}

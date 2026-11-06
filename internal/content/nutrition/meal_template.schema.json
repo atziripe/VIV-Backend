@@ -74,6 +74,11 @@
     },
 
     "author": { "type": ["string", "null"] },
-    "created_at": { "type": "string", "format": "date" }
+    "created_at": { "type": "string", "format": "date" },
+    "image_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "Hero photo representing this template's style of plate — shown regardless of which specific ingredients the solver picks for a given user, since the photo represents the template's cuisine/style, not an exact resolved combination."
+    }
   }
 }

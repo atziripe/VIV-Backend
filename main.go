@@ -2,12 +2,13 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"log/slog"
-	"net/http"
 	stdhttp "net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -16,16 +17,22 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"google.golang.org/api/option"
 
+	"viv/internal/adapters/apple"
+	"viv/internal/adapters/email"
 	httpadapter "viv/internal/adapters/http"
 	"viv/internal/adapters/llm/openai"
 	"viv/internal/adapters/mealgen"
 	"viv/internal/adapters/repository"
 	"viv/internal/adapters/runner"
 	"viv/internal/config"
+	"viv/internal/core/cascade"
+	corecontent "viv/internal/core/content"
+	"viv/internal/core/mesocycle"
 	corenutrition "viv/internal/core/nutrition"
-	"viv/internal/core/recovery"
 	"viv/internal/core/rules"
 	rulestraining "viv/internal/core/rules/training"
+	"viv/internal/core/strengthlibrary"
+	"viv/internal/core/strengthsession"
 	coretraining "viv/internal/core/training"
 	"viv/internal/core/usecase"
 
@@ -40,13 +47,36 @@ import (
 func main() {
 
 	// ====== Sentry initialization ======
+	// TracesSampleRate defaults to 0.2 (20% of requests get a performance
+	// trace) rather than 0, so the Performance tab in Sentry actually has
+	// data without needing a code change — tune via SENTRY_TRACES_SAMPLE_RATE.
+	// Release comes from SENTRY_RELEASE (e.g. the deploy's git SHA) so
+	// Sentry can tell "did this error start after a specific deploy"
+	// instead of lumping every version together; left empty if unset,
+	// which Sentry tolerates (events just go untagged by release).
+	tracesSampleRate := 0.2
+	if v := os.Getenv("SENTRY_TRACES_SAMPLE_RATE"); v != "" {
+		if parsed, err := strconv.ParseFloat(v, 64); err == nil {
+			tracesSampleRate = parsed
+		} else {
+			log.Printf("[startup] invalid SENTRY_TRACES_SAMPLE_RATE %q, using default %.2f", v, tracesSampleRate)
+		}
+	}
 	err_sentry := sentry.Init(sentry.ClientOptions{
-		Dsn:         os.Getenv("SENTRY_DSN"),
-		Environment: os.Getenv("APP_ENV"),
+		Dsn:              os.Getenv("SENTRY_DSN"),
+		Environment:      os.Getenv("APP_ENV"),
+		Release:          os.Getenv("SENTRY_RELEASE"),
+		AttachStacktrace: true,
+		TracesSampleRate: tracesSampleRate,
 	})
 	if err_sentry != nil {
 		log.Printf("sentry init failed: %v", err_sentry)
 	}
+	// log.Fatal below calls os.Exit, which skips every deferred call —
+	// including this one — so a startup crash needs its own flush (see
+	// the fatal() helper at the bottom of this file) rather than relying
+	// on this defer, which only covers a clean return from main().
+	defer sentry.Flush(2 * time.Second)
 
 	sentryHandler := sentryhttp.New(sentryhttp.Options{
 		Repanic:         true,
@@ -56,7 +86,7 @@ func main() {
 	// ========= Config load =========
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatalf("failed to load config: %v", err)
+		fatal("failed to load config: %v", err)
 	}
 
 	// ========= Context de app + graceful shutdown =========
@@ -68,65 +98,72 @@ func main() {
 	log.Printf("GOOGLE_APPLICATION_CREDENTIALS=%q", cfg.FirebaseCredentialsFile)
 	app, err := initFirebaseApp(ctx, cfg)
 	if err != nil {
-		log.Fatalf("failed to init firebase app: %v", err)
+		fatal("failed to init firebase app: %v", err)
 	}
 
 	// Auth client
 	authClient, err := app.Auth(ctx)
 	if err != nil {
-		log.Fatalf("failed to init firebase auth client: %v", err)
+		fatal("failed to init firebase auth client: %v", err)
 	}
-
-	// Firestore client
-	fsClient, err := app.Firestore(ctx)
-	if err != nil {
-		log.Fatalf("failed to init firestore client: %v", err)
-	}
-	defer fsClient.Close()
 
 	// ========= Repositories =========
-	// Firestore (primary — source of truth during migration)
-	fsUserRepo := repository.NewFirestoreUserRepository(fsClient)
-	fsCheckinRepo := repository.NewFirestoreCheckinRepository(fsClient)
-	fsLifestyleRepo := repository.NewFirestoreLifestyleChangeRepository(fsClient)
-	fsPlanRepo := repository.NewFirestorePlanRepository(fsClient)
-	fsPlanJobsRepo := repository.NewFirestorePlanJobsRepository(fsClient)
-	fsDeviceTokenRepo := repository.NewFirestoreDeviceTokenRepository(fsClient)
+	// Phase 4 of the Firestore→Neon cutover removed Firestore entirely —
+	// Firebase is now used only for Auth (authClient above) and push
+	// notifications (FCMRepository below, which rides on the same *fb.App
+	// but never touches Firestore). See the Audit Map for the full
+	// per-entity cutover history.
 
-	// Neon (secondary — dual-write target)
-	// If DATABASE_URL is missing or Neon is unreachable, the app falls back to
-	// Firestore-only mode and logs a warning. No crash, no downtime.
+	// Neon is mandatory now, not an optional dual-write target. Phase 1 of
+	// the Firestore→Neon cutover (checkins/device tokens/lifestyle
+	// changes/weekly plan drafts/exercise pins/daily check-ins/session
+	// logs/nutrition plans/recovery actions — see the Audit Map) made
+	// those 9 entities Neon-only: there is no Firestore fallback for them
+	// anymore, so a missing/unreachable Neon is fatal at startup instead
+	// of the silent "Firestore-only mode" degradation this used to have.
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		fatal("DATABASE_URL is required — Firestore-only mode was retired in Phase 1 of the Firestore→Neon cutover")
+	}
+	neonPool, err := repository.NewNeonPool(ctx, dbURL)
+	if err != nil {
+		fatal("neon: failed to connect: %v", err)
+	}
+	slog.Info("neon: connected")
+
+	// Phase 1 cutover — Neon-only, no Firestore involved for these at all.
 	var (
-		userRepo        usecase.UserRepository        = fsUserRepo
-		checkinRepo     usecase.CheckinRepository     = fsCheckinRepo
-		planRepo        usecase.PlanRepository        = fsPlanRepo
-		planJobsRepo    usecase.PlanJobsRepository    = fsPlanJobsRepo
-		deviceTokenRepo usecase.DeviceTokenRepository = fsDeviceTokenRepo
+		checkinRepo         usecase.CheckinRepository         = repository.NewNeonCheckinRepository(neonPool)
+		deviceTokenRepo     usecase.DeviceTokenRepository     = repository.NewNeonDeviceTokenRepository(neonPool)
+		lifestyleRepo       usecase.LifestyleChangeRepository = repository.NewNeonLifestyleChangeRepository(neonPool)
+		weeklyPlanDraftRepo usecase.WeeklyPlanDraftRepository = repository.NewNeonWeeklyPlanDraftRepository(neonPool)
+		exercisePinRepo     usecase.ExercisePinRepository     = repository.NewNeonExercisePinRepository(neonPool)
+		dailyCheckinRepo    usecase.DailyCheckinRepository    = repository.NewNeonDailyCheckinRepository(neonPool)
+		sessionLogRepo      usecase.SessionLogRepository      = repository.NewNeonSessionLogRepository(neonPool)
+		nutritionPlanRepo   usecase.NutritionPlanRepository   = repository.NewNeonNutritionPlanRepository(neonPool)
+		recoveryActionRepo  usecase.RecoveryActionRepository  = repository.NewNeonRecoveryActionRepository(neonPool)
 	)
 
-	if dbURL := os.Getenv("DATABASE_URL"); dbURL != "" {
-		neonPool, err := repository.NewNeonPool(ctx, dbURL)
-		if err != nil {
-			slog.Error("neon: failed to connect, running Firestore-only", "err", err)
-		} else {
-			slog.Info("neon: connected — dual-write enabled")
-			userRepo = repository.NewDualUserRepository(fsUserRepo, repository.NewNeonUserRepository(neonPool))
-			checkinRepo = repository.NewDualCheckinRepository(fsCheckinRepo, repository.NewNeonCheckinRepository(neonPool))
-			planRepo = repository.NewDualPlanRepository(fsPlanRepo, repository.NewNeonPlanRepository(neonPool))
-			planJobsRepo = repository.NewDualPlanJobsRepository(fsPlanJobsRepo, repository.NewNeonPlanJobsRepository(neonPool))
-			deviceTokenRepo = repository.NewDualDeviceTokenRepository(fsDeviceTokenRepo, repository.NewNeonDeviceTokenRepository(neonPool))
-		}
-	} else {
-		slog.Warn("DATABASE_URL not set — running Firestore-only (no dual-write)")
-	}
+	// Phase 2 cutover — User, legacy Plan, and PlanJobs are Neon-only now
+	// too (data parity verified via a fresh error-free backfill run).
+	// neonUserRepo is kept as its concrete type alongside the userRepo
+	// interface variable because it also satisfies PendingDeletionLister/
+	// InactivityLister (used by the two crons below) — usecase.UserRepository
+	// itself doesn't expose those methods.
+	neonUserRepo := repository.NewNeonUserRepository(neonPool)
+	userRepo := usecase.UserRepository(neonUserRepo)
+	planRepo := usecase.PlanRepository(repository.NewNeonPlanRepository(neonPool))
+	planJobsRepo := usecase.PlanJobsRepository(repository.NewNeonPlanJobsRepository(neonPool))
 
-	// lifestyleRepo has no Neon implementation yet — stays Firestore-only
-	lifestyleRepo := fsLifestyleRepo
+	// Phase 4 cutover — Neon-only, no Firestore involved at all anymore.
+	consentRepo := usecase.ConsentStore(repository.NewNeonConsentRepository(neonPool))
+	accountAnonymizer := usecase.AccountAnonymizer(repository.NewNeonAccountAnonymizer(neonPool))
+	ineligibilityEventRecorder := usecase.IneligibilityEventRecorder(repository.NewNeonIneligibilityEventRecorder(neonPool))
 
 	fcmRepo := repository.NewFCMRepository(app)
 
 	if cfg.OpenAIAPIKey == "" {
-		log.Fatal("OPENAI_API_KEY is not set")
+		fatal("OPENAI_API_KEY is not set")
 	}
 
 	oaClient := openai.NewOpenAIClient(cfg.OpenAIAPIKey, "gpt-4.1-mini")
@@ -134,7 +171,7 @@ func main() {
 	// ========= Training Pipeline =========
 	trainingLib, err := coretraining.LoadLibrary("internal/content/training")
 	if err != nil {
-		log.Fatalf("failed to load training library: %v", err)
+		fatal("failed to load training library: %v", err)
 	}
 	log.Printf("training library loaded: %d sessions", trainingLib.SessionCount())
 
@@ -155,13 +192,13 @@ func main() {
 	// free-form LLM generation does.
 	nutritionIngredients, err := corenutrition.LoadIngredientLibrary("internal/content/nutrition")
 	if err != nil {
-		log.Fatalf("failed to load nutrition ingredient library: %v", err)
+		fatal("failed to load nutrition ingredient library: %v", err)
 	}
 	log.Printf("nutrition ingredient library loaded: %d ingredients", nutritionIngredients.Count())
 
 	nutritionTemplates, err := corenutrition.LoadMealTemplateLibrary("internal/content/nutrition")
 	if err != nil {
-		log.Fatalf("failed to load nutrition template library: %v", err)
+		fatal("failed to load nutrition template library: %v", err)
 	}
 	log.Printf("nutrition template library loaded: %d templates", nutritionTemplates.Count())
 
@@ -174,25 +211,10 @@ func main() {
 	// bounded ingredient/template space means hit rate climbs fast anyway.
 	copyGen := openai.NewCopyGenerator(oaClient)
 	copyCache := mealgen.NewInMemoryCopyCache()
-	copyEnricher := mealgen.NewAsyncCopyEnricher(copyGen, copyCache, planRepo)
-
-	// ========= Recovery Pipeline =========
-	bannerLib, err := recovery.LoadBannerLibrary("internal/content/recovery")
-	if err != nil {
-		log.Printf("warning: banner library not loaded: %v", err)
-	} else {
-		log.Printf("recovery banner library loaded: %d entries", bannerLib.EntryCount())
-	}
-
-	movesContentLib, err := recovery.LoadMovesContentLibrary("internal/content/recovery")
-	if err != nil {
-		log.Printf("warning: moves content library not loaded: %v", err)
-	} else {
-		log.Printf("recovery moves library loaded: %d entries", movesContentLib.EntryCount())
-	}
+	copyEnricher := mealgen.NewAsyncCopyEnricher(copyGen, copyCache, planRepo, consentRepo)
+	nutritionPlanCopyEnricher := mealgen.NewAsyncNutritionPlanCopyEnricher(copyGen, copyCache, nutritionPlanRepo, consentRepo)
 
 	// ========= Usecases =========
-	onboardingUC := usecase.NewCompleteOnboardingUseCase(userRepo)
 	createCheckinUC := usecase.NewCreateCheckinUseCase(checkinRepo, userRepo, "v1")
 	latestCheckinUC := usecase.NewGetLatestCheckinUseCase(checkinRepo)
 	statusCheckinUC := usecase.NewGetCheckinStatusUseCase(checkinRepo, userRepo)
@@ -217,6 +239,139 @@ func main() {
 	statusTrainingUC := usecase.NewGetPlanGenerationStatusUseCase(planJobsRepo)
 	saveArrangementUC := usecase.NewSaveTrainingArrangementUseCase(planRepo, userRepo, checkinRepo, trainingLib)
 
+	// ========= New Weekly Plan Pipeline (VIV-106..113) =========
+	// Deliberately isolated from the old Training Pipeline above — its own
+	// content directory, its own taxonomy, its own async job flow, reusing
+	// only what's genuinely shared (oaClient, cyclePhaseLookup,
+	// planJobsRepo/PlanJob's queued/running/done/failed shape).
+	weeklySessionLib, err := corecontent.LoadSessionLibrary("internal/content/training_v2/sessions")
+	if err != nil {
+		fatal("failed to load weekly-plan session library: %v", err)
+	}
+	weeklyExerciseLib, err := corecontent.LoadExerciseLibrary("internal/content/training_v2/exercises")
+	if err != nil {
+		fatal("failed to load weekly-plan exercise library: %v", err)
+	}
+	weeklyMesocycleWarmupCooldownLib, err := corecontent.LoadMesocycleWarmupCooldownLibrary("internal/content/training_v2/mesocycle_warmup_cooldown")
+	if err != nil {
+		fatal("failed to load mesocycle warmup/cooldown library: %v", err)
+	}
+	log.Printf("weekly-plan content loaded: session library + exercise library + mesocycle warmup/cooldown library")
+
+	// VIV-101/117's reviewed Strength movement catalog, plus VIV-108's
+	// block/slot config — both loaded and validated here so a broken
+	// catalog or config fails the boot the same way every other content
+	// library's does.
+	strengthLib, err := strengthlibrary.Load()
+	if err != nil {
+		fatal("failed to load strength movement library: %v", err)
+	}
+	strengthBlockConfig, err := strengthlibrary.LoadBlockConfig()
+	if err != nil {
+		fatal("failed to load strength block config: %v", err)
+	}
+	log.Printf("strength movement library loaded (include_pending_exercises=%v)", cfg.IncludePendingExercises)
+
+	// VIV-108 real selector: deterministic, config-driven slot-pool
+	// rotation over the approved catalog above — replaces the old
+	// StubExerciseSetSelector/StubExerciseLibrary placeholder entirely.
+	exercisePinService := usecase.NewExercisePinService(exercisePinRepo, mesocycle.DefaultBlockExerciseSelector{}, strengthLib, strengthBlockConfig)
+
+	// strengthSessionsRollout is the single source of truth for "does
+	// THIS user get the real VIV-112 Strength assembly" — both the
+	// cascade wiring right below and weeklyContentSelector further down
+	// read the exact same value, for the exact same userID
+	// (cascade.UserCatalog.UserID, stamped by GenerateWeeklyPlanUsecase/
+	// AdaptDailySlotUsecase from their own validated input.UserID), so
+	// the two can never disagree about who's on the new path.
+	strengthSessionsRollout := usecase.NewStrengthSessionsRollout(cfg.UseRealStrengthSessions, cfg.StrengthSessionsAllowlist)
+
+	// VIV-105's ReduceDuration/SimplifyComplexity levers have never
+	// actually fired for ANY activity type before this — DefaultContentLibrary
+	// was never assigned anywhere, so it stayed the package's own
+	// always-false stub. This wires it for real, but ONLY for Strength
+	// (strengthsession.ContentLibraryAdapter.HasVariant returns false
+	// for every other activity type unconditionally) and only for a
+	// user strengthSessionsRollout.Enabled(userID) actually covers —
+	// for anyone else, Strength must behave exactly like the old stub
+	// too, since the OLD content selection path below has no idea how
+	// to handle a DurationTier=Short Strength slot. This used to be
+	// keyed to the master switch alone (a real gap during a partial
+	// allowlist rollout); cascade.UserCatalog.UserID now carries the
+	// real per-user identity through ResolveSlotConflict into
+	// HasVariant, so this and weeklyContentSelector's own dispatch
+	// below are evaluated against the identical rollout decision.
+	cascade.DefaultContentLibrary = strengthsession.ContentLibraryAdapter{
+		Config:  strengthBlockConfig,
+		Rollout: strengthSessionsRollout,
+	}
+
+	weeklyScheduler := openai.NewWeeklyScheduler(oaClient)                 // VIV-109, real LLM-backed Layer 1
+	ruleEngineValidator := usecase.NewRuleEngineValidator(weeklyScheduler) // VIV-110, retries Layer 1 once on a spacing violation
+	jointImpactWarnings := usecase.NewJointImpactWarningsLayer()           // VIV-111
+	weeklyContentSelector := usecase.NewSessionContentSelector(            // VIV-112
+		weeklySessionLib, weeklyExerciseLib, weeklyMesocycleWarmupCooldownLib, exercisePinService,
+		strengthLib, strengthBlockConfig, strengthSessionsRollout,
+	)
+	log.Printf("strength session assembly rollout: %s", strengthSessionsRollout.Mode())
+
+	generateWeeklyPlanUC := usecase.NewGenerateWeeklyPlanUsecase(
+		cyclePhaseLookup,
+		weeklyScheduler,
+		ruleEngineValidator,
+		jointImpactWarnings,
+		weeklyContentSelector,
+		weeklyPlanDraftRepo,
+	)
+
+	weeklyPlanRunner := runner.NewLocalWeeklyPlanRunner(planJobsRepo, generateWeeklyPlanUC, 3*time.Minute)
+	startWeeklyPlanUC := usecase.NewStartWeeklyPlanGenerationUseCase(planJobsRepo, weeklyPlanRunner)
+	statusWeeklyPlanUC := usecase.NewGetPlanGenerationStatusUseCase(planJobsRepo)
+	currentWeeklyPlanUC := usecase.NewGetCurrentWeeklyPlanUseCase(weeklyPlanDraftRepo)
+	weeklyPlanDayUC := usecase.NewGetWeeklyPlanDayUseCase(weeklyPlanDraftRepo, sessionLogRepo)
+
+	// Weekly note (VIV-113) — real LLM call, small plain-value input only
+	// (see weekly_note.go's doc comments), wired here so it's finally
+	// reachable via GET /training/weekly-plan/note.
+	weeklyNoteGen := openai.NewWeeklyNoteGenerator(oaClient)
+	weeklyNoteUC := usecase.NewWeeklyNoteUsecase(weeklyNoteGen)
+	getWeeklyNoteUC := usecase.NewGetWeeklyNoteUseCase(weeklyPlanDraftRepo, weeklyNoteUC, consentRepo)
+
+	// Manual day-slot edit (design doc §9) — wired here since it needs
+	// weeklyContentSelector (VIV-112) to re-hydrate the edited day's
+	// content, same collaborator generateWeeklyPlanUC above already uses.
+	editDaySlotUC := usecase.NewUserEditSlotUsecase(weeklyPlanDraftRepo, weeklyContentSelector)
+
+	// Real-time set-by-set session logging (Loggable/mesocycle-pinned
+	// days only, i.e. Strength today) — the write side of the session-
+	// detail screen above.
+	startSessionUC := usecase.NewStartSessionUseCase(weeklyPlanDraftRepo, sessionLogRepo)
+	logSetUC := usecase.NewLogSetUseCase(weeklyPlanDraftRepo, sessionLogRepo)
+	completeSessionUC := usecase.NewCompleteSessionUseCase(weeklyPlanDraftRepo, sessionLogRepo)
+
+	// Onboarding completion queues the user's first weekly-plan generation
+	// right after persisting — async, via the same planJobsRepo/
+	// weeklyPlanRunner pair POST /training/weekly-plan/generate uses, so
+	// POST /onboarding returns without waiting on the LLM scheduling call.
+	// Built here, after weeklyPlanRunner exists, since it needs it as a
+	// collaborator.
+	onboardingUC := usecase.NewCompleteOnboardingUseCase(userRepo, planJobsRepo, weeklyPlanRunner, consentRepo)
+
+	// Daily check-in (VIV-103/106/107): scores the day's answers, then
+	// either generates a fresh week (no plan covers today yet) or adapts
+	// today's slot in an already-generated one.
+	adaptDailySlotUC := usecase.NewAdaptDailySlotUsecase(cyclePhaseLookup, weeklyPlanDraftRepo)
+	resyncNutritionPlanUC := usecase.NewResyncNutritionPlanUseCase(nutritionPlanRepo, userRepo)
+	submitDailyCheckinUC := usecase.NewSubmitDailyCheckinUseCase(dailyCheckinRepo, weeklyPlanDraftRepo, userRepo, generateWeeklyPlanUC, adaptDailySlotUC, resyncNutritionPlanUC)
+
+	// Always-available period logging — reuses the same cycle recalibration
+	// as onboarding/check-in's cycle_start, but without the weekly check-in
+	// gate (Mom Test P0: logging must work the day it happens, not only
+	// Sunday). Drafts/generateWeeklyPlanUC/resyncNutritionPlanUC let a
+	// report that lands off-prediction rebuild the current week around the
+	// real anchor, same generator submitDailyCheckinUC's rollover uses.
+	logPeriodStartUC := usecase.NewLogPeriodStartUseCase(userRepo, weeklyPlanDraftRepo, generateWeeklyPlanUC, resyncNutritionPlanUC)
+
 	// PATCH /me needs generateNutritionUC (sync macro/meal recompute on
 	// weight/height changes), startTrainingUC (async full regen on cycle
 	// changes), and copyEnricher (so a weight/height-triggered nutrition
@@ -224,9 +379,28 @@ func main() {
 	// built after all three exist.
 	updateProfileUC := usecase.NewUpdateProfileUseCase(userRepo, planRepo, checkinRepo, cyclePhaseLookup, generateNutritionUC, startTrainingUC, copyEnricher)
 
-	nutritionUC := usecase.NewGetNutritionPlanUseCase(userRepo, planRepo, checkinRepo, cyclePhaseLookup)
+	nutritionUC := usecase.NewGetNutritionPlanUseCase(userRepo, planRepo, checkinRepo, cyclePhaseLookup, nutritionPlanRepo)
 	mealSelectionUC := usecase.NewSaveMealSelectionUseCase(planRepo)
-	recoveryUC := usecase.NewGetRecoveryUseCase(userRepo, planRepo, cyclePhaseLookup, bannerLib, movesContentLib)
+	saveNutritionMealSelectionUC := usecase.NewSaveNutritionMealSelectionUseCase(nutritionPlanRepo)
+
+	// New pipeline: nutrition is generated on demand once the user opts
+	// into the nutrition module (see submit_nutrition_onboarding.go), not
+	// bundled with training onboarding.
+	submitNutritionOnboardingUC := usecase.NewSubmitNutritionOnboardingUseCase(userRepo, weeklyPlanDraftRepo, cyclePhaseLookup, generateNutritionUC, nutritionPlanRepo, nutritionPlanCopyEnricher)
+
+	// Session-driven recovery card (VIV Recovery Engine Decision Table
+	// spec). Replaces the old cycle-phase banner entirely — the old
+	// GetRecoveryUseCase/domain.Plan-based /recovery/today was removed
+	// because it silently faked an "onboarding" banner forever for any
+	// new-pipeline user (who never has a domain.Plan). Reuses
+	// weeklyContentSelector (VIV-112) to re-hydrate content for whichever
+	// day a high-cost reschedule moves.
+	getRecoveryCardUC := usecase.NewGetRecoveryCardUseCase(weeklyPlanDraftRepo, dailyCheckinRepo, userRepo, recoveryActionRepo, weeklyContentSelector)
+	saveRecoveryActionUC := usecase.NewSaveRecoveryActionUseCase(recoveryActionRepo)
+
+	// Home screen redesign — single aggregated read, reuses getRecoveryCardUC
+	// as-is rather than re-threading weeklyContentSelector into a second place.
+	getHomeTimelineUC := usecase.NewGetHomeTimelineUseCase(userRepo, weeklyPlanDraftRepo, dailyCheckinRepo, sessionLogRepo, nutritionPlanRepo, getRecoveryCardUC)
 
 	phaseFeedbackUC := usecase.NewSavePhaseFeedbackUseCase(planRepo)
 
@@ -234,16 +408,90 @@ func main() {
 	sundayCheckinUC := usecase.NewSendSundayCheckinUseCase(deviceTokenRepo, fcmRepo)
 	trainingReminderUC := usecase.NewSendTrainingReminderUseCase(deviceTokenRepo, fcmRepo, planRepo)
 
+	// App Store account-deletion requirement (guideline 5.1.1v) — see
+	// usecase.DeleteAccountUseCase's doc comment for the deletion ordering.
+	authAccountDeleter := repository.NewFirebaseAuthAccountDeleter(authClient)
+
+	// Sign in with Apple: token exchange (POST /me/apple-credentials) and
+	// revocation (part of account deletion) — both the same App Store
+	// requirement, both served by one apple.Client. All four APPLE_* env
+	// vars must be set together; a partial set is treated the same as
+	// none (both disabled, logged once here) rather than failing in a
+	// half-configured way. Left as nil interfaces (not a nil *apple.Client
+	// wrapped in one) when unconfigured, so the nil-checks below and in
+	// DeleteAccountUseCase/ExchangeAppleAuthorizationCodeUseCase work.
+	var (
+		appleRevoker   usecase.AppleTokenRevoker
+		appleExchanger usecase.AppleCodeExchanger
+	)
+	switch {
+	case cfg.AppleTeamID == "" && cfg.AppleKeyID == "" && cfg.AppleClientID == "" && cfg.ApplePrivateKey == "":
+		log.Println("[startup] APPLE_* credentials not set — Sign in with Apple token exchange/revocation is disabled")
+	case cfg.AppleTeamID == "" || cfg.AppleKeyID == "" || cfg.AppleClientID == "" || cfg.ApplePrivateKey == "":
+		log.Println("[startup] APPLE_* credentials only partially set — Sign in with Apple token exchange/revocation is disabled")
+	default:
+		appleClient, err := apple.NewClient(cfg.AppleTeamID, cfg.AppleKeyID, cfg.AppleClientID, cfg.ApplePrivateKey)
+		if err != nil {
+			log.Printf("[startup] failed to configure Apple client, disabling it: %v", err)
+		} else {
+			appleRevoker = appleClient
+			appleExchanger = appleClient
+		}
+	}
+
+	deleteAccountUC := usecase.NewDeleteAccountUseCase(accountAnonymizer, authAccountDeleter, userRepo, appleRevoker)
+	exchangeAppleCodeUC := usecase.NewExchangeAppleAuthorizationCodeUseCase(userRepo, appleExchanger)
+
+	// DELETE /me's 30-day grace period — see ScheduleAccountDeletionUseCase/
+	// RunPendingAccountDeletionsUseCase's doc comments. ListPendingDeletions
+	// is Neon-only now (Phase 2/3 of the Firestore→Neon cutover), hence
+	// neonUserRepo rather than the userRepo interface variable.
+	scheduleDeletionUC := usecase.NewScheduleAccountDeletionUseCase(userRepo)
+	cancelDeletionUC := usecase.NewCancelAccountDeletionUseCase(userRepo)
+	runPendingDeletionsUC := usecase.NewRunPendingAccountDeletionsUseCase(neonUserRepo, deleteAccountUC)
+	recordActivityUC := usecase.NewRecordUserActivityUseCase(userRepo)
+
+	// 2-year-inactivity sweep — "are you still there?" email via Brevo,
+	// then the same 30-day grace period as a user-requested deletion (see
+	// RunInactivitySweepUseCase). BrevoAPIKey empty just means every send
+	// fails, is logged, and gets retried next week — it never silently
+	// skips the notice/deletion flow.
+	if cfg.BrevoAPIKey == "" {
+		log.Println("[startup] BREVO_API_KEY not set — inactivity re-engagement emails will fail until it's configured")
+	}
+	reEngagementSender := email.NewBrevoReEngagementEmailSender(cfg.BrevoAPIKey, cfg.BrevoInactivityTemplateID)
+	userContactLookup := repository.NewFirebaseUserContactLookup(authClient)
+	runInactivitySweepUC := usecase.NewRunInactivitySweepUseCase(neonUserRepo, userContactLookup, reEngagementSender, userRepo)
+
+	exportUserDataUC := usecase.NewExportUserDataUseCase(userRepo, consentRepo, lifestyleRepo, dailyCheckinRepo, sessionLogRepo, recoveryActionRepo, nutritionPlanRepo, weeklyPlanDraftRepo, planRepo)
+
+	// Pre-onboarding eligibility gate ("Which describes you right now?") —
+	// deletes the account outright, not through the 30-day grace period
+	// (see ReportIneligibilityUseCase's doc comment).
+	reportIneligibilityUC := usecase.NewReportIneligibilityUseCase(ineligibilityEventRecorder, deleteAccountUC)
+
+	getConsentsUC := usecase.NewGetConsentsUseCase(consentRepo)
+	setConsentUC := usecase.NewSetConsentUseCase(consentRepo, deleteAccountUC)
+
 	// ========= Handlers =========
 	onboardingHandler := httpadapter.NewOnboardingHandler(onboardingUC)
 	checkinHandler := httpadapter.NewCheckinHandler(createCheckinUC, latestCheckinUC, statusCheckinUC)
 	lifestyleHandler := httpadapter.NewLifestyleHandler(reportLifestyleUC, listLifestyleUC)
-	meHandler := httpadapter.NewMeHandler(getMeUC, updateProfileUC)
+	meHandler := httpadapter.NewMeHandler(getMeUC, updateProfileUC, scheduleDeletionUC, cancelDeletionUC)
+	homeHandler := httpadapter.NewHomeHandler(getHomeTimelineUC)
+	consentHandler := httpadapter.NewConsentHandler(getConsentsUC, setConsentUC)
+	exportHandler := httpadapter.NewExportHandler(exportUserDataUC)
+	ineligibilityHandler := httpadapter.NewIneligibilityHandler(reportIneligibilityUC)
+	appleHandler := httpadapter.NewAppleHandler(exchangeAppleCodeUC)
 	plansHandler := httpadapter.NewPlansHandler(getCurrentPlanUC, getByIDUC, getByWeekStartUC, statusUC, phaseFeedbackUC)
 	trainingHandler := httpadapter.NewTrainingHandler(startTrainingUC, statusTrainingUC, trainingEngine, resumeTrainingUC, completeDayUC, saveArrangementUC)
-	nutritionHandler := httpadapter.NewNutritionHandler(nutritionUC, mealSelectionUC)
-	recoveryHandler := httpadapter.NewRecoveryHandler(recoveryUC)
+	weeklyPlanHandler := httpadapter.NewWeeklyPlanHandler(startWeeklyPlanUC, statusWeeklyPlanUC, currentWeeklyPlanUC, weeklyPlanDayUC, getWeeklyNoteUC, editDaySlotUC)
+	sessionLogHandler := httpadapter.NewSessionLogHandler(startSessionUC, logSetUC, completeSessionUC)
+	dailyCheckinHandler := httpadapter.NewDailyCheckinHandler(submitDailyCheckinUC)
+	nutritionHandler := httpadapter.NewNutritionHandler(nutritionUC, mealSelectionUC, submitNutritionOnboardingUC, saveNutritionMealSelectionUC)
+	recoveryCardHandler := httpadapter.NewRecoveryCardHandler(getRecoveryCardUC, saveRecoveryActionUC)
 	deviceTokenHandler := httpadapter.NewDeviceTokenHandler(registerDeviceTokenUC)
+	periodHandler := httpadapter.NewPeriodHandler(logPeriodStartUC)
 
 	// ========= Router config =========
 	r := chi.NewRouter()
@@ -259,9 +507,28 @@ func main() {
 		_, _ = w.Write([]byte(`{"status":"ok"}`))
 	})
 
+	// Rate limiting — a backstop against a runaway client or script
+	// hammering an endpoint; nothing stopped that before this. Two
+	// tiers: a generous per-user limit across every authenticated route
+	// (applied on `protected` below), and a much stricter one on the
+	// handful of routes that kick off an LLM-backed generation job
+	// (expensive, and meant to be called once per day/week, not polled —
+	// status checks go through a separate, cheap endpoint). In-process
+	// only (see PerUserRateLimiter's doc comment) — fine for a single
+	// backend instance.
+	generalRateLimiter := httpadapter.NewPerUserRateLimiter(10, 20)
+	generalRateLimiter.StartEvictionLoop(ctx, 10*time.Minute, 30*time.Minute)
+	generationRateLimiter := httpadapter.NewPerUserRateLimiter(1.0/15.0, 2)
+	generationRateLimiter.StartEvictionLoop(ctx, 10*time.Minute, 30*time.Minute)
+
 	api := chi.NewRouter()
 
-	api.Post("/onboarding", onboardingHandler.ServeHTTP)
+	api.With(generationRateLimiter.Middleware).Post("/onboarding", onboardingHandler.ServeHTTP)
+	api.Post("/onboarding/ineligibility", ineligibilityHandler.Report)
+
+	// VIV-103/106/107 daily check-in — distinct from the older /checkins
+	// (plural) weekly check-in below.
+	api.Post("/checkin", dailyCheckinHandler.Submit)
 
 	api.Post("/checkins", checkinHandler.Create)
 	api.Get("/checkins/latest", checkinHandler.Latest)
@@ -272,35 +539,50 @@ func main() {
 
 	api.Get("/me", meHandler.GetMe)
 	api.Patch("/me", meHandler.UpdateProfile)
+	api.Delete("/me", meHandler.DeleteAccount)
+	api.Post("/me/cancel-deletion", meHandler.CancelDeletion)
+	api.Post("/me/apple-credentials", appleHandler.SetCredentials)
 
-	//api.Post("/plans/generate", plansHandler.Generate)
+	api.Get("/me/consents", consentHandler.GetConsents)
+	api.Post("/me/consents", consentHandler.SetConsent)
+
+	api.Get("/me/export", exportHandler.Export)
+
+	api.Get("/home/today", homeHandler.GetToday)
+
 	api.Get("/plans/current", plansHandler.GetCurrent)
 	api.Get("/plans/{id}", plansHandler.GetByID)
-	//api.Post("/plans/adjust", plansHandler.Adjust)
 	api.Get("/plans/week/{week_start}", plansHandler.GetByWeekStart)
 	api.Get("/plans/generate/status", plansHandler.GenerateStatus)
 
 	api.Post("/training/resume", trainingHandler.Resume)
-	api.Post("/training/generate", trainingHandler.Generate)
+	api.With(generationRateLimiter.Middleware).Post("/training/generate", trainingHandler.Generate)
 	api.Get("/training/generate/status", trainingHandler.GenerateStatus)
 	api.Post("/training/validate-arrangement", trainingHandler.ValidateArrangement)
 	api.Post("/training/complete-day", trainingHandler.CompleteDay)
 	api.Post("/training/save-arrangement", trainingHandler.SaveArrangement)
 
+	// New weekly-plan pipeline (VIV-106..113) — async job, same shape as
+	// /training/generate above.
+	api.With(generationRateLimiter.Middleware).Post("/training/weekly-plan/generate", weeklyPlanHandler.Generate)
+	api.Get("/training/weekly-plan/generate/status", weeklyPlanHandler.GenerateStatus)
+	api.Get("/training/weekly-plan/current", weeklyPlanHandler.CurrentWeek)
+	api.Get("/training/weekly-plan/day", weeklyPlanHandler.Day)
+	api.Patch("/training/weekly-plan/day", weeklyPlanHandler.EditDaySlot)
+	api.Get("/training/weekly-plan/note", weeklyPlanHandler.Note)
+	api.Post("/training/weekly-plan/day/start", sessionLogHandler.Start)
+	api.Post("/training/weekly-plan/day/log-set", sessionLogHandler.LogSet)
+	api.Post("/training/weekly-plan/day/complete", sessionLogHandler.Complete)
+
 	api.Get("/nutrition/plan", nutritionHandler.GetPlan)
 	api.Post("/nutrition/meal-selection", nutritionHandler.SaveMealSelection)
-	api.Get("/recovery/today", recoveryHandler.GetToday)
+	api.Post("/nutrition/onboarding", nutritionHandler.SubmitOnboarding)
+	api.Get("/recovery/card", recoveryCardHandler.GetCard)
+	api.Post("/recovery/card/action", recoveryCardHandler.SaveAction)
 	api.Post("/plans/phase-feedback", plansHandler.SavePhaseFeedback)
 
 	api.Post("/users/me/device-token", deviceTokenHandler.Upsert)
-	// POST /debug/sunday-checkin  — QUITAR EN PRODUCCIÓN
-	r.Post("/debug/sunday-checkin", func(w http.ResponseWriter, r *http.Request) {
-		if err := sundayCheckinUC.Execute(r.Context()); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		w.WriteHeader(http.StatusOK)
-	})
+	api.Post("/cycle/period-start", periodHandler.LogStart)
 
 	chi.Walk(api, func(method string, route string, handler stdhttp.Handler, middlewares ...func(stdhttp.Handler) stdhttp.Handler) error {
 		log.Printf("[api.route] %s %s", method, route)
@@ -308,8 +590,10 @@ func main() {
 	})
 
 	protected := chi.NewRouter()
+	protected.Use(httpadapter.AppCheckMiddleware(cfg.FirebaseProjectNumber, cfg.AppCheckEnforce))
 	protected.Use(httpadapter.FirebaseAuthMiddleware(authClient))
-	protected.Use(httpadapter.EnsureUserMiddleware(userRepo))
+	protected.Use(httpadapter.EnsureUserMiddleware(userRepo, recordActivityUC))
+	protected.Use(generalRateLimiter.Middleware)
 
 	rpcHandler := httpadapter.NewRPCHandler(api)
 	protected.Post("/rpc", rpcHandler.Handle)
@@ -319,11 +603,17 @@ func main() {
 	r.Mount("/", protected)
 
 	// ==================== Schedulers ==============================
-	c := cron.New(cron.WithLocation(time.UTC))
+	// cron.Recover (via WithChain) catches a panic inside any job below
+	// and reports it through sentryCronLogger instead of crashing the
+	// whole process — robfig/cron doesn't recover panics on its own, and
+	// a panic in a goroutine with nothing above it to catch one takes
+	// the entire server down, HTTP included.
+	c := cron.New(cron.WithLocation(time.UTC), cron.WithChain(cron.Recover(sentryCronLogger{})))
 	c.AddFunc("0 15 * * 0", func() {
 		log.Println("[scheduler] running sunday checkin")
 		if err := sundayCheckinUC.Execute(context.Background()); err != nil {
 			log.Printf("[scheduler] error: %v", err)
+			captureSchedulerError("sunday_checkin", err)
 		}
 	})
 
@@ -334,6 +624,7 @@ func main() {
 		tokensByTimezone, err := trainingReminderUC.DeviceToken.GetAllActiveByTimezone(ctx)
 		if err != nil {
 			log.Printf("[scheduler] error getting tokens: %v", err)
+			captureSchedulerError("training_reminder", err)
 			return
 		}
 
@@ -343,6 +634,7 @@ func main() {
 			loc, err := time.LoadLocation(timezone)
 			if err != nil {
 				log.Printf("[scheduler] invalid timezone %s: %v", timezone, err)
+				captureSchedulerError("training_reminder", err)
 				continue
 			}
 			localHour := time.Now().In(loc).Hour()
@@ -350,6 +642,29 @@ func main() {
 			if localHour == 9 {
 				trainingReminderUC.ExecuteForTimezone(ctx, timezone, tokens)
 			}
+		}
+	})
+
+	// Account-deletion sweep: finishes off every DELETE /me whose 30-day
+	// grace period (ScheduleAccountDeletionUseCase) has elapsed. Once a
+	// day is plenty — this isn't time-sensitive down to the hour.
+	c.AddFunc("0 4 * * *", func() {
+		log.Println("[scheduler] running account-deletion sweep")
+		if err := runPendingDeletionsUC.Execute(context.Background()); err != nil {
+			log.Printf("[scheduler] account-deletion sweep error: %v", err)
+			captureSchedulerError("account_deletion_sweep", err)
+		}
+	})
+
+	// Inactivity sweep: finds users with 2 years of no activity, emails
+	// them via Brevo, and starts their 30-day notice window. Weekly, not
+	// daily — this is a years-long threshold, there's no need to check it
+	// every day.
+	c.AddFunc("0 5 * * 1", func() {
+		log.Println("[scheduler] running inactivity sweep")
+		if err := runInactivitySweepUC.Execute(context.Background()); err != nil {
+			log.Printf("[scheduler] inactivity sweep error: %v", err)
+			captureSchedulerError("inactivity_sweep", err)
 		}
 	})
 
@@ -373,7 +688,7 @@ func main() {
 	go func() {
 		log.Printf("VIV backend listening on :%s", port)
 		if err := srv.ListenAndServe(); err != nil && err != stdhttp.ErrServerClosed {
-			log.Fatalf("http server error: %v", err)
+			fatal("http server error: %v", err)
 		}
 	}()
 
@@ -388,6 +703,44 @@ func main() {
 	} else {
 		log.Println("server stopped cleanly")
 	}
+}
+
+// captureSchedulerError reports a cron job's own returned error to
+// Sentry, tagged by job name — distinct from sentryCronLogger below,
+// which only ever sees a panic, not a normal error return.
+func captureSchedulerError(job string, err error) {
+	sentry.WithScope(func(scope *sentry.Scope) {
+		scope.SetTag("scheduler_job", job)
+		sentry.CaptureException(err)
+	})
+}
+
+// sentryCronLogger adapts cron.Recover's panic reporting to Sentry —
+// without this, cron.DefaultLogger would just print the panic to
+// stdout, exactly the kind of "silently stopped running" failure
+// monitoring is supposed to catch.
+type sentryCronLogger struct{}
+
+func (sentryCronLogger) Info(msg string, keysAndValues ...any) {
+	log.Printf("[scheduler] %s %v", msg, keysAndValues)
+}
+
+func (sentryCronLogger) Error(err error, msg string, keysAndValues ...any) {
+	log.Printf("[scheduler] ERROR %s: %v %v", msg, err, keysAndValues)
+	sentry.CaptureException(err)
+}
+
+// fatal reports msg to Sentry and flushes before exiting — log.Fatal's
+// os.Exit skips every deferred call, so without this a startup crash
+// (bad config, Neon/Firebase unreachable, a missing content library)
+// would only ever show up in stdout logs, never in Sentry, making a
+// crash-looping deploy invisible to the one tool meant to page on it.
+func fatal(format string, args ...any) {
+	msg := fmt.Sprintf(format, args...)
+	log.Print(msg)
+	sentry.CaptureMessage(msg)
+	sentry.Flush(2 * time.Second)
+	os.Exit(1)
 }
 
 func initFirebaseApp(ctx context.Context, cfg *config.Config) (*fb.App, error) {

@@ -19,14 +19,16 @@ type AsyncCopyEnricher struct {
 	generator CopyGenerator
 	cache     CopyCache
 	planRepo  usecase.PlanRepository
+	consents  usecase.ConsentChecker
 	timeout   time.Duration
 }
 
-func NewAsyncCopyEnricher(generator CopyGenerator, cache CopyCache, planRepo usecase.PlanRepository) *AsyncCopyEnricher {
+func NewAsyncCopyEnricher(generator CopyGenerator, cache CopyCache, planRepo usecase.PlanRepository, consents usecase.ConsentChecker) *AsyncCopyEnricher {
 	return &AsyncCopyEnricher{
 		generator: generator,
 		cache:     cache,
 		planRepo:  planRepo,
+		consents:  consents,
 		timeout:   60 * time.Second,
 	}
 }
@@ -38,9 +40,21 @@ func (e *AsyncCopyEnricher) EnrichAsync(userID, planID string, plan domain.Nutri
 		ctx, cancel := context.WithTimeout(context.Background(), e.timeout)
 		defer cancel()
 
+		// Without ai_processing consent, the plan just keeps its raw
+		// template-derived names/descriptions — a normal, already-handled
+		// state (see CopyEnriched), not an error.
+		if granted, err := e.consents.IsGranted(ctx, userID, domain.ConsentAIProcessing); err != nil {
+			log.Printf("[mealgen.copy] consent check failed user=%s plan=%s err=%v", userID, planID, err)
+			reportFailure("mealgen_copy_consent_check", userID, err)
+			return
+		} else if !granted {
+			return
+		}
+
 		enriched, changed, err := EnrichPlanCopy(ctx, plan, e.generator, e.cache)
 		if err != nil {
 			log.Printf("[mealgen.copy] enrichment failed user=%s plan=%s err=%v", userID, planID, err)
+			reportFailure("mealgen_copy_enrichment", userID, err)
 		}
 		if !changed {
 			return
@@ -49,10 +63,12 @@ func (e *AsyncCopyEnricher) EnrichAsync(userID, planID string, plan domain.Nutri
 		data, err := json.Marshal(enriched)
 		if err != nil {
 			log.Printf("[mealgen.copy] marshal failed user=%s plan=%s err=%v", userID, planID, err)
+			reportFailure("mealgen_copy_marshal", userID, err)
 			return
 		}
 		if err := e.planRepo.UpdateNutritionJSON(ctx, userID, planID, data); err != nil {
 			log.Printf("[mealgen.copy] update failed user=%s plan=%s err=%v", userID, planID, err)
+			reportFailure("mealgen_copy_update", userID, err)
 			return
 		}
 		log.Printf("[mealgen.copy] enriched copy saved user=%s plan=%s", userID, planID)

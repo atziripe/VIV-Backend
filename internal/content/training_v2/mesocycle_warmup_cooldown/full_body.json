@@ -1,0 +1,13 @@
+{
+  "muscle_group": "full_body",
+  "warmup": {
+    "duration_minutes": 6,
+    "description": "Raise heart rate and mobilize the whole body before mixed-modality work.",
+    "movements": ["Jumping jacks", "Bodyweight squats", "Arm circles", "Walking lunges with a twist"]
+  },
+  "cooldown": {
+    "duration_minutes": 5,
+    "description": "Bring heart rate down and release the major muscle groups.",
+    "movements": ["Easy walk in place", "Standing quad stretch", "Doorway chest stretch"]
+  }
+}

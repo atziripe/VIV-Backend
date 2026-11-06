@@ -1,5 +1,7 @@
 package domain
 
+import "time"
+
 // ============================================================================
 // NUTRITION MACRO TARGETS
 // ============================================================================
@@ -51,6 +53,10 @@ type MealOption struct {
 	FlagReason  *string          `json:"flag_reason,omitempty"`
 	Ingredients []MealIngredient `json:"ingredients"`
 	Macros      DayMacros        `json:"macros"`
+	// ImageURL is the originating template's hero photo — see
+	// MealTemplate.ImageURL. Empty when the option wasn't built from a
+	// template (e.g. LLM-generated content) or the template has no photo.
+	ImageURL string `json:"image_url,omitempty"`
 }
 
 // MealIngredient represents a single ingredient in a meal option.
@@ -58,6 +64,10 @@ type MealIngredient struct {
 	Name    string  `json:"name"`
 	AmountG float64 `json:"amount_g"`
 	Approx  string  `json:"approx"`
+	// ImageURL is this ingredient's photo — see Ingredient.ImageURL. Empty
+	// when the ingredient wasn't resolved from the library (e.g.
+	// LLM-generated content) or has no photo yet.
+	ImageURL string `json:"image_url,omitempty"`
 }
 
 // ============================================================================
@@ -80,6 +90,13 @@ type NutritionWeekPlan struct {
 	// raw copy that hasn't been enriched yet. The client can poll for this
 	// flipping true instead of diffing text to know when to refresh.
 	CopyEnriched bool `json:"copy_enriched"`
+
+	// MealSelections records which option (index into MealSlot.Options)
+	// the user picked for each (weekday, meal_slot) — same
+	// weekday->slot->option_index shape as the old pipeline's
+	// domain.Plan.MealSelections, just carried on the plan itself here
+	// since NutritionPlan isn't versioned per generation the way Plan is.
+	MealSelections map[string]map[string]int `json:"meal_selections,omitempty"`
 }
 
 // NutritionDayPlan holds nutrition info for a single day of the week.
@@ -89,4 +106,16 @@ type NutritionDayPlan struct {
 	Macros        DayMacros     `json:"macros"`
 	Hydration     HydrationInfo `json:"hydration"`
 	Meals         []MealSlot    `json:"meals,omitempty"`
+}
+
+// NutritionPlan is a user's single active nutrition plan (new pipeline):
+// generated on demand once they opt into the nutrition module, rather than
+// bundled with training. Unlike the old pipeline's domain.Plan, it isn't
+// versioned per generation — one document per user, overwritten by each
+// regeneration.
+type NutritionPlan struct {
+	UserID    string
+	Plan      NutritionWeekPlan
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }

@@ -2,9 +2,13 @@ package http
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/getsentry/sentry-go"
+
 	"viv/internal/core/usecase"
 )
 
@@ -39,21 +43,48 @@ type onboardingRequest struct {
 	StressReactivity   string `json:"stress_reactivity"`
 	StressLevel        string `json:"stress_level"`
 	Priority           string `json:"priority"`
+
+	// Activities and GoalID are the new-pipeline catalog/goal selections
+	// (VIV-101/VIV-102), validated by the usecase against the real
+	// taxonomy/profiles. GoalID is a single string on purpose: a caller
+	// submitting a JSON array here fails at decode time below, before it
+	// ever reaches the usecase.
+	Activities []string `json:"activities"`
+	GoalID     string   `json:"goal_id"`
+
+	Consents onboardingConsents `json:"consents"`
+}
+
+// onboardingConsents captures the two consent toggles shown on the
+// onboarding consent screen in one request, alongside the profile itself —
+// see CompleteOnboardingInput.HealthDataConsent's doc comment for why this
+// is required rather than a separate call.
+type onboardingConsents struct {
+	HealthDataProcessing bool `json:"health_data_processing"`
+	AIProcessing         bool `json:"ai_processing"`
 }
 
 type onboardingResponse struct {
-	ID                  string  `json:"id"`
-	OnboardingCompleted bool    `json:"onboarding_completed"`
-	DOB                 string  `json:"dob"`
-	WeightKg            float64 `json:"weight_kg"`
-	HeightCm            float64 `json:"height_cm"`
-	TrainingOften       string  `json:"training_often"`
-	TrainingType        string  `json:"training_type"`
-	TrainingTime        string  `json:"training_time"`
-	TrainingGoals       string  `json:"training_goals"`
-	SleepWindow         string  `json:"sleep_window"`
-	StressLevel         string  `json:"stress_level"`
-	Priority            string  `json:"priority"`
+	ID                  string   `json:"id"`
+	OnboardingCompleted bool     `json:"onboarding_completed"`
+	DOB                 string   `json:"dob"`
+	WeightKg            float64  `json:"weight_kg"`
+	HeightCm            float64  `json:"height_cm"`
+	TrainingOften       string   `json:"training_often"`
+	TrainingType        string   `json:"training_type"`
+	TrainingTime        string   `json:"training_time"`
+	TrainingGoals       string   `json:"training_goals"`
+	SleepWindow         string   `json:"sleep_window"`
+	StressLevel         string   `json:"stress_level"`
+	Priority            string   `json:"priority"`
+	Activities          []string `json:"activities"`
+	GoalID              string   `json:"goal_id"`
+
+	// WeeklyPlanJobID is the id of the just-queued first weekly-plan
+	// generation — poll it the same way as /training/weekly-plan/generate's
+	// job_id, via GET /training/weekly-plan/generate/status?job_id=....
+	// Omitted when queuing failed; onboarding itself still succeeded.
+	WeeklyPlanJobID string `json:"weekly_plan_job_id,omitempty"`
 }
 
 type OnboardingHandler struct {
@@ -126,12 +157,40 @@ func (h *OnboardingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		StressReactivity:   req.StressReactivity,
 		StressLevel:        req.StressLevel,
 		Priority:           req.Priority,
+
+		Activities: req.Activities,
+		GoalID:     req.GoalID,
+
+		HealthDataConsent:   req.Consents.HealthDataProcessing,
+		AIProcessingConsent: req.Consents.AIProcessing,
 	}
 
 	out, err := h.UC.Execute(ctx, in)
 	if err != nil {
-		http.Error(w, "failed to complete onboarding", http.StatusInternalServerError)
+		var invalidActivity usecase.InvalidActivityError
+		var invalidGoal usecase.InvalidGoalError
+		var consentRequired usecase.ConsentRequiredError
+		var invalidDOB usecase.InvalidDOBError
+		var underMinimumAge usecase.UnderMinimumAgeError
+		switch {
+		case errors.As(err, &invalidActivity), errors.As(err, &invalidGoal), errors.As(err, &consentRequired),
+			errors.As(err, &invalidDOB), errors.As(err, &underMinimumAge):
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		default:
+			log.Printf("[onboarding] complete onboarding error: %v", err)
+			if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+				hub.Scope().SetTag("endpoint", r.URL.Path)
+				hub.Scope().SetTag("method", r.Method)
+				hub.CaptureException(err)
+			}
+			http.Error(w, "failed to complete onboarding", http.StatusInternalServerError)
+		}
 		return
+	}
+
+	activities := make([]string, len(out.User.UserCatalog))
+	for i, a := range out.User.UserCatalog {
+		activities[i] = string(a)
 	}
 
 	// 5. Mapear a response
@@ -147,6 +206,9 @@ func (h *OnboardingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		SleepWindow:         out.User.SleepWindow,
 		StressLevel:         out.User.StressLevel,
 		Priority:            out.User.Priority,
+		Activities:          activities,
+		GoalID:              string(out.User.GoalID),
+		WeeklyPlanJobID:     out.WeeklyPlanJobID,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

@@ -1,0 +1,51 @@
+{
+  "id": "cycling_lower_m_l_standard_v1",
+  "version": 1,
+  "content_status": "draft_dummy",
+  "activity_type": "cycling",
+  "intensity": "M",
+  "impact": "L",
+  "muscle_group": "lower",
+  "duration_tier": "standard",
+  "complexity_tier": "standard",
+  "load_tier": "standard",
+  "duration_minutes": 35,
+  "content": {
+    "warmup": {
+      "duration_minutes": 5,
+      "description": "Easy spin to open up the legs.",
+      "movements": [
+        "Easy spin, low resistance",
+        "A few standing pedal strokes"
+      ]
+    },
+    "main_exercises": [
+      {
+        "name": "Steady endurance ride",
+        "sets": 1,
+        "reps": "28 min",
+        "rest_seconds": 0,
+        "load_guidance": "Moderate resistance, RPE 5-6",
+        "form_cue": "Consistent cadence, breathing controlled but working"
+      }
+    ],
+    "cooldown": {
+      "duration_minutes": 5,
+      "description": "Easy spin down, then stretch.",
+      "movements": [
+        "Easy spin, low resistance",
+        "Quad stretch",
+        "Hip flexor stretch"
+      ]
+    }
+  },
+  "phase_notes": {
+    "menstrual": "",
+    "follicular": "",
+    "ovulatory": "",
+    "early_luteal": "",
+    "late_luteal": ""
+  },
+  "author": null,
+  "created_at": "2026-01-01"
+}

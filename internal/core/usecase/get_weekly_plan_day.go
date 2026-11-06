@@ -1,0 +1,346 @@
+package usecase
+
+import (
+	"context"
+	"fmt"
+	"strings"
+	"time"
+
+	"viv/internal/core/activity"
+	"viv/internal/core/domain"
+)
+
+// ============================================================================
+// GET WEEKLY PLAN DAY — the "session detail" read for one day of an
+// already-generated week: the warmup/main-work/cooldown breakdown a
+// session-detail screen needs, plus (for Loggable days) whatever
+// real-time session log already exists — so a client that reopens the
+// app mid-workout can resume instead of losing state. Pure read: this
+// does NOT re-run content selection/exercise pinning, and does not
+// itself implement start/log-set/complete — see session_logging.go for
+// the write side of this flow.
+// ============================================================================
+
+// assumedSecondsPerSet is a first-draft estimate used ONLY to derive a
+// rough total duration for mesocycle-pinned (exercise-list) days, which
+// have no author-specified duration the way session-library content
+// does (content.Session.DurationMinutes). Not sourced from any
+// literature review — flagged via WeeklyPlanDayDetail.DurationIsEstimated
+// rather than silently presented as exact.
+const assumedSecondsPerSet = 45
+
+type GetWeeklyPlanDayInput struct {
+	UserID string
+	Date   time.Time // local calendar date, client-sent — same convention as every other date-scoped endpoint here
+}
+
+type WeeklyPlanDayExercise struct {
+	ID           string // "" for session-library exercises — no stable per-exercise ID exists for that path today
+	Name         string
+	Sets         int
+	Reps         string
+	RestSeconds  int
+	LoadGuidance string
+	FormCue      string
+
+	// Slot/Priority/Equipment/PrescriptionText are populated for the
+	// real VIV-112 Strength assembly path only (StrengthBlock) — that
+	// path's prescription is a single piece of config-authored text,
+	// kept as written rather than decomposed back into Reps/
+	// LoadGuidance/FormCue, so those stay zero there. ID, Sets and
+	// RestSeconds ARE populated for this path too (ID from
+	// strengthlibrary.Exercise.ID, Sets parsed off the leading "N ×" of
+	// PrescriptionText, RestSeconds from rest_seconds_by_type) — the
+	// same numbers usecase.LogSetUseCase needs to accept a logged set,
+	// so a Strength day is just as loggable as the old mesocycle-pinned
+	// path. See strengthsession.AssembledExercise.
+	Slot             string
+	Priority         string
+	Equipment        []string
+	PrescriptionText string
+}
+
+type WeeklyPlanDayBlock struct {
+	DurationMinutes int
+	Description     string
+	Movements       []string
+}
+
+// WeeklyPlanTierChange is one cascade (VIV-105) tier decision that
+// actually changed something about a Strength day's assembly, surfaced
+// as plain data so the client can say why. Mirrors
+// strengthsession.TierChange.
+type WeeklyPlanTierChange struct {
+	Lever  string
+	Detail string
+}
+
+type WeeklyPlanDayDetail struct {
+	Date      time.Time
+	Weekday   string
+	IsRestDay bool
+
+	ActivityType string
+	MuscleGroup  string
+	Intensity    string
+	Impact       string
+	Substituted  bool
+	Warning      string
+
+	// Loggable is true for a mesocycle-pinned day (old path, or
+	// Functional if ever enabled) or a real VIV-112 Strength assembly
+	// day (StrengthBlock) — the days with discrete sets to log in real
+	// time. Derived from which part of Content was actually populated
+	// at generation time (never more than one), so it always matches
+	// what MainExercises actually is.
+	Loggable bool
+
+	// Title and LoadLabel are mechanical taxonomy labels ("Lower" +
+	// "Strength" -> "Lower Strength"; Intensity M -> "Moderate load") —
+	// NOT the weekly-note copy/tone system (VIV-113, LLM-generated
+	// narrative). No coaching-note/description text is generated
+	// anywhere in this pipeline yet, so there is deliberately no such
+	// field here.
+	Title     string
+	LoadLabel string
+
+	DurationMinutes int
+	// DurationIsEstimated is true when DurationMinutes came from
+	// assumedSecondsPerSet rather than author-specified content.
+	DurationIsEstimated bool
+
+	// Warmup/Cooldown come from the session library for session-library
+	// days, from a generic per-muscle-group pair for mesocycle-pinned
+	// days (see content.MesocycleWarmupCooldownLibrary), or from the
+	// config's own per-zone warmup_cooldown for a real VIV-112 Strength
+	// assembly day — nil only if Content was never hydrated at all
+	// (shouldn't happen once generation completes, but never
+	// fabricated to fill the gap).
+	Warmup        *WeeklyPlanDayBlock
+	MainExercises []WeeklyPlanDayExercise
+	Cooldown      *WeeklyPlanDayBlock
+
+	// StrengthBlockNumber/StrengthWeek/StrengthConfigStatus/
+	// StrengthTierChanges are populated for the real VIV-112 Strength
+	// assembly path only (day.Content.StrengthBlock != nil) — zero
+	// otherwise. StrengthConfigStatus is
+	// VIV_Strength_Block_Config.json's own "status" field verbatim
+	// (e.g. "draft_not_reviewed_by_sport_scientist"); the task that
+	// built the Strength assembly requires this stay traceable all the
+	// way to the client, so it is never dropped here either.
+	StrengthBlockNumber  int
+	StrengthWeek         int
+	StrengthConfigStatus string
+	StrengthTierChanges  []WeeklyPlanTierChange
+
+	// StrengthRampUpNote is warmup_cooldown.ramp_up_note verbatim,
+	// shown once per session before the first Main exercise — never
+	// per-exercise. StrengthWarmupCooldownStatus is
+	// warmup_cooldown._status verbatim, passed through next to
+	// StrengthConfigStatus so it stays just as traceable. Both empty
+	// outside the real Strength assembly path.
+	StrengthRampUpNote           string
+	StrengthWarmupCooldownStatus string
+
+	// StrengthRestSecondsStatus is rest_seconds_by_type._status
+	// verbatim, passed through next to StrengthConfigStatus/
+	// StrengthWarmupCooldownStatus so it stays just as traceable. Empty
+	// outside the real Strength assembly path.
+	StrengthRestSecondsStatus string
+
+	// Session is the in-progress or completed real-time log for this day
+	// — nil when Loggable is false, or when Loggable is true but the user
+	// hasn't started it yet. See session_logging.go (StartSessionUseCase
+	// et al.) for how it gets created/updated.
+	Session *domain.SessionLog
+}
+
+type GetWeeklyPlanDayOutput struct {
+	// Found is false when no generated week covers Date at all.
+	Found bool
+	Day   WeeklyPlanDayDetail
+}
+
+type GetWeeklyPlanDayUseCase struct {
+	Drafts WeeklyPlanDraftRepository
+	Logs   SessionLogRepository
+}
+
+func NewGetWeeklyPlanDayUseCase(drafts WeeklyPlanDraftRepository, logs SessionLogRepository) *GetWeeklyPlanDayUseCase {
+	return &GetWeeklyPlanDayUseCase{Drafts: drafts, Logs: logs}
+}
+
+func (uc *GetWeeklyPlanDayUseCase) Execute(ctx context.Context, in GetWeeklyPlanDayInput) (GetWeeklyPlanDayOutput, error) {
+	userID := strings.TrimSpace(in.UserID)
+	if userID == "" {
+		return GetWeeklyPlanDayOutput{}, fmt.Errorf("get weekly plan day: userID is required")
+	}
+	date := time.Date(in.Date.Year(), in.Date.Month(), in.Date.Day(), 0, 0, 0, 0, time.UTC)
+
+	draft, err := uc.Drafts.GetByDate(ctx, userID, date)
+	if err != nil {
+		return GetWeeklyPlanDayOutput{}, fmt.Errorf("get weekly plan day: %w", err)
+	}
+	if draft == nil {
+		return GetWeeklyPlanDayOutput{Found: false}, nil
+	}
+
+	idx, ok := dayIndexForDate(*draft, date)
+	if !ok {
+		return GetWeeklyPlanDayOutput{}, fmt.Errorf("get weekly plan day: %s is not part of the loaded week", date.Format("2006-01-02"))
+	}
+	day := draft.Days[idx]
+
+	detail := WeeklyPlanDayDetail{
+		Date:      day.Date,
+		Weekday:   day.Weekday,
+		IsRestDay: day.IsRestDay,
+	}
+	if day.IsRestDay {
+		return GetWeeklyPlanDayOutput{Found: true, Day: detail}, nil
+	}
+
+	detail.ActivityType = string(day.Assignment.ActivityType)
+	detail.MuscleGroup = string(day.Assignment.MuscleGroup)
+	detail.Intensity = string(day.Assignment.Intensity)
+	detail.Impact = string(day.Assignment.Impact)
+	detail.Substituted = day.Assignment.Substituted
+	detail.Warning = day.Warning
+	detail.Title = titleFor(day.Assignment.MuscleGroup, day.Assignment.ActivityType)
+	detail.LoadLabel = loadLabelFor(day.Assignment.Intensity)
+
+	switch {
+	case day.Content != nil && day.Content.Session != nil:
+		s := day.Content.Session
+		detail.DurationMinutes = s.DurationMinutes
+		detail.Warmup = &WeeklyPlanDayBlock{
+			DurationMinutes: s.Content.Warmup.DurationMinutes,
+			Description:     s.Content.Warmup.Description,
+			Movements:       s.Content.Warmup.Movements,
+		}
+		detail.Cooldown = &WeeklyPlanDayBlock{
+			DurationMinutes: s.Content.Cooldown.DurationMinutes,
+			Description:     s.Content.Cooldown.Description,
+			Movements:       s.Content.Cooldown.Movements,
+		}
+		for _, e := range s.Content.MainExercises {
+			detail.MainExercises = append(detail.MainExercises, WeeklyPlanDayExercise{
+				Name: e.Name, Sets: e.Sets, Reps: e.Reps, RestSeconds: e.RestSeconds,
+				LoadGuidance: e.LoadGuidance, FormCue: e.FormCue,
+			})
+		}
+
+	case day.Content != nil && day.Content.Exercises != nil:
+		detail.Loggable = true
+		totalSeconds := 0
+		for _, pe := range day.Content.Exercises {
+			detail.MainExercises = append(detail.MainExercises, WeeklyPlanDayExercise{
+				ID: string(pe.Exercise.ID), Name: pe.Exercise.Name,
+				Sets: pe.Prescription.Sets, Reps: pe.Prescription.Reps, RestSeconds: pe.Prescription.RestSeconds,
+				LoadGuidance: pe.Prescription.LoadGuidance, FormCue: pe.Prescription.FormCue,
+			})
+			totalSeconds += pe.Prescription.Sets * (pe.Prescription.RestSeconds + assumedSecondsPerSet)
+		}
+		detail.DurationMinutes = (totalSeconds + 30) / 60 // rounded to the nearest minute
+		detail.DurationIsEstimated = true
+		if day.Content.Warmup != nil {
+			detail.Warmup = &WeeklyPlanDayBlock{
+				DurationMinutes: day.Content.Warmup.DurationMinutes,
+				Description:     day.Content.Warmup.Description,
+				Movements:       day.Content.Warmup.Movements,
+			}
+		}
+		if day.Content.Cooldown != nil {
+			detail.Cooldown = &WeeklyPlanDayBlock{
+				DurationMinutes: day.Content.Cooldown.DurationMinutes,
+				Description:     day.Content.Cooldown.Description,
+				Movements:       day.Content.Cooldown.Movements,
+			}
+		}
+
+	case day.Content != nil && day.Content.StrengthBlock != nil:
+		detail.Loggable = true
+		sb := day.Content.StrengthBlock
+		detail.StrengthBlockNumber = sb.BlockNumber
+		detail.StrengthWeek = sb.Week
+		detail.StrengthConfigStatus = sb.ConfigStatus
+		detail.StrengthRampUpNote = sb.RampUpNote
+		detail.StrengthWarmupCooldownStatus = sb.WarmupCooldownStatus
+		detail.StrengthRestSecondsStatus = sb.RestSecondsStatus
+		for _, tc := range sb.TierChanges {
+			detail.StrengthTierChanges = append(detail.StrengthTierChanges, WeeklyPlanTierChange{Lever: tc.Lever, Detail: tc.Detail})
+		}
+		for _, e := range sb.Exercises {
+			detail.MainExercises = append(detail.MainExercises, WeeklyPlanDayExercise{
+				ID:               e.ExerciseID,
+				Name:             e.ExerciseName,
+				Sets:             e.Sets,
+				RestSeconds:      e.RestSeconds,
+				Slot:             e.Slot,
+				Priority:         string(e.Priority),
+				Equipment:        e.Equipment,
+				PrescriptionText: e.PrescriptionText,
+			})
+		}
+		// Warmup/Cooldown come from day.Content.Warmup/Cooldown (set by
+		// usecase.selectStrengthBlock from this same AssembledSession) —
+		// applies_to_all_tiers is validated true at config load time, so
+		// this is never shortened for a Short-tier session either.
+		if day.Content.Warmup != nil {
+			detail.Warmup = &WeeklyPlanDayBlock{
+				DurationMinutes: day.Content.Warmup.DurationMinutes,
+				Description:     day.Content.Warmup.Description,
+				Movements:       day.Content.Warmup.Movements,
+			}
+		}
+		if day.Content.Cooldown != nil {
+			detail.Cooldown = &WeeklyPlanDayBlock{
+				DurationMinutes: day.Content.Cooldown.DurationMinutes,
+				Description:     day.Content.Cooldown.Description,
+				Movements:       day.Content.Cooldown.Movements,
+			}
+		}
+	}
+
+	if detail.Loggable {
+		log, err := uc.Logs.GetByDate(ctx, userID, date)
+		if err != nil {
+			return GetWeeklyPlanDayOutput{}, fmt.Errorf("get weekly plan day: loading session log: %w", err)
+		}
+		detail.Session = log
+	}
+
+	return GetWeeklyPlanDayOutput{Found: true, Day: detail}, nil
+}
+
+// titleFor and loadLabelFor are simple, mechanical taxonomy-to-label
+// mappings — see WeeklyPlanDayDetail's doc comment for why these are not
+// the weekly-note copy system.
+func titleFor(mg activity.MuscleGroup, at activity.ID) string {
+	return strings.TrimSpace(titleCaseWords(string(mg)) + " " + titleCaseWords(string(at)))
+}
+
+func titleCaseWords(s string) string {
+	words := strings.Fields(strings.ReplaceAll(s, "_", " "))
+	for i, w := range words {
+		if w != "" {
+			words[i] = strings.ToUpper(w[:1]) + w[1:]
+		}
+	}
+	return strings.Join(words, " ")
+}
+
+func loadLabelFor(intensity activity.IntensityLevel) string {
+	switch intensity {
+	case activity.IntensityAR:
+		return "Recovery load"
+	case activity.IntensityL:
+		return "Light load"
+	case activity.IntensityM:
+		return "Moderate load"
+	case activity.IntensityH:
+		return "High load"
+	default:
+		return ""
+	}
+}

@@ -53,6 +53,11 @@ type Ingredient struct {
 	MaxGrams       float64        `json:"max_grams"`
 	Author         *string        `json:"author"`
 	CreatedAt      string         `json:"created_at"`
+
+	// ImageURL is a photo of this ingredient, reused across every
+	// template/combination it appears in — see ingredient.schema.json's
+	// doc comment. Empty for an ingredient with no photo yet.
+	ImageURL string `json:"image_url,omitempty"`
 }
 
 // TemplateSlot is one role to fill when composing a plate from this template.
@@ -78,4 +83,10 @@ type MealTemplate struct {
 	PhaseNotes      map[string]string `json:"phase_notes,omitempty"`
 	Author          *string           `json:"author"`
 	CreatedAt       string            `json:"created_at"`
+
+	// ImageURL is this template's hero photo — shown regardless of which
+	// exact ingredients the solver picks for a given user, see
+	// meal_template.schema.json's doc comment. Empty for a template with
+	// no photo yet.
+	ImageURL string `json:"image_url,omitempty"`
 }

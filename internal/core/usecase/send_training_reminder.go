@@ -7,8 +7,16 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/sync/errgroup"
+
 	"viv/internal/core/domain"
 )
+
+// trainingReminderConcurrency bounds how many per-token IsTrainingDay+
+// SendPush sequences run at once — same reasoning as
+// sundayCheckinConcurrency, just against the Neon pool as well as FCM
+// here (IsTrainingDay is a DB read per token).
+const trainingReminderConcurrency = 20
 
 type SendTrainingReminderUseCase struct {
 	DeviceToken  DeviceTokenRepository
@@ -48,26 +56,36 @@ func (uc *SendTrainingReminderUseCase) ExecuteForTimezone(ctx context.Context, t
 
 	msg := trainingMessages[rand.Intn(len(trainingMessages))]
 
-	for _, t := range tokens {
-		// Obtener el plan del user
-		isTrainingDay, err := uc.DB.IsTrainingDay(ctx, t.UserID, weekday)
-		if err != nil {
-			log.Printf("[training_reminder] error checking plan for user %s: %v", t.UserID, err)
-			continue
-		}
-		if !isTrainingDay {
-			continue
-		}
+	// Each token's IsTrainingDay-check+send is independent of every
+	// other's — fans out instead of paying for up to 2N sequential round
+	// trips (one DB read + one FCM send per token). Every goroutine
+	// always returns nil (failures are logged, not propagated — same as
+	// the sequential version).
+	g, gctx := errgroup.WithContext(ctx)
+	g.SetLimit(trainingReminderConcurrency)
 
-		err = uc.Notification.SendPush(ctx, t.Token, msg.Title, msg.Body)
-		if err != nil {
-			if isInvalidToken(err) {
-				_ = uc.DeviceToken.Deactivate(ctx, t.UserID)
+	for _, t := range tokens {
+		g.Go(func() error {
+			isTrainingDay, err := uc.DB.IsTrainingDay(gctx, t.UserID, weekday)
+			if err != nil {
+				log.Printf("[training_reminder] error checking plan for user %s: %v", t.UserID, err)
+				return nil
 			}
-			continue
-		}
-		log.Printf("[training_reminder] sent to user %s", t.UserID)
+			if !isTrainingDay {
+				return nil
+			}
+
+			if err := uc.Notification.SendPush(gctx, t.Token, msg.Title, msg.Body); err != nil {
+				if isInvalidToken(err) {
+					_ = uc.DeviceToken.Deactivate(gctx, t.UserID)
+				}
+				return nil
+			}
+			log.Printf("[training_reminder] sent to user %s", t.UserID)
+			return nil
+		})
 	}
+	_ = g.Wait()
 
 	return nil
 }

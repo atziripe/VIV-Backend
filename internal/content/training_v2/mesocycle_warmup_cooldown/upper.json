@@ -1,0 +1,13 @@
+{
+  "muscle_group": "upper",
+  "warmup": {
+    "duration_minutes": 6,
+    "description": "Open the shoulders and prime the upper back before loading them.",
+    "movements": ["Arm circles", "Band pull-apart", "Scapular push-ups", "Cat-cow"]
+  },
+  "cooldown": {
+    "duration_minutes": 5,
+    "description": "Release through the chest, shoulders and upper back.",
+    "movements": ["Doorway chest stretch", "Cross-body shoulder stretch", "Child's pose with reach"]
+  }
+}

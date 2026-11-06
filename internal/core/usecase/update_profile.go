@@ -3,11 +3,28 @@ package usecase
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	"viv/internal/core/domain"
 )
+
+// InvalidCycleDurationError is returned when a client-supplied
+// cycle_duration doesn't parse to a plausible number of days — the "Update
+// cycle length" nudge sends a raw day count (e.g. "33"), unlike
+// onboarding's bucketed strings ("26-30 days"), so this is the first place
+// that input needs real validation instead of silently zeroing out
+// CyclePhase on a parse failure (see phaseForDay's duration<=0 guardrail).
+type InvalidCycleDurationError struct{ Value string }
+
+func (e InvalidCycleDurationError) Error() string {
+	return fmt.Sprintf(
+		"cycle_duration must be a number of days between %d and %d (or a recognized range like \"26-30 days\"), got %q",
+		minLearnedCycleDuration, maxLearnedCycleDuration, e.Value,
+	)
+}
 
 // UpdateProfileInput uses pointers so a nil field means "not sent by the
 // client", distinguishing that from "sent as empty string" — an explicit
@@ -50,6 +67,11 @@ type UpdateProfileInput struct {
 	CycleType      *string
 	CycleDuration  *string
 	PeriodDuration *string
+
+	// CycleEstimationDisabled is the "it varies — stop estimating" opt-out
+	// — see domain.User.CycleEstimationDisabled and
+	// usecase.ExpectedPeriodDate/DaysLate.
+	CycleEstimationDisabled *bool
 
 	// ApplyPlanChangesNow opts into an immediate full plan regeneration when
 	// CycleDuration/PeriodDuration or a training input
@@ -261,10 +283,18 @@ func (uc *UpdateProfileUseCase) Execute(ctx context.Context, in UpdateProfileInp
 		user.CycleType = getCycleType(*in.CycleType)
 	}
 	if in.CycleDuration != nil {
-		user.CycleDuration = normalizeCycleDuration(*in.CycleDuration)
+		normalized := normalizeCycleDuration(*in.CycleDuration)
+		d, err := strconv.Atoi(normalized)
+		if err != nil || d < minLearnedCycleDuration || d > maxLearnedCycleDuration {
+			return nil, InvalidCycleDurationError{Value: *in.CycleDuration}
+		}
+		user.CycleDuration = normalized
 	}
 	if in.PeriodDuration != nil {
 		user.PeriodDuration = *in.PeriodDuration
+	}
+	if in.CycleEstimationDisabled != nil {
+		user.CycleEstimationDisabled = *in.CycleEstimationDisabled
 	}
 
 	now := time.Now().UTC()

@@ -7,17 +7,21 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/getsentry/sentry-go"
+
 	"viv/internal/core/domain"
 	"viv/internal/core/usecase"
 )
 
 type MeHandler struct {
-	UC           *usecase.GetCurrentUserUseCase
-	UpdateProfUC *usecase.UpdateProfileUseCase
+	UC                 *usecase.GetCurrentUserUseCase
+	UpdateProfUC       *usecase.UpdateProfileUseCase
+	ScheduleDeletionUC *usecase.ScheduleAccountDeletionUseCase
+	CancelDeletionUC   *usecase.CancelAccountDeletionUseCase
 }
 
-func NewMeHandler(uc *usecase.GetCurrentUserUseCase, updateProfUC *usecase.UpdateProfileUseCase) *MeHandler {
-	return &MeHandler{UC: uc, UpdateProfUC: updateProfUC}
+func NewMeHandler(uc *usecase.GetCurrentUserUseCase, updateProfUC *usecase.UpdateProfileUseCase, scheduleDeletionUC *usecase.ScheduleAccountDeletionUseCase, cancelDeletionUC *usecase.CancelAccountDeletionUseCase) *MeHandler {
+	return &MeHandler{UC: uc, UpdateProfUC: updateProfUC, ScheduleDeletionUC: scheduleDeletionUC, CancelDeletionUC: cancelDeletionUC}
 }
 
 // Lo que devolvemos al frontend (puedes ajustar campos)
@@ -36,6 +40,16 @@ type meResponse struct {
 	CyclePhase     string  `json:"cycle_phase"`
 	CycleLength    string  `json:"cycle_duration"`
 	PeriodDuration string  `json:"period_duration"`
+
+	// DaysLate/ExpectedPeriodDate drive the client's "still not here?"
+	// prompt — see cycleSummary's doc comment for why these are always
+	// safe to compute fresh regardless of CycleDay/CyclePhase staleness.
+	// DaysLate > 0 means late, < 0 means early, 0 means on time, no anchor
+	// to predict from yet, or CycleEstimationDisabled (ExpectedPeriodDate
+	// is "" in the latter two cases).
+	DaysLate                int    `json:"days_late"`
+	ExpectedPeriodDate      string `json:"expected_period_date,omitempty"`
+	CycleEstimationDisabled bool   `json:"cycle_estimation_disabled"`
 
 	TrainingOften    string `json:"training_often"`
 	TrainingDuration string `json:"training_duration"`
@@ -63,8 +77,18 @@ type meResponse struct {
 	LastActivePlanID     *string `json:"last_active_plan_id,omitempty"`
 	LastInjuryReportedAt *string `json:"last_injury_reported_at,omitempty"`
 
+	// Activities and GoalID are the new-pipeline catalog/goal selections
+	// (VIV-101/VIV-102), captured at onboarding — see onboarding_handler.go.
+	Activities []string `json:"activities"`
+	GoalID     string   `json:"goal_id"`
+
 	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"updated_at"`
+
+	// PendingDeletionAt lets any screen show the "account scheduled for
+	// deletion" banner with a cancel option, not just the response right
+	// after DELETE /me — see domain.User.PendingDeletionAt.
+	PendingDeletionAt *string `json:"pending_deletion_at,omitempty"`
 }
 
 func (h *MeHandler) GetMe(w http.ResponseWriter, r *http.Request) {
@@ -84,6 +108,11 @@ func (h *MeHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// MVP error handling, check it later
 		log.Printf("http server error: %v", err)
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
 		http.Error(w, "failed to get current user", http.StatusInternalServerError)
 		return
 	}
@@ -100,11 +129,27 @@ func toMeResponse(u *domain.User) meResponse {
 		lastInjuryStr = &s
 	}
 
+	daysLate := usecase.DaysLate(u, time.Now().UTC())
+	expectedPeriodStr := ""
+	if expected := usecase.ExpectedPeriodDate(u); !expected.IsZero() {
+		expectedPeriodStr = expected.Format("2006-01-02")
+	}
+
 	createdStr := u.CreatedAt.UTC().Format(time.RFC3339)
 	updatedStr := u.UpdatedAt.UTC().Format(time.RFC3339)
+	var pendingDeletionStr *string
+	if u.PendingDeletionAt != nil {
+		s := u.PendingDeletionAt.UTC().Format(time.RFC3339)
+		pendingDeletionStr = &s
+	}
 	onboardingInt := 0
 	if u.OnboardingCompleted {
 		onboardingInt = 1
+	}
+
+	activities := make([]string, len(u.UserCatalog))
+	for i, a := range u.UserCatalog {
+		activities[i] = string(a)
 	}
 
 	return meResponse{
@@ -122,6 +167,10 @@ func toMeResponse(u *domain.User) meResponse {
 		CyclePhase:     u.CyclePhase,
 		CycleLength:    u.CycleDuration,
 		PeriodDuration: u.PeriodDuration,
+
+		DaysLate:                daysLate,
+		ExpectedPeriodDate:      expectedPeriodStr,
+		CycleEstimationDisabled: u.CycleEstimationDisabled,
 
 		TrainingOften:    u.TrainingOften,
 		TrainingDuration: u.TrainingDuration,
@@ -149,8 +198,13 @@ func toMeResponse(u *domain.User) meResponse {
 		LastActivePlanID:     u.LastActivePlanID,
 		LastInjuryReportedAt: lastInjuryStr,
 
+		Activities: activities,
+		GoalID:     string(u.GoalID),
+
 		CreatedAt: createdStr,
 		UpdatedAt: updatedStr,
+
+		PendingDeletionAt: pendingDeletionStr,
 	}
 }
 
@@ -191,6 +245,10 @@ type updateProfileRequest struct {
 	CycleDuration  *string `json:"cycle_duration"`
 	PeriodDuration *string `json:"period_duration"`
 
+	// CycleEstimationDisabled is the "it varies — stop estimating" opt-out
+	// from the late-period nudge — see domain.User.CycleEstimationDisabled.
+	CycleEstimationDisabled *bool `json:"cycle_estimation_disabled"`
+
 	// ApplyPlanChangesNow opts into an immediate full plan regeneration when
 	// cycle_duration/period_duration or a training input above actually
 	// changed value. Defaults to false (omitted = false): the edit is
@@ -217,10 +275,33 @@ type immediateEffects struct {
 // cycleSummary mirrors the same fields the plan endpoints (GET /plans/current
 // etc.) already return — recomputed here too so the client sees the updated
 // phase/countdown right after a cycle-affecting PATCH without a second call.
+//
+// DaysLate/ExpectedPeriodDate are pure functions of CycleAnchorAt +
+// CycleDuration (see usecase.DaysLate/usecase.ExpectedPeriodDate) — they
+// don't need SyncUserCycleDaily to have run first, so they're always safe
+// to compute fresh here regardless of how stale CyclePhase/CycleDay are.
+// DaysLate > 0 is what drives the client's "still not here?" prompt;
+// ExpectedPeriodDate is "" when there's no anchor yet to predict from.
 type cycleSummary struct {
 	CurrentPhase       string `json:"current_phase"`
 	NextPhase          string `json:"next_phase"`
 	DaysUntilNextPhase int    `json:"days_until_next_phase"`
+
+	DaysLate           int    `json:"days_late"`
+	ExpectedPeriodDate string `json:"expected_period_date,omitempty"`
+}
+
+func buildCycleSummary(user *domain.User, currentPhase, nextPhase string, daysUntilNextPhase int) cycleSummary {
+	s := cycleSummary{
+		CurrentPhase:       currentPhase,
+		NextPhase:          nextPhase,
+		DaysUntilNextPhase: daysUntilNextPhase,
+		DaysLate:           usecase.DaysLate(user, time.Now().UTC()),
+	}
+	if expected := usecase.ExpectedPeriodDate(user); !expected.IsZero() {
+		s.ExpectedPeriodDate = expected.Format("2006-01-02")
+	}
+	return s
 }
 
 type updateProfileResponse struct {
@@ -277,6 +358,8 @@ func (h *MeHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 		CycleDuration:  req.CycleDuration,
 		PeriodDuration: req.PeriodDuration,
 
+		CycleEstimationDisabled: req.CycleEstimationDisabled,
+
 		ApplyPlanChangesNow: req.ApplyPlanChangesNow,
 	}
 
@@ -287,7 +370,17 @@ func (h *MeHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "user not found", http.StatusNotFound)
 			return
 		}
+		var invalidDuration usecase.InvalidCycleDurationError
+		if errors.As(err, &invalidDuration) {
+			http.Error(w, invalidDuration.Error(), http.StatusBadRequest)
+			return
+		}
 		log.Printf("[update-profile] execute error: %v", err)
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
 		http.Error(w, "failed to update profile", http.StatusInternalServerError)
 		return
 	}
@@ -301,14 +394,90 @@ func (h *MeHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 			JobID:                   out.PlanRegenJobID,
 			PlanChangesDeferred:     out.PlanChangesDeferred,
 		},
-		CycleSummary: cycleSummary{
-			CurrentPhase:       out.CurrentPhase,
-			NextPhase:          out.NextPhase,
-			DaysUntilNextPhase: out.DaysUntilNextPhase,
-		},
+		CycleSummary: buildCycleSummary(out.User, out.CurrentPhase, out.NextPhase, out.DaysUntilNextPhase),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(resp)
+}
+
+// scheduleDeletionResponse tells the client when the account will actually
+// be deleted, so it can render the grace-period countdown + cancel option
+// right away without a second GET /me round-trip.
+type scheduleDeletionResponse struct {
+	PendingDeletionAt string `json:"pending_deletion_at"`
+	GracePeriodDays   int    `json:"grace_period_days"`
+}
+
+// DeleteAccount schedules the caller's account for deletion
+// usecase.AccountDeletionGracePeriod from now (App Store guideline
+// 5.1.1v) rather than deleting it on the spot — the account stays fully
+// usable and the request is cancellable via CancelDeletion until then. See
+// usecase.RunPendingAccountDeletionsUseCase for what actually deletes it
+// once the grace period elapses, and usecase.DeleteAccountUseCase for what
+// "all of their data" means and why anonymized/aggregate data is kept.
+func (h *MeHandler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	userID, ok := UserIDFromContext(ctx)
+	if !ok || userID == "" {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	user, err := h.ScheduleDeletionUC.Execute(ctx, userID)
+	if err != nil {
+		var notFound usecase.UserNotFoundError
+		if errors.As(err, &notFound) {
+			http.Error(w, "user not found", http.StatusNotFound)
+			return
+		}
+		log.Printf("[delete-account] execute error: %v", err)
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
+		http.Error(w, "failed to schedule account deletion", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(scheduleDeletionResponse{
+		PendingDeletionAt: user.PendingDeletionAt.UTC().Format(time.RFC3339),
+		GracePeriodDays:   int(usecase.AccountDeletionGracePeriod / (24 * time.Hour)),
+	})
+}
+
+// CancelDeletion reverses a pending DeleteAccount request — see
+// usecase.CancelAccountDeletionUseCase. Idempotent: calling it with nothing
+// pending just returns the user's current (unchanged) state.
+func (h *MeHandler) CancelDeletion(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	userID, ok := UserIDFromContext(ctx)
+	if !ok || userID == "" {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if _, err := h.CancelDeletionUC.Execute(ctx, userID); err != nil {
+		var notFound usecase.UserNotFoundError
+		if errors.As(err, &notFound) {
+			http.Error(w, "user not found", http.StatusNotFound)
+			return
+		}
+		log.Printf("[cancel-deletion] execute error: %v", err)
+		if hub := sentry.GetHubFromContext(r.Context()); hub != nil {
+			hub.Scope().SetTag("endpoint", r.URL.Path)
+			hub.Scope().SetTag("method", r.Method)
+			hub.CaptureException(err)
+		}
+		http.Error(w, "failed to cancel account deletion", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

@@ -1,0 +1,1780 @@
+[
+  {
+    "id": "core_captain_s_chair_knee_raise",
+    "activity_type": "strength",
+    "name": "Captain’s Chair Knee Raise",
+    "zone": "core",
+    "movement_group": "Hip flexion / pelvic control",
+    "review_status": "approved",
+    "equipment": [
+      "machine"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "core_dead_bug_alternating_arm_and_leg_extension",
+    "activity_type": "strength",
+    "name": "Dead Bug — Alternating Arm and Leg Extension",
+    "zone": "core",
+    "movement_group": "Anti-extension",
+    "review_status": "approved",
+    "equipment": [
+      "none"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Not in Lina's list",
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "core_double_dumbbell_front_rack_carry",
+    "activity_type": "strength",
+    "name": "Double Dumbbell Front-Rack Carry",
+    "zone": "core",
+    "movement_group": "Carry",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "flag": "Near something Lina removed",
+    "note": "Lina removed 'Barbell or Dumbbell Front Rack Hold' | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "core_dumbbell_farmer_carry",
+    "activity_type": "strength",
+    "name": "Dumbbell Farmer Carry",
+    "zone": "core",
+    "movement_group": "Carry",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell"
+    ],
+    "technical_demand": "Low",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "core_dumbbell_renegade_row_feet_wide",
+    "activity_type": "strength",
+    "name": "Dumbbell Renegade Row — Feet Wide",
+    "zone": "core",
+    "movement_group": "Anti-rotation + horizontal pull",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell"
+    ],
+    "technical_demand": "High",
+    "balance_demand": "High",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "core_dumbbell_suitcase_carry",
+    "activity_type": "strength",
+    "name": "Dumbbell Suitcase Carry",
+    "zone": "core",
+    "movement_group": "Carry",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "flag": "Lina removed this",
+    "note": "Lina removed this exact exercise in this zone | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "core_floor_plank_shoulder_tap_feet_wide",
+    "activity_type": "strength",
+    "name": "Floor Plank Shoulder Tap — Feet Wide",
+    "zone": "core",
+    "movement_group": "Anti-rotation",
+    "review_status": "approved",
+    "equipment": [
+      "none"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "core_forearm_plank",
+    "activity_type": "strength",
+    "name": "Forearm Plank",
+    "zone": "core",
+    "movement_group": "Anti-extension",
+    "review_status": "approved",
+    "equipment": [
+      "none"
+    ],
+    "technical_demand": "Low",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Not in Lina's list",
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "core_half_kneeling_cable_pallof_press",
+    "activity_type": "strength",
+    "name": "Half-Kneeling Cable Pallof Press",
+    "zone": "core",
+    "movement_group": "Anti-rotation",
+    "review_status": "approved",
+    "equipment": [
+      "machine"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "core_hanging_knee_raise_strict",
+    "activity_type": "strength",
+    "name": "Hanging Knee Raise — Strict",
+    "zone": "core",
+    "movement_group": "Hip flexion / pelvic control",
+    "review_status": "approved",
+    "equipment": [
+      "pull_up_bar"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "core_hanging_straight_leg_raise_strict",
+    "activity_type": "strength",
+    "name": "Hanging Straight-Leg Raise — Strict",
+    "zone": "core",
+    "movement_group": "Hip flexion / pelvic control",
+    "review_status": "approved",
+    "equipment": [
+      "pull_up_bar"
+    ],
+    "technical_demand": "High",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "core_incline_plank_shoulder_tap",
+    "activity_type": "strength",
+    "name": "Incline Plank Shoulder Tap",
+    "zone": "core",
+    "movement_group": "Anti-rotation",
+    "review_status": "approved",
+    "equipment": [
+      "box"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "flag": "Not in Lina's list",
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "core_kneeling_ab_wheel_rollout",
+    "activity_type": "strength",
+    "name": "Kneeling Ab Wheel Rollout",
+    "zone": "core",
+    "movement_group": "Anti-extension",
+    "review_status": "approved",
+    "equipment": [
+      "ab_wheel"
+    ],
+    "technical_demand": "High",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "core_reverse_crunch",
+    "activity_type": "strength",
+    "name": "Reverse Crunch",
+    "zone": "core",
+    "movement_group": "Trunk flexion / pelvic curl",
+    "review_status": "approved",
+    "equipment": [
+      "none"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Near something Lina removed",
+    "note": "Lina removed 'Decline Bench Reverse Crunch' | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "core_side_plank_knees_bent",
+    "activity_type": "strength",
+    "name": "Side Plank — Knees Bent",
+    "zone": "core",
+    "movement_group": "Lateral stability / anti-lateral flexion",
+    "review_status": "approved",
+    "equipment": [
+      "none"
+    ],
+    "technical_demand": "Low",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "flag": "Not in Lina's list",
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "core_side_plank_legs_straight_feet_stacked",
+    "activity_type": "strength",
+    "name": "Side Plank — Legs Straight, Feet Stacked",
+    "zone": "core",
+    "movement_group": "Lateral stability / anti-lateral flexion",
+    "review_status": "approved",
+    "equipment": [
+      "none"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "High",
+    "demand_reviewed": true,
+    "flag": "Not in Lina's list",
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "core_side_plank_legs_straight_feet_staggered",
+    "activity_type": "strength",
+    "name": "Side Plank — Legs Straight, Feet Staggered",
+    "zone": "core",
+    "movement_group": "Lateral stability / anti-lateral flexion",
+    "review_status": "approved",
+    "equipment": [
+      "none"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "flag": "Not in Lina's list",
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "core_side_plank_with_top_leg_raise",
+    "activity_type": "strength",
+    "name": "Side Plank With Top-Leg Raise",
+    "zone": "core",
+    "movement_group": "Lateral stability + hip abduction",
+    "review_status": "approved",
+    "equipment": [
+      "none"
+    ],
+    "technical_demand": "High",
+    "balance_demand": "High",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "core_single_arm_dumbbell_overhead_carry",
+    "activity_type": "strength",
+    "name": "Single-Arm Dumbbell Overhead Carry",
+    "zone": "core",
+    "movement_group": "Carry",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell"
+    ],
+    "technical_demand": "High",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "flag": "Not in Lina's list",
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "core_standing_band_woodchop_high_to_low_with_foot_pivot",
+    "activity_type": "strength",
+    "name": "Standing Band Woodchop — High to Low, With Foot Pivot",
+    "zone": "core",
+    "movement_group": "Rotation",
+    "review_status": "approved",
+    "equipment": [
+      "resistance_band"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "core_standing_cable_pallof_press",
+    "activity_type": "strength",
+    "name": "Standing Cable Pallof Press",
+    "zone": "core",
+    "movement_group": "Anti-rotation",
+    "review_status": "approved",
+    "equipment": [
+      "machine"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Not in Lina's list",
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "core_standing_cable_rotation_chest_height_with_foot_pivot",
+    "activity_type": "strength",
+    "name": "Standing Cable Rotation — Chest Height, With Foot Pivot",
+    "zone": "core",
+    "movement_group": "Rotation",
+    "review_status": "approved",
+    "equipment": [
+      "machine"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "flag": "Not in Lina's list",
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "core_standing_cable_woodchop_high_to_low_with_foot_pivot",
+    "activity_type": "strength",
+    "name": "Standing Cable Woodchop — High to Low, With Foot Pivot",
+    "zone": "core",
+    "movement_group": "Rotation",
+    "review_status": "approved",
+    "equipment": [
+      "machine"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "core_standing_landmine_rotation_with_foot_pivot",
+    "activity_type": "strength",
+    "name": "Standing Landmine Rotation — With Foot Pivot",
+    "zone": "core",
+    "movement_group": "Rotation",
+    "review_status": "approved",
+    "equipment": [
+      "barbell"
+    ],
+    "technical_demand": "High",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "core_supine_alternating_heel_tap_from_tabletop",
+    "activity_type": "strength",
+    "name": "Supine Alternating Heel Tap — From Tabletop",
+    "zone": "core",
+    "movement_group": "Anti-extension",
+    "review_status": "approved",
+    "equipment": [
+      "none"
+    ],
+    "technical_demand": "Low",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Not in Lina's list",
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "core_supine_bent_knee_leg_raise",
+    "activity_type": "strength",
+    "name": "Supine Bent-Knee Leg Raise",
+    "zone": "core",
+    "movement_group": "Hip flexion / pelvic control",
+    "review_status": "approved",
+    "equipment": [
+      "none"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Not in Lina's list",
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "core_supine_crunch",
+    "activity_type": "strength",
+    "name": "Supine Crunch",
+    "zone": "core",
+    "movement_group": "Trunk flexion",
+    "review_status": "approved",
+    "equipment": [
+      "none"
+    ],
+    "technical_demand": "Low",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Not in Lina's list",
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "core_toes_to_bar_strict",
+    "activity_type": "strength",
+    "name": "Toes-to-Bar — Strict",
+    "zone": "core",
+    "movement_group": "Hip flexion / pelvic control",
+    "review_status": "approved",
+    "equipment": [
+      "pull_up_bar"
+    ],
+    "technical_demand": "High",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "core_weighted_dead_bug_dumbbell_held_above_chest_alternating_leg_extension",
+    "activity_type": "strength",
+    "name": "Weighted Dead Bug — Dumbbell Held Above Chest, Alternating Leg Extension",
+    "zone": "core",
+    "movement_group": "Anti-extension",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "full_assisted_pull_up_machine",
+    "activity_type": "strength",
+    "name": "Assisted Pull-Up — Machine",
+    "zone": "full",
+    "movement_group": "Vertical pull",
+    "review_status": "approved",
+    "equipment": [
+      "machine"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Covered by Lina's 'Pull-Ups (assisted or weighted)' | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "full_barbell_bench_press",
+    "activity_type": "strength",
+    "name": "Barbell Bench Press",
+    "zone": "full",
+    "movement_group": "Horizontal push",
+    "review_status": "approved",
+    "equipment": [
+      "barbell",
+      "bench",
+      "rack"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "full_barbell_front_squat",
+    "activity_type": "strength",
+    "name": "Barbell Front Squat",
+    "zone": "full",
+    "movement_group": "Squat",
+    "review_status": "approved",
+    "equipment": [
+      "barbell",
+      "rack"
+    ],
+    "technical_demand": "High",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "full_barbell_push_press",
+    "activity_type": "strength",
+    "name": "Barbell Push Press",
+    "zone": "full",
+    "movement_group": "Vertical push / power",
+    "review_status": "approved",
+    "equipment": [
+      "barbell",
+      "rack"
+    ],
+    "technical_demand": "High",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "full_bodyweight_step_up",
+    "activity_type": "strength",
+    "name": "Bodyweight Step-Up",
+    "zone": "full",
+    "movement_group": "Lunge / single-leg",
+    "review_status": "approved",
+    "equipment": [
+      "box"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "flag": "Near something Lina removed",
+    "note": "Lina removed 'Step-Up (Dumbbell, High Box)' in the Lower body tab | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "full_conventional_barbell_deadlift",
+    "activity_type": "strength",
+    "name": "Conventional Barbell Deadlift",
+    "zone": "full",
+    "movement_group": "Hip hinge",
+    "review_status": "approved",
+    "equipment": [
+      "barbell"
+    ],
+    "technical_demand": "High",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "full_dead_bug_alternating_arm_and_leg_extension",
+    "activity_type": "strength",
+    "name": "Dead Bug — Alternating Arm and Leg Extension",
+    "zone": "full",
+    "movement_group": "Core — anti-extension",
+    "review_status": "approved",
+    "equipment": [
+      "none"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Approved by Lina in another zone only",
+    "note": "Lina approved 'Weighted Dead Bug' in the Core tab | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "full_double_dumbbell_front_rack_carry",
+    "activity_type": "strength",
+    "name": "Double Dumbbell Front-Rack Carry",
+    "zone": "full",
+    "movement_group": "Carry",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "flag": "Not in Lina's list",
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "full_dumbbell_farmer_carry",
+    "activity_type": "strength",
+    "name": "Dumbbell Farmer Carry",
+    "zone": "full",
+    "movement_group": "Carry",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell"
+    ],
+    "technical_demand": "Low",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "note": "Lina's change: should be heavy, not light | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "full_dumbbell_push_press",
+    "activity_type": "strength",
+    "name": "Dumbbell Push Press",
+    "zone": "full",
+    "movement_group": "Vertical push / power",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell"
+    ],
+    "technical_demand": "High",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "full_dumbbell_renegade_row_feet_wide",
+    "activity_type": "strength",
+    "name": "Dumbbell Renegade Row — Feet Wide",
+    "zone": "full",
+    "movement_group": "Horizontal pull + core anti-rotation",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell"
+    ],
+    "technical_demand": "High",
+    "balance_demand": "High",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "full_dumbbell_reverse_lunge",
+    "activity_type": "strength",
+    "name": "Dumbbell Reverse Lunge",
+    "zone": "full",
+    "movement_group": "Lunge / single-leg",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "full_dumbbell_romanian_deadlift",
+    "activity_type": "strength",
+    "name": "Dumbbell Romanian Deadlift",
+    "zone": "full",
+    "movement_group": "Hip hinge",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "full_dumbbell_step_up",
+    "activity_type": "strength",
+    "name": "Dumbbell Step-Up",
+    "zone": "full",
+    "movement_group": "Lunge / single-leg",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell",
+      "box"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "flag": "Near something Lina removed",
+    "note": "Lina removed 'Step-Up (Dumbbell, High Box)' in the Lower body tab | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "full_dumbbell_suitcase_carry",
+    "activity_type": "strength",
+    "name": "Dumbbell Suitcase Carry",
+    "zone": "full",
+    "movement_group": "Carry",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "flag": "Near something Lina removed",
+    "note": "Lina removed 'Dumbbell Suitcase Carry' in the Core tab | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "full_dumbbell_thruster",
+    "activity_type": "strength",
+    "name": "Dumbbell Thruster",
+    "zone": "full",
+    "movement_group": "Squat + vertical push",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell"
+    ],
+    "technical_demand": "High",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "full_elevated_kettlebell_deadlift",
+    "activity_type": "strength",
+    "name": "Elevated Kettlebell Deadlift",
+    "zone": "full",
+    "movement_group": "Hip hinge",
+    "review_status": "approved",
+    "equipment": [
+      "kettlebell",
+      "box"
+    ],
+    "technical_demand": "Low",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Not in Lina's list",
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "full_goblet_lateral_squat_alternating_sides",
+    "activity_type": "strength",
+    "name": "Goblet Lateral Squat — Alternating Sides",
+    "zone": "full",
+    "movement_group": "Squat / lateral",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "full_goblet_squat_dumbbell",
+    "activity_type": "strength",
+    "name": "Goblet Squat — Dumbbell",
+    "zone": "full",
+    "movement_group": "Squat",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Approved by Lina in another zone only",
+    "note": "Lina approved Goblet Squat in the Lower body tab | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "full_hanging_knee_raise",
+    "activity_type": "strength",
+    "name": "Hanging Knee Raise",
+    "zone": "full",
+    "movement_group": "Core — controlled trunk / hip flexion",
+    "review_status": "approved",
+    "equipment": [
+      "pull_up_bar"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "full_incline_push_up",
+    "activity_type": "strength",
+    "name": "Incline Push-Up",
+    "zone": "full",
+    "movement_group": "Horizontal push",
+    "review_status": "approved",
+    "equipment": [
+      "box"
+    ],
+    "technical_demand": "Low",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Lina removed this",
+    "note": "Lina removed 'Incline Push-Up (Bench or Wall)' in this zone | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "full_kettlebell_deadlift",
+    "activity_type": "strength",
+    "name": "Kettlebell Deadlift",
+    "zone": "full",
+    "movement_group": "Hip hinge",
+    "review_status": "approved",
+    "equipment": [
+      "kettlebell"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Not in Lina's list",
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "full_seated_cable_row",
+    "activity_type": "strength",
+    "name": "Seated Cable Row",
+    "zone": "full",
+    "movement_group": "Horizontal pull",
+    "review_status": "approved",
+    "equipment": [
+      "machine"
+    ],
+    "technical_demand": "Low",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Not in Lina's list",
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "full_side_plank_knees_bent",
+    "activity_type": "strength",
+    "name": "Side Plank — Knees Bent",
+    "zone": "full",
+    "movement_group": "Core — anti-lateral flexion",
+    "review_status": "approved",
+    "equipment": [
+      "none"
+    ],
+    "technical_demand": "Low",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "flag": "Approved by Lina in another zone only",
+    "note": "Lina approved a related version in the Core tab | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "full_single_arm_dumbbell_overhead_carry",
+    "activity_type": "strength",
+    "name": "Single-Arm Dumbbell Overhead Carry",
+    "zone": "full",
+    "movement_group": "Carry",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell"
+    ],
+    "technical_demand": "High",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "flag": "Not in Lina's list",
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "full_single_arm_dumbbell_row_bench_supported",
+    "activity_type": "strength",
+    "name": "Single-Arm Dumbbell Row — Bench-Supported",
+    "zone": "full",
+    "movement_group": "Horizontal pull",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell",
+      "bench"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Lina approved 'Single-Arm Dumbbell Row' in this zone | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "full_standard_push_up",
+    "activity_type": "strength",
+    "name": "Standard Push-Up",
+    "zone": "full",
+    "movement_group": "Horizontal push",
+    "review_status": "approved",
+    "equipment": [
+      "none"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "full_standing_pallof_press",
+    "activity_type": "strength",
+    "name": "Standing Pallof Press",
+    "zone": "full",
+    "movement_group": "Core — anti-rotation",
+    "review_status": "approved",
+    "equipment": [
+      "machine"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Approved by Lina in another zone only",
+    "note": "Lina approved a related version in the Core tab | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "full_strict_pull_up",
+    "activity_type": "strength",
+    "name": "Strict Pull-Up",
+    "zone": "full",
+    "movement_group": "Vertical pull",
+    "review_status": "approved",
+    "equipment": [
+      "pull_up_bar"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Covered by Lina's 'Pull-Ups (assisted or weighted)' | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "full_supported_bodyweight_split_squat",
+    "activity_type": "strength",
+    "name": "Supported Bodyweight Split Squat",
+    "zone": "full",
+    "movement_group": "Lunge / single-leg",
+    "review_status": "approved",
+    "equipment": [
+      "hand_support"
+    ],
+    "technical_demand": "Low",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Not in Lina's list",
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "full_weighted_pull_up",
+    "activity_type": "strength",
+    "name": "Weighted Pull-Up",
+    "zone": "full",
+    "movement_group": "Vertical pull",
+    "review_status": "approved",
+    "equipment": [
+      "pull_up_bar"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Covered by Lina's 'Pull-Ups (assisted or weighted)' | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "lower_barbell_back_squat",
+    "activity_type": "strength",
+    "name": "Barbell Back Squat",
+    "zone": "lower",
+    "movement_group": "Squat",
+    "review_status": "approved",
+    "equipment": [
+      "barbell",
+      "rack"
+    ],
+    "technical_demand": "High",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "lower_barbell_hip_thrust",
+    "activity_type": "strength",
+    "name": "Barbell Hip Thrust",
+    "zone": "lower",
+    "movement_group": "Hip thrust / bridge",
+    "review_status": "approved",
+    "equipment": [
+      "barbell",
+      "bench"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "lower_barbell_romanian_deadlift",
+    "activity_type": "strength",
+    "name": "Barbell Romanian Deadlift",
+    "zone": "lower",
+    "movement_group": "Hip hinge",
+    "review_status": "approved",
+    "equipment": [
+      "barbell"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "lower_bodyweight_box_squat",
+    "activity_type": "strength",
+    "name": "Bodyweight Box Squat",
+    "zone": "lower",
+    "movement_group": "Squat",
+    "review_status": "approved",
+    "equipment": [
+      "box"
+    ],
+    "technical_demand": "Low",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Near something Lina removed",
+    "note": "Lina removed 'Box Squat (Bodyweight or Light Dumbbell)' in the Full body tab | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "lower_bodyweight_glute_bridge",
+    "activity_type": "strength",
+    "name": "Bodyweight Glute Bridge",
+    "zone": "lower",
+    "movement_group": "Hip thrust / bridge",
+    "review_status": "approved",
+    "equipment": [
+      "none"
+    ],
+    "technical_demand": "Low",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Near something Lina removed",
+    "note": "Lina removed 'Single-Leg Glute Bridge' | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "lower_bodyweight_rear_foot_elevated_split_squat",
+    "activity_type": "strength",
+    "name": "Bodyweight Rear-Foot-Elevated Split Squat",
+    "zone": "lower",
+    "movement_group": "Lunge / single-leg",
+    "review_status": "approved",
+    "equipment": [
+      "bench"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "High",
+    "demand_reviewed": true,
+    "flag": "Near something Lina removed",
+    "note": "Lina removed 'Bulgarian Split Squat (Dumbbell)'; same movement without load | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "lower_bodyweight_split_squat",
+    "activity_type": "strength",
+    "name": "Bodyweight Split Squat",
+    "zone": "lower",
+    "movement_group": "Lunge / single-leg",
+    "review_status": "approved",
+    "equipment": [
+      "none"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "lower_double_dumbbell_front_squat",
+    "activity_type": "strength",
+    "name": "Double Dumbbell Front Squat",
+    "zone": "lower",
+    "movement_group": "Squat",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Near something Lina removed",
+    "note": "Lina removed 'Front Squat' in this zone | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "lower_dumbbell_glute_bridge",
+    "activity_type": "strength",
+    "name": "Dumbbell Glute Bridge",
+    "zone": "lower",
+    "movement_group": "Hip thrust / bridge",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell"
+    ],
+    "technical_demand": "Low",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Near something Lina removed",
+    "note": "Lina removed 'Single-Leg Glute Bridge' | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "lower_dumbbell_hip_thrust",
+    "activity_type": "strength",
+    "name": "Dumbbell Hip Thrust",
+    "zone": "lower",
+    "movement_group": "Hip thrust / bridge",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell",
+      "bench"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "lower_dumbbell_reverse_lunge",
+    "activity_type": "strength",
+    "name": "Dumbbell Reverse Lunge",
+    "zone": "lower",
+    "movement_group": "Lunge / single-leg",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "lower_dumbbell_romanian_deadlift",
+    "activity_type": "strength",
+    "name": "Dumbbell Romanian Deadlift",
+    "zone": "lower",
+    "movement_group": "Hip hinge",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "lower_goblet_squat_dumbbell",
+    "activity_type": "strength",
+    "name": "Goblet Squat — Dumbbell",
+    "zone": "lower",
+    "movement_group": "Squat",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "lower_goblet_squat_kettlebell",
+    "activity_type": "strength",
+    "name": "Goblet Squat — Kettlebell",
+    "zone": "lower",
+    "movement_group": "Squat",
+    "review_status": "approved",
+    "equipment": [
+      "kettlebell"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "lower_seated_calf_raise_machine",
+    "activity_type": "strength",
+    "name": "Seated Calf Raise — Machine",
+    "zone": "lower",
+    "movement_group": "Calves",
+    "review_status": "approved",
+    "equipment": [
+      "machine"
+    ],
+    "technical_demand": "Low",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "lower_standing_calf_raise_machine",
+    "activity_type": "strength",
+    "name": "Standing Calf Raise — Machine",
+    "zone": "lower",
+    "movement_group": "Calves",
+    "review_status": "approved",
+    "equipment": [
+      "machine"
+    ],
+    "technical_demand": "Low",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "lower_supported_bilateral_standing_calf_raise",
+    "activity_type": "strength",
+    "name": "Supported Bilateral Standing Calf Raise",
+    "zone": "lower",
+    "movement_group": "Calves",
+    "review_status": "approved",
+    "equipment": [
+      "hand_support"
+    ],
+    "technical_demand": "Low",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Not in Lina's list",
+    "note": "Variants of the Standing Calf Raise Lina kept 'as an option' | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "lower_supported_bodyweight_split_squat",
+    "activity_type": "strength",
+    "name": "Supported Bodyweight Split Squat",
+    "zone": "lower",
+    "movement_group": "Lunge / single-leg",
+    "review_status": "approved",
+    "equipment": [
+      "hand_support"
+    ],
+    "technical_demand": "Low",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Not in Lina's list",
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "lower_supported_single_leg_dumbbell_romanian_deadlift",
+    "activity_type": "strength",
+    "name": "Supported Single-Leg Dumbbell Romanian Deadlift",
+    "zone": "lower",
+    "movement_group": "Hip hinge",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell",
+      "hand_support"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Near something Lina removed",
+    "note": "Lina removed 'Supported Romanian Deadlift'; this one is single-leg | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "lower_supported_single_leg_standing_calf_raise",
+    "activity_type": "strength",
+    "name": "Supported Single-Leg Standing Calf Raise",
+    "zone": "lower",
+    "movement_group": "Calves",
+    "review_status": "approved",
+    "equipment": [
+      "hand_support"
+    ],
+    "technical_demand": "Low",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Not in Lina's list",
+    "note": "Variants of the Standing Calf Raise Lina kept 'as an option' | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "lower_two_handed_kettlebell_swing",
+    "activity_type": "strength",
+    "name": "Two-Handed Kettlebell Swing",
+    "zone": "lower",
+    "movement_group": "Hip hinge / power",
+    "review_status": "approved",
+    "equipment": [
+      "kettlebell"
+    ],
+    "technical_demand": "High",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "lower_unsupported_single_leg_dumbbell_romanian_deadlift",
+    "activity_type": "strength",
+    "name": "Unsupported Single-Leg Dumbbell Romanian Deadlift",
+    "zone": "lower",
+    "movement_group": "Hip hinge",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell"
+    ],
+    "technical_demand": "High",
+    "balance_demand": "High",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "upper_assisted_pull_up_machine",
+    "activity_type": "strength",
+    "name": "Assisted Pull-Up — Machine",
+    "zone": "upper",
+    "movement_group": "Vertical pull",
+    "review_status": "approved",
+    "equipment": [
+      "machine"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Covered by Lina's 'Pull-Ups (assisted or weighted)' | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "upper_barbell_bench_press",
+    "activity_type": "strength",
+    "name": "Barbell Bench Press",
+    "zone": "upper",
+    "movement_group": "Horizontal push",
+    "review_status": "approved",
+    "equipment": [
+      "barbell",
+      "bench",
+      "rack"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "upper_bench_dip",
+    "activity_type": "strength",
+    "name": "Bench Dip",
+    "zone": "upper",
+    "movement_group": "Arms — elbow extension",
+    "review_status": "approved",
+    "equipment": [
+      "bench"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "upper_bent_over_barbell_row",
+    "activity_type": "strength",
+    "name": "Bent-Over Barbell Row",
+    "zone": "upper",
+    "movement_group": "Horizontal pull",
+    "review_status": "approved",
+    "equipment": [
+      "barbell"
+    ],
+    "technical_demand": "High",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "upper_cable_triceps_pushdown",
+    "activity_type": "strength",
+    "name": "Cable Triceps Pushdown",
+    "zone": "upper",
+    "movement_group": "Arms — elbow extension",
+    "review_status": "approved",
+    "equipment": [
+      "machine"
+    ],
+    "technical_demand": "Low",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Not in Lina's list",
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "upper_chest_supported_dumbbell_row",
+    "activity_type": "strength",
+    "name": "Chest-Supported Dumbbell Row",
+    "zone": "upper",
+    "movement_group": "Horizontal pull",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell",
+      "bench"
+    ],
+    "technical_demand": "Low",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Lina removed this",
+    "note": "Lina removed this exact exercise in this zone | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "upper_dumbbell_bench_press",
+    "activity_type": "strength",
+    "name": "Dumbbell Bench Press",
+    "zone": "upper",
+    "movement_group": "Horizontal push",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell",
+      "bench"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Not in Lina's list",
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "upper_dumbbell_biceps_curl",
+    "activity_type": "strength",
+    "name": "Dumbbell Biceps Curl",
+    "zone": "upper",
+    "movement_group": "Arms — elbow flexion",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell"
+    ],
+    "technical_demand": "Low",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "upper_dumbbell_hammer_curl",
+    "activity_type": "strength",
+    "name": "Dumbbell Hammer Curl",
+    "zone": "upper",
+    "movement_group": "Arms — elbow flexion",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell"
+    ],
+    "technical_demand": "Low",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "upper_feet_elevated_push_up",
+    "activity_type": "strength",
+    "name": "Feet-Elevated Push-Up",
+    "zone": "upper",
+    "movement_group": "Horizontal push",
+    "review_status": "approved",
+    "equipment": [
+      "bench"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Covered by Lina's 'Push-Up Variation (elevated feet or weighted vest, or standard)' | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "upper_incline_push_up",
+    "activity_type": "strength",
+    "name": "Incline Push-Up",
+    "zone": "upper",
+    "movement_group": "Horizontal push",
+    "review_status": "approved",
+    "equipment": [
+      "box"
+    ],
+    "technical_demand": "Low",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Near something Lina removed",
+    "note": "Lina removed 'Incline Push-Up (Bench or Wall)' in the Full body tab | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "upper_neutral_grip_lat_pulldown",
+    "activity_type": "strength",
+    "name": "Neutral-Grip Lat Pulldown",
+    "zone": "upper",
+    "movement_group": "Vertical pull",
+    "review_status": "approved",
+    "equipment": [
+      "machine"
+    ],
+    "technical_demand": "Low",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "upper_overhand_grip_lat_pulldown",
+    "activity_type": "strength",
+    "name": "Overhand-Grip Lat Pulldown",
+    "zone": "upper",
+    "movement_group": "Vertical pull",
+    "review_status": "approved",
+    "equipment": [
+      "machine"
+    ],
+    "technical_demand": "Low",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Not in Lina's list",
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "upper_parallel_bar_dip",
+    "activity_type": "strength",
+    "name": "Parallel-Bar Dip",
+    "zone": "upper",
+    "movement_group": "Arms — elbow extension",
+    "review_status": "approved",
+    "equipment": [
+      "dip_bars"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "upper_prone_t_raise_incline_bench",
+    "activity_type": "strength",
+    "name": "Prone T Raise — Incline Bench",
+    "zone": "upper",
+    "movement_group": "Shoulders",
+    "review_status": "approved",
+    "equipment": [
+      "bench"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Not in Lina's list",
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "upper_prone_y_raise_incline_bench",
+    "activity_type": "strength",
+    "name": "Prone Y Raise — Incline Bench",
+    "zone": "upper",
+    "movement_group": "Shoulders",
+    "review_status": "approved",
+    "equipment": [
+      "bench"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Not in Lina's list",
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "upper_seated_cable_row",
+    "activity_type": "strength",
+    "name": "Seated Cable Row",
+    "zone": "upper",
+    "movement_group": "Horizontal pull",
+    "review_status": "approved",
+    "equipment": [
+      "machine"
+    ],
+    "technical_demand": "Low",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Not in Lina's list",
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "upper_seated_chest_press_machine",
+    "activity_type": "strength",
+    "name": "Seated Chest Press — Machine",
+    "zone": "upper",
+    "movement_group": "Horizontal push",
+    "review_status": "approved",
+    "equipment": [
+      "machine"
+    ],
+    "technical_demand": "Low",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Not in Lina's list",
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "upper_seated_dumbbell_lateral_raise",
+    "activity_type": "strength",
+    "name": "Seated Dumbbell Lateral Raise",
+    "zone": "upper",
+    "movement_group": "Shoulders",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell",
+      "bench"
+    ],
+    "technical_demand": "Low",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Not in Lina's list",
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "upper_seated_dumbbell_overhead_press_back_supported",
+    "activity_type": "strength",
+    "name": "Seated Dumbbell Overhead Press — Back-Supported",
+    "zone": "upper",
+    "movement_group": "Vertical push",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell",
+      "bench"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "upper_seated_overhead_dumbbell_triceps_extension",
+    "activity_type": "strength",
+    "name": "Seated Overhead Dumbbell Triceps Extension",
+    "zone": "upper",
+    "movement_group": "Arms — elbow extension",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell",
+      "bench"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "upper_seated_shoulder_press_machine",
+    "activity_type": "strength",
+    "name": "Seated Shoulder Press — Machine",
+    "zone": "upper",
+    "movement_group": "Vertical push",
+    "review_status": "approved",
+    "equipment": [
+      "machine"
+    ],
+    "technical_demand": "Low",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "flag": "Not in Lina's list",
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "upper_single_arm_dumbbell_row_bench_supported",
+    "activity_type": "strength",
+    "name": "Single-Arm Dumbbell Row — Bench-Supported",
+    "zone": "upper",
+    "movement_group": "Horizontal pull",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell",
+      "bench"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Lina's change: hand on bench, not elbow | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "upper_standard_push_up",
+    "activity_type": "strength",
+    "name": "Standard Push-Up",
+    "zone": "upper",
+    "movement_group": "Horizontal push",
+    "review_status": "approved",
+    "equipment": [
+      "none"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Covered by Lina's 'Push-Up Variation (elevated feet or weighted vest, or standard)' | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "upper_standing_band_external_rotation_elbow_at_side",
+    "activity_type": "strength",
+    "name": "Standing Band External Rotation — Elbow at Side",
+    "zone": "upper",
+    "movement_group": "Shoulders",
+    "review_status": "approved",
+    "equipment": [
+      "resistance_band"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "upper_standing_barbell_overhead_press",
+    "activity_type": "strength",
+    "name": "Standing Barbell Overhead Press",
+    "zone": "upper",
+    "movement_group": "Vertical push",
+    "review_status": "approved",
+    "equipment": [
+      "barbell",
+      "rack"
+    ],
+    "technical_demand": "High",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "upper_standing_dumbbell_lateral_raise",
+    "activity_type": "strength",
+    "name": "Standing Dumbbell Lateral Raise",
+    "zone": "upper",
+    "movement_group": "Shoulders",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell"
+    ],
+    "technical_demand": "Low",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "upper_standing_dumbbell_overhead_press",
+    "activity_type": "strength",
+    "name": "Standing Dumbbell Overhead Press",
+    "zone": "upper",
+    "movement_group": "Vertical push",
+    "review_status": "approved",
+    "equipment": [
+      "dumbbell"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Moderate",
+    "demand_reviewed": true,
+    "flag": "Not in Lina's list",
+    "note": "Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "upper_strict_pull_up",
+    "activity_type": "strength",
+    "name": "Strict Pull-Up",
+    "zone": "upper",
+    "movement_group": "Vertical pull",
+    "review_status": "approved",
+    "equipment": [
+      "pull_up_bar"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Covered by Lina's 'Pull-Ups (assisted or weighted)' | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "upper_wall_supported_y_t_raises",
+    "activity_type": "strength",
+    "name": "Wall-Supported Y-T Raises",
+    "zone": "upper",
+    "movement_group": "Shoulders",
+    "review_status": "approved",
+    "equipment": [
+      "hand_support"
+    ],
+    "demand_reviewed": true,
+    "note": "Lina step 1 (missing from Stefy's table, added back) | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "upper_weighted_pull_up",
+    "activity_type": "strength",
+    "name": "Weighted Pull-Up",
+    "zone": "upper",
+    "movement_group": "Vertical pull",
+    "review_status": "approved",
+    "equipment": [
+      "pull_up_bar"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Covered by Lina's 'Pull-Ups (assisted or weighted)' | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  },
+  {
+    "id": "upper_weighted_vest_push_up",
+    "activity_type": "strength",
+    "name": "Weighted-Vest Push-Up",
+    "zone": "upper",
+    "movement_group": "Horizontal push",
+    "review_status": "approved",
+    "equipment": [
+      "weighted_vest"
+    ],
+    "technical_demand": "Moderate",
+    "balance_demand": "Low",
+    "demand_reviewed": true,
+    "note": "Covered by Lina's 'Push-Up Variation (elevated feet or weighted vest, or standard)' | Approved by Lina in her second review. Difficulty ratings not reviewed."
+  }
+]

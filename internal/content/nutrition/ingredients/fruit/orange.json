@@ -15,5 +15,6 @@
   "min_grams": null,
   "max_grams": null,
   "author": null,
-  "created_at": "2026-07-13"
+  "created_at": "2026-07-13",
+  "image_url": "https://pub-8019200fd09441e79acaac513264e6b5.r2.dev/ingredients/orange.jpg"
 }

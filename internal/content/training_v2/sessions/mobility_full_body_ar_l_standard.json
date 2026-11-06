@@ -1,0 +1,59 @@
+{
+  "id": "mobility_full_body_ar_l_standard_v1",
+  "version": 1,
+  "content_status": "draft_dummy",
+  "activity_type": "mobility",
+  "intensity": "AR",
+  "impact": "L",
+  "muscle_group": "full_body",
+  "duration_tier": "standard",
+  "complexity_tier": "standard",
+  "load_tier": "standard",
+  "duration_minutes": 20,
+  "content": {
+    "warmup": {
+      "duration_minutes": 3,
+      "description": "Gentle joint circles to bring blood flow to the areas you'll work.",
+      "movements": [
+        "Neck circles",
+        "Shoulder rolls",
+        "Ankle circles"
+      ]
+    },
+    "main_exercises": [
+      {
+        "name": "Foam rolling pass (calves, quads, upper back)",
+        "sets": 1,
+        "reps": "60 sec per area",
+        "rest_seconds": 0,
+        "load_guidance": "Light to moderate pressure",
+        "form_cue": "Roll slowly, pause on tender spots rather than rolling through them"
+      },
+      {
+        "name": "Long-held stretches (hip flexor, hamstring, chest)",
+        "sets": 1,
+        "reps": "90 sec per side/area",
+        "rest_seconds": 0,
+        "load_guidance": "Bodyweight",
+        "form_cue": "Breathe into the stretch, ease deeper on the exhale rather than forcing it"
+      }
+    ],
+    "cooldown": {
+      "duration_minutes": 4,
+      "description": "Settle into stillness and let the nervous system downshift.",
+      "movements": [
+        "Diaphragmatic breathing",
+        "Reclined stillness"
+      ]
+    }
+  },
+  "phase_notes": {
+    "menstrual": "",
+    "follicular": "",
+    "ovulatory": "",
+    "early_luteal": "",
+    "late_luteal": ""
+  },
+  "author": null,
+  "created_at": "2026-01-01"
+}

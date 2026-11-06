@@ -1,0 +1,60 @@
+{
+  "id": "pilates_full_body_m_l_standard_v1",
+  "version": 1,
+  "content_status": "draft_dummy",
+  "activity_type": "pilates",
+  "intensity": "M",
+  "impact": "L",
+  "muscle_group": "full_body",
+  "duration_tier": "standard",
+  "complexity_tier": "standard",
+  "load_tier": "standard",
+  "duration_minutes": 35,
+  "content": {
+    "warmup": {
+      "duration_minutes": 5,
+      "description": "Breath-led warmup to find pelvic and spinal control.",
+      "movements": [
+        "Seated breathing",
+        "Pelvic tilts",
+        "Spinal articulation (roll-down)"
+      ]
+    },
+    "main_exercises": [
+      {
+        "name": "Mat flow with resistance ring (Hundred, Teaser prep, Bridge with ring)",
+        "sets": 3,
+        "reps": "10-12 reps per exercise",
+        "rest_seconds": 25,
+        "load_guidance": "Light resistance ring, RPE 5-6",
+        "form_cue": "Keep constant tension on the ring through each rep"
+      },
+      {
+        "name": "Standing single-leg balance series",
+        "sets": 2,
+        "reps": "10 reps per side",
+        "rest_seconds": 20,
+        "load_guidance": "Bodyweight, add light hand weights if available",
+        "form_cue": "Slow, controlled tempo \u2014 resist wobbling rather than correcting after"
+      }
+    ],
+    "cooldown": {
+      "duration_minutes": 5,
+      "description": "Slow stretch sequence to release through the spine and hips.",
+      "movements": [
+        "Seated spinal twist",
+        "Child's pose",
+        "Hip flexor stretch"
+      ]
+    }
+  },
+  "phase_notes": {
+    "menstrual": "",
+    "follicular": "",
+    "ovulatory": "",
+    "early_luteal": "",
+    "late_luteal": ""
+  },
+  "author": null,
+  "created_at": "2026-01-01"
+}

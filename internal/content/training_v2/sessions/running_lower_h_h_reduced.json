@@ -1,0 +1,52 @@
+{
+  "id": "running_lower_h_h_reduced_v1",
+  "version": 1,
+  "content_status": "draft_dummy",
+  "activity_type": "running",
+  "intensity": "H",
+  "impact": "H",
+  "muscle_group": "lower",
+  "duration_tier": "standard",
+  "complexity_tier": "standard",
+  "load_tier": "reduced",
+  "duration_minutes": 30,
+  "content": {
+    "warmup": {
+      "duration_minutes": 5,
+      "description": "Dynamic mobility to prep for running.",
+      "movements": [
+        "Leg swings",
+        "Walking lunges",
+        "Ankle circles"
+      ]
+    },
+    "main_exercises": [
+      {
+        "name": "Interval repeats (3 min hard / 2 min easy)",
+        "sets": 3,
+        "reps": "3 min on / 2 min off",
+        "rest_seconds": 0,
+        "load_guidance": "Hard effort, RPE 6-7, lighter load than usual (fewer repeats)",
+        "form_cue": "Hold good form on each repeat — quality over quantity today"
+      }
+    ],
+    "cooldown": {
+      "duration_minutes": 5,
+      "description": "Walk to bring heart rate down, then light stretching.",
+      "movements": [
+        "Easy walk",
+        "Calf stretch",
+        "Quad stretch"
+      ]
+    }
+  },
+  "phase_notes": {
+    "menstrual": "",
+    "follicular": "",
+    "ovulatory": "",
+    "early_luteal": "",
+    "late_luteal": ""
+  },
+  "author": null,
+  "created_at": "2026-01-01"
+}

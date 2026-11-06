@@ -1,0 +1,1 @@
+ALTER TABLE plan_jobs DROP COLUMN IF EXISTS plan_id;

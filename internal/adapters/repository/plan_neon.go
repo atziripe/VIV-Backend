@@ -51,7 +51,7 @@ func (r *NeonPlanRepository) Create(ctx context.Context, p *domain.Plan) error {
 	// critical for ML queries ("what phase was she in when this plan was generated?")
 	var (
 		cycleDay      *int
-		cycleDuration *string
+		cycleDuration *int
 		cyclePhase    *string
 		cycleType     *string
 		cycleAnchorAt *time.Time
@@ -72,6 +72,7 @@ func (r *NeonPlanRepository) Create(ctx context.Context, p *domain.Plan) error {
 			cycle_day_range, plan_version, status,
 			generated_from, source_event_id,
 			cycle_day, cycle_duration, cycle_phase, cycle_type, cycle_anchor_at,
+			start_date, end_date,
 			created_at
 		) VALUES (
 			$1, $2, $3,
@@ -79,7 +80,8 @@ func (r *NeonPlanRepository) Create(ctx context.Context, p *domain.Plan) error {
 			$7, $8, $9,
 			$10, $11,
 			$12, $13, $14, $15, $16,
-			$17
+			$17, $18,
+			$19
 		)
 		ON CONFLICT (firestore_id) DO NOTHING
 		RETURNING id
@@ -87,8 +89,9 @@ func (r *NeonPlanRepository) Create(ctx context.Context, p *domain.Plan) error {
 		userUUID, checkinUUID, nullableString(p.ID),
 		jsonbOrNull(p.TrainingJSON), jsonbOrNull(p.NutritionJSON), jsonbOrNull(p.RecoveryJSON),
 		p.CycleDayRange, p.PlanVersion, p.Status,
-		p.GeneratedFrom, p.SourceEventID,
+		nullableString(p.GeneratedFrom), nullableString(p.SourceEventID),
 		cycleDay, cycleDuration, cyclePhase, cycleType, cycleAnchorAt,
+		nullableTime(p.StartDate), nullableTime(p.EndDate),
 		p.CreatedAt,
 	).Scan(&newID)
 
@@ -106,6 +109,7 @@ func (r *NeonPlanRepository) GetByID(ctx context.Context, userID, planID string)
 			pl.training_json, pl.nutrition_json, pl.recovery_json,
 			pl.cycle_day_range, pl.plan_version, pl.status,
 			pl.generated_from, pl.source_event_id,
+			pl.start_date, pl.end_date,
 			pl.created_at,
 			ch.firestore_id as checkin_firestore_id
 		FROM plans pl
@@ -126,6 +130,7 @@ func (r *NeonPlanRepository) GetLatestByWeekStart(ctx context.Context, userID st
 			pl.training_json, pl.nutrition_json, pl.recovery_json,
 			pl.cycle_day_range, pl.plan_version, pl.status,
 			pl.generated_from, pl.source_event_id,
+			pl.start_date, pl.end_date,
 			pl.created_at,
 			ch.firestore_id as checkin_firestore_id
 		FROM plans pl
@@ -154,6 +159,7 @@ func (r *NeonPlanRepository) GetLatest(ctx context.Context, userID string) (*dom
 			pl.training_json, pl.nutrition_json, pl.recovery_json,
 			pl.cycle_day_range, pl.plan_version, pl.status,
 			pl.generated_from, pl.source_event_id,
+			pl.start_date, pl.end_date,
 			pl.created_at,
 			ch.firestore_id as checkin_firestore_id
 		FROM plans pl
@@ -276,13 +282,18 @@ func scanPlan(row pgx.Row) (*domain.Plan, error) {
 		trainingJSON       []byte
 		nutritionJSON      []byte
 		recoveryJSON       []byte
+		generatedFrom      *string
+		sourceEventID      *string
+		startDate          *time.Time
+		endDate            *time.Time
 	)
 
 	err := row.Scan(
 		&firestoreID, &p.UserID,
 		&trainingJSON, &nutritionJSON, &recoveryJSON,
 		&p.CycleDayRange, &p.PlanVersion, &p.Status,
-		&p.GeneratedFrom, &p.SourceEventID,
+		&generatedFrom, &sourceEventID,
+		&startDate, &endDate,
 		&p.CreatedAt,
 		&checkinFirestoreID,
 	)
@@ -296,9 +307,44 @@ func scanPlan(row pgx.Row) (*domain.Plan, error) {
 	if checkinFirestoreID != nil {
 		p.CheckinID = *checkinFirestoreID
 	}
+	if generatedFrom != nil {
+		p.GeneratedFrom = *generatedFrom
+	}
+	if sourceEventID != nil {
+		p.SourceEventID = *sourceEventID
+	}
+	if startDate != nil {
+		p.StartDate = *startDate
+	}
+	if endDate != nil {
+		p.EndDate = *endDate
+	}
 	p.TrainingJSON = trainingJSON
 	p.NutritionJSON = nutritionJSON
 	p.RecoveryJSON = recoveryJSON
+
+	// training_completed/phase_feedback live inside training_json
+	// (Update{TrainingCompleted,PhaseFeedback} merge them there), and
+	// meal_selections inside nutrition_json (UpdateMealSelections) —
+	// extract them back out into their own domain.Plan fields.
+	if len(trainingJSON) > 0 {
+		var extracted struct {
+			TrainingCompleted map[string]bool                      `json:"training_completed,omitempty"`
+			PhaseFeedback     map[string]domain.PhaseFeedbackEntry `json:"phase_feedback,omitempty"`
+		}
+		if err := json.Unmarshal(trainingJSON, &extracted); err == nil {
+			p.TrainingCompleted = extracted.TrainingCompleted
+			p.PhaseFeedback = extracted.PhaseFeedback
+		}
+	}
+	if len(nutritionJSON) > 0 {
+		var extracted struct {
+			MealSelections map[string]map[string]int `json:"meal_selections,omitempty"`
+		}
+		if err := json.Unmarshal(nutritionJSON, &extracted); err == nil {
+			p.MealSelections = extracted.MealSelections
+		}
+	}
 
 	return &p, nil
 }
