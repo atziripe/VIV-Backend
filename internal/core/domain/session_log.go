@@ -32,14 +32,22 @@ type SetLog struct {
 	SetNumber    int
 	WeightKg     float64
 	Reps         int
-	LoggedAt     time.Time
+
+	// RIR is the reps-in-reserve the user reported for this set — nil
+	// when not given (session-library/mesocycle-pinned logging never
+	// asked for it before VIV-112's Strength assembly, whose
+	// prescriptions are RIR-based). Never defaulted to 0: a literal "0
+	// RIR" (to failure) must stay distinguishable from "not logged".
+	RIR *int
+
+	LoggedAt time.Time
 }
 
-// SessionLog is the real-time execution record for one Loggable day
-// (mesocycle-pinned activities only, today — see
-// usecase.WeeklyPlanDayDetail.Loggable) — distinct from WeekDraft/DayPlan,
-// which is the PLAN, not what actually happened. One record per
-// (UserID, Date).
+// SessionLog is the real-time execution record for one Loggable day —
+// the old mesocycle-pinned path, or VIV-112's real Strength assembly
+// (see usecase.WeeklyPlanDayDetail.Loggable) — distinct from
+// WeekDraft/DayPlan, which is the PLAN, not what actually happened. One
+// record per (UserID, Date).
 type SessionLog struct {
 	UserID       string
 	Date         time.Time

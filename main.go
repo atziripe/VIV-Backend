@@ -25,11 +25,14 @@ import (
 	"viv/internal/adapters/repository"
 	"viv/internal/adapters/runner"
 	"viv/internal/config"
+	"viv/internal/core/cascade"
 	corecontent "viv/internal/core/content"
 	"viv/internal/core/mesocycle"
 	corenutrition "viv/internal/core/nutrition"
 	"viv/internal/core/rules"
 	rulestraining "viv/internal/core/rules/training"
+	"viv/internal/core/strengthlibrary"
+	"viv/internal/core/strengthsession"
 	coretraining "viv/internal/core/training"
 	"viv/internal/core/usecase"
 
@@ -255,15 +258,62 @@ func main() {
 	}
 	log.Printf("weekly-plan content loaded: session library + exercise library + mesocycle warmup/cooldown library")
 
-	// StubExerciseSetSelector: real curated exercise-set selection logic
-	// (VIV-108) doesn't exist yet — this just offers everything the
-	// exercise library has for a muscle group. Swap when that lands.
-	exercisePinService := usecase.NewExercisePinService(exercisePinRepo, mesocycle.StubExerciseSetSelector{}, weeklyExerciseLib)
+	// VIV-101/117's reviewed Strength movement catalog, plus VIV-108's
+	// block/slot config — both loaded and validated here so a broken
+	// catalog or config fails the boot the same way every other content
+	// library's does.
+	strengthLib, err := strengthlibrary.Load()
+	if err != nil {
+		fatal("failed to load strength movement library: %v", err)
+	}
+	strengthBlockConfig, err := strengthlibrary.LoadBlockConfig()
+	if err != nil {
+		fatal("failed to load strength block config: %v", err)
+	}
+	log.Printf("strength movement library loaded (include_pending_exercises=%v)", cfg.IncludePendingExercises)
 
-	weeklyScheduler := openai.NewWeeklyScheduler(oaClient)                                                                                                // VIV-109, real LLM-backed Layer 1
-	ruleEngineValidator := usecase.NewRuleEngineValidator(weeklyScheduler)                                                                                // VIV-110, retries Layer 1 once on a spacing violation
-	jointImpactWarnings := usecase.NewJointImpactWarningsLayer()                                                                                          // VIV-111
-	weeklyContentSelector := usecase.NewSessionContentSelector(weeklySessionLib, weeklyExerciseLib, weeklyMesocycleWarmupCooldownLib, exercisePinService) // VIV-112
+	// VIV-108 real selector: deterministic, config-driven slot-pool
+	// rotation over the approved catalog above — replaces the old
+	// StubExerciseSetSelector/StubExerciseLibrary placeholder entirely.
+	exercisePinService := usecase.NewExercisePinService(exercisePinRepo, mesocycle.DefaultBlockExerciseSelector{}, strengthLib, strengthBlockConfig)
+
+	// strengthSessionsRollout is the single source of truth for "does
+	// THIS user get the real VIV-112 Strength assembly" — both the
+	// cascade wiring right below and weeklyContentSelector further down
+	// read the exact same value, for the exact same userID
+	// (cascade.UserCatalog.UserID, stamped by GenerateWeeklyPlanUsecase/
+	// AdaptDailySlotUsecase from their own validated input.UserID), so
+	// the two can never disagree about who's on the new path.
+	strengthSessionsRollout := usecase.NewStrengthSessionsRollout(cfg.UseRealStrengthSessions, cfg.StrengthSessionsAllowlist)
+
+	// VIV-105's ReduceDuration/SimplifyComplexity levers have never
+	// actually fired for ANY activity type before this — DefaultContentLibrary
+	// was never assigned anywhere, so it stayed the package's own
+	// always-false stub. This wires it for real, but ONLY for Strength
+	// (strengthsession.ContentLibraryAdapter.HasVariant returns false
+	// for every other activity type unconditionally) and only for a
+	// user strengthSessionsRollout.Enabled(userID) actually covers —
+	// for anyone else, Strength must behave exactly like the old stub
+	// too, since the OLD content selection path below has no idea how
+	// to handle a DurationTier=Short Strength slot. This used to be
+	// keyed to the master switch alone (a real gap during a partial
+	// allowlist rollout); cascade.UserCatalog.UserID now carries the
+	// real per-user identity through ResolveSlotConflict into
+	// HasVariant, so this and weeklyContentSelector's own dispatch
+	// below are evaluated against the identical rollout decision.
+	cascade.DefaultContentLibrary = strengthsession.ContentLibraryAdapter{
+		Config:  strengthBlockConfig,
+		Rollout: strengthSessionsRollout,
+	}
+
+	weeklyScheduler := openai.NewWeeklyScheduler(oaClient)                 // VIV-109, real LLM-backed Layer 1
+	ruleEngineValidator := usecase.NewRuleEngineValidator(weeklyScheduler) // VIV-110, retries Layer 1 once on a spacing violation
+	jointImpactWarnings := usecase.NewJointImpactWarningsLayer()           // VIV-111
+	weeklyContentSelector := usecase.NewSessionContentSelector(            // VIV-112
+		weeklySessionLib, weeklyExerciseLib, weeklyMesocycleWarmupCooldownLib, exercisePinService,
+		strengthLib, strengthBlockConfig, strengthSessionsRollout,
+	)
+	log.Printf("strength session assembly rollout: %s", strengthSessionsRollout.Mode())
 
 	generateWeeklyPlanUC := usecase.NewGenerateWeeklyPlanUsecase(
 		cyclePhaseLookup,
@@ -457,9 +507,23 @@ func main() {
 		_, _ = w.Write([]byte(`{"status":"ok"}`))
 	})
 
+	// Rate limiting — a backstop against a runaway client or script
+	// hammering an endpoint; nothing stopped that before this. Two
+	// tiers: a generous per-user limit across every authenticated route
+	// (applied on `protected` below), and a much stricter one on the
+	// handful of routes that kick off an LLM-backed generation job
+	// (expensive, and meant to be called once per day/week, not polled —
+	// status checks go through a separate, cheap endpoint). In-process
+	// only (see PerUserRateLimiter's doc comment) — fine for a single
+	// backend instance.
+	generalRateLimiter := httpadapter.NewPerUserRateLimiter(10, 20)
+	generalRateLimiter.StartEvictionLoop(ctx, 10*time.Minute, 30*time.Minute)
+	generationRateLimiter := httpadapter.NewPerUserRateLimiter(1.0/15.0, 2)
+	generationRateLimiter.StartEvictionLoop(ctx, 10*time.Minute, 30*time.Minute)
+
 	api := chi.NewRouter()
 
-	api.Post("/onboarding", onboardingHandler.ServeHTTP)
+	api.With(generationRateLimiter.Middleware).Post("/onboarding", onboardingHandler.ServeHTTP)
 	api.Post("/onboarding/ineligibility", ineligibilityHandler.Report)
 
 	// VIV-103/106/107 daily check-in — distinct from the older /checkins
@@ -492,7 +556,7 @@ func main() {
 	api.Get("/plans/generate/status", plansHandler.GenerateStatus)
 
 	api.Post("/training/resume", trainingHandler.Resume)
-	api.Post("/training/generate", trainingHandler.Generate)
+	api.With(generationRateLimiter.Middleware).Post("/training/generate", trainingHandler.Generate)
 	api.Get("/training/generate/status", trainingHandler.GenerateStatus)
 	api.Post("/training/validate-arrangement", trainingHandler.ValidateArrangement)
 	api.Post("/training/complete-day", trainingHandler.CompleteDay)
@@ -500,7 +564,7 @@ func main() {
 
 	// New weekly-plan pipeline (VIV-106..113) — async job, same shape as
 	// /training/generate above.
-	api.Post("/training/weekly-plan/generate", weeklyPlanHandler.Generate)
+	api.With(generationRateLimiter.Middleware).Post("/training/weekly-plan/generate", weeklyPlanHandler.Generate)
 	api.Get("/training/weekly-plan/generate/status", weeklyPlanHandler.GenerateStatus)
 	api.Get("/training/weekly-plan/current", weeklyPlanHandler.CurrentWeek)
 	api.Get("/training/weekly-plan/day", weeklyPlanHandler.Day)
@@ -529,6 +593,7 @@ func main() {
 	protected.Use(httpadapter.AppCheckMiddleware(cfg.FirebaseProjectNumber, cfg.AppCheckEnforce))
 	protected.Use(httpadapter.FirebaseAuthMiddleware(authClient))
 	protected.Use(httpadapter.EnsureUserMiddleware(userRepo, recordActivityUC))
+	protected.Use(generalRateLimiter.Middleware)
 
 	rpcHandler := httpadapter.NewRPCHandler(api)
 	protected.Post("/rpc", rpcHandler.Handle)

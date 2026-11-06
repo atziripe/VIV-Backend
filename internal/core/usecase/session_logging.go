@@ -6,18 +6,22 @@ import (
 	"strings"
 	"time"
 
+	"viv/internal/core/content"
 	"viv/internal/core/domain"
+	"viv/internal/core/mesocycle"
 )
 
 // ============================================================================
-// SESSION LOGGING — real-time set-by-set logging for Loggable
-// (mesocycle-pinned) days only, per product decision: session-library
-// days (Yoga, Pilates, Running, ...) have no completion/logging support
-// yet — a smaller, separate feature if ever needed. Three actions, one
-// per screen of the logging flow: start a session, log one set, complete
-// the session with optional feedback. A rest timer between sets needs no
-// endpoint at all — it's purely derived client-side from the current
-// exercise's RestSeconds, already returned by GET /training/weekly-plan/day.
+// SESSION LOGGING — real-time set-by-set logging for Loggable days:
+// the old mesocycle-pinned path, and VIV-112's real Strength assembly
+// (StrengthBlock). Session-library days (Yoga, Pilates, Running, ...)
+// still have no completion/logging support — a smaller, separate
+// feature if ever needed. Three actions, one per screen of the logging
+// flow: start a session, log one set, complete the session with
+// optional feedback. A rest timer between sets needs no endpoint at
+// all — it's purely derived client-side from the current exercise's
+// RestSeconds (old path) or absent entirely for the Strength assembly
+// path, which doesn't model rest seconds.
 // ============================================================================
 
 type SessionLogRepository interface {
@@ -34,8 +38,15 @@ type SessionLogRepository interface {
 
 // loggableDayExercises is the shared precondition every session-logging
 // usecase below needs: a plan must cover the date, the day must not be a
-// rest day, and it must be Loggable (mesocycle-pinned) — errors clearly
-// otherwise rather than letting a non-loggable day silently accept logs.
+// rest day, and it must be Loggable — errors clearly otherwise rather
+// than letting a non-loggable day silently accept logs. Two paths
+// qualify: the old mesocycle-pinned path (day.Content.Exercises) and
+// VIV-112's real Strength assembly (day.Content.StrengthBlock), which
+// has no content.Exercise/content.ExercisePrescription of its own —
+// each AssembledExercise is adapted into one here (ExerciseID/Name and
+// the Sets count already parsed off its prescription text) so
+// LogSetUseCase/CompleteSessionUseCase need no path-specific logic
+// downstream.
 func loggableDayExercises(ctx context.Context, drafts WeeklyPlanDraftRepository, userID string, date time.Time) (DayPlan, []PrescribedExercise, error) {
 	draft, err := drafts.GetByDate(ctx, userID, date)
 	if err != nil {
@@ -52,10 +63,23 @@ func loggableDayExercises(ctx context.Context, drafts WeeklyPlanDraftRepository,
 	if day.IsRestDay {
 		return DayPlan{}, nil, errSessionLogging("session logging: %s is a rest day", date.Format("2006-01-02"))
 	}
-	if day.Content == nil || day.Content.Exercises == nil {
+
+	switch {
+	case day.Content != nil && day.Content.Exercises != nil:
+		return day, day.Content.Exercises, nil
+	case day.Content != nil && day.Content.StrengthBlock != nil:
+		sb := day.Content.StrengthBlock
+		exercises := make([]PrescribedExercise, 0, len(sb.Exercises))
+		for _, e := range sb.Exercises {
+			exercises = append(exercises, PrescribedExercise{
+				Exercise:     content.Exercise{ID: mesocycle.ExerciseID(e.ExerciseID), Name: e.ExerciseName},
+				Prescription: content.ExercisePrescription{Sets: e.Sets},
+			})
+		}
+		return day, exercises, nil
+	default:
 		return DayPlan{}, nil, errSessionLogging("session logging: %s is not a loggable day", date.Format("2006-01-02"))
 	}
-	return day, day.Content.Exercises, nil
 }
 
 func normalizeLogDate(t time.Time) time.Time {
@@ -131,6 +155,14 @@ type LogSetInput struct {
 	SetNumber  int
 	WeightKg   float64
 	Reps       int
+
+	// RIR is the reps-in-reserve the user reports for this set — nil
+	// when not given. Strength's real assembly prescribes RIR targets
+	// (see strengthsession.AssembledExercise.PrescriptionText), so a
+	// client logging against that path is expected to send it; it's
+	// optional here rather than required so the old mesocycle-pinned
+	// path (no RIR prescription at all) keeps working unchanged.
+	RIR *int
 }
 
 type LogSetOutput struct {
@@ -160,6 +192,9 @@ func (uc *LogSetUseCase) Execute(ctx context.Context, in LogSetInput) (LogSetOut
 	}
 	if in.Reps < 0 {
 		return LogSetOutput{}, errSessionLogging("log set: reps cannot be negative")
+	}
+	if in.RIR != nil && *in.RIR < 0 {
+		return LogSetOutput{}, errSessionLogging("log set: rir cannot be negative")
 	}
 	date := normalizeLogDate(in.Date)
 
@@ -199,6 +234,7 @@ func (uc *LogSetUseCase) Execute(ctx context.Context, in LogSetInput) (LogSetOut
 		SetNumber:    in.SetNumber,
 		WeightKg:     in.WeightKg,
 		Reps:         in.Reps,
+		RIR:          in.RIR,
 		LoggedAt:     time.Now().UTC(),
 	}
 	replaced := false

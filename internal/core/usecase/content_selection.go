@@ -3,11 +3,15 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"log"
+	"time"
 
 	"viv/internal/core/activity"
 	"viv/internal/core/cascade"
 	"viv/internal/core/content"
 	"viv/internal/core/mesocycle"
+	"viv/internal/core/strengthlibrary"
+	"viv/internal/core/strengthsession"
 )
 
 // ============================================================================
@@ -19,19 +23,30 @@ import (
 // content library (internal/core/training/library.go, a filesystem walk —
 // no go:embed anywhere in this codebase) before writing this.
 //
-// SessionContentSelector implements usecase.ContentSelectionLayer. It has
-// exactly two jobs, dispatched per slot by mesocycle.IsMesocycleEligible:
+// SessionContentSelector implements usecase.ContentSelectionLayer. It
+// dispatches per slot:
 //
-//  1. Mesocycle-eligible (Strength, Functional-if-enabled): fetch the
-//     pinned exercise set from VIV-108 (never free-select), hydrate each
-//     pinned ID from the exercise library, and pick Standard/Reduced
-//     prescription by the slot's LoadTier — the exercise SET never
-//     changes, only sets/reps/load.
-//  2. Everything else: look up one pre-built session keyed by the slot's
-//     full resolved attributes (ActivityType/Intensity/Impact/MuscleGroup
-//     plus DurationTier/ComplexityTier/LoadTier).
+//  1. ActivityType == Strength AND strengthRollout.Enabled(userID): the
+//     real VIV-112 assembly (internal/core/strengthsession.Assemble) —
+//     VIV-108's pinned block, hydrated against the real strengthlibrary
+//     catalog and VIV_Strength_Block_Config.json's exercise_types/
+//     weekly_prescription_by_type/variant_rules. See StrengthSessionsRollout
+//     for why this is a per-user rollout rather than a single on/off
+//     switch: the OLD path below hydrates against content.ExerciseLibrary's
+//     placeholder seed data, which doesn't have real prescriptions for
+//     the real catalog, so the rollout exists to move users over
+//     gradually (or pin it to a staging allowlist) rather than flipping
+//     everyone at once.
+//  2. Mesocycle-eligible otherwise (Strength for a user the rollout
+//     doesn't cover, or Functional-if-ever-enabled): the OLD path —
+//     fetch the pinned exercise set from VIV-108 (never free-select),
+//     hydrate each pinned ID from content.ExerciseLibrary, and pick
+//     Standard/Reduced prescription by the slot's LoadTier.
+//  3. Everything else — EVERY other activity type (Pilates, Cardio,
+//     HIIT, etc.) — untouched, exactly as before: look up one pre-built
+//     session keyed by the slot's full resolved attributes.
 //
-// In both cases, a requested non-standard tier that the library doesn't
+// In every case, a requested non-standard tier the library doesn't
 // actually have content for is a hard error — never silently served as
 // the standard version. Silently downgrading would misrepresent an
 // adjustment the cascade (or the rule engine relaxing a lever) explicitly
@@ -41,6 +56,12 @@ type SessionContentSelector struct {
 	exercises      *content.ExerciseLibrary
 	warmupCooldown *content.MesocycleWarmupCooldownLibrary
 	pins           ExercisePinResolver
+
+	strengthLibrary  *strengthlibrary.Library
+	strengthConfig   *strengthlibrary.BlockConfig
+	strengthSelector mesocycle.BlockExerciseSelector
+	strengthRollout  StrengthSessionsRollout
+	now              func() time.Time
 }
 
 // ExercisePinResolver is the subset of *ExercisePinService content
@@ -48,6 +69,7 @@ type SessionContentSelector struct {
 // ExercisePinRepository.
 type ExercisePinResolver interface {
 	ResolvePinnedExercises(ctx context.Context, userID string, activityType activity.ID, muscleGroup activity.MuscleGroup) ([]mesocycle.ExerciseID, error)
+	ResolvePinnedBlock(ctx context.Context, userID string, activityType activity.ID, muscleGroup activity.MuscleGroup) (mesocycle.PinnedExerciseSet, error)
 }
 
 func NewSessionContentSelector(
@@ -55,21 +77,54 @@ func NewSessionContentSelector(
 	exercises *content.ExerciseLibrary,
 	warmupCooldown *content.MesocycleWarmupCooldownLibrary,
 	pins ExercisePinResolver,
+	strengthLib *strengthlibrary.Library,
+	strengthConfig *strengthlibrary.BlockConfig,
+	strengthRollout StrengthSessionsRollout,
 ) *SessionContentSelector {
-	return &SessionContentSelector{sessions: sessions, exercises: exercises, warmupCooldown: warmupCooldown, pins: pins}
+	return &SessionContentSelector{
+		sessions:         sessions,
+		exercises:        exercises,
+		warmupCooldown:   warmupCooldown,
+		pins:             pins,
+		strengthLibrary:  strengthLib,
+		strengthConfig:   strengthConfig,
+		strengthSelector: mesocycle.DefaultBlockExerciseSelector{},
+		strengthRollout:  strengthRollout,
+		now:              func() time.Time { return time.Now().UTC() },
+	}
+}
+
+// NewSessionContentSelectorWithClock is NewSessionContentSelector with
+// an injectable clock, for deterministic week-number tests against the
+// real Strength assembly path.
+func NewSessionContentSelectorWithClock(
+	sessions *content.SessionLibrary,
+	exercises *content.ExerciseLibrary,
+	warmupCooldown *content.MesocycleWarmupCooldownLibrary,
+	pins ExercisePinResolver,
+	strengthLib *strengthlibrary.Library,
+	strengthConfig *strengthlibrary.BlockConfig,
+	strengthRollout StrengthSessionsRollout,
+	now func() time.Time,
+) *SessionContentSelector {
+	s := NewSessionContentSelector(sessions, exercises, warmupCooldown, pins, strengthLib, strengthConfig, strengthRollout)
+	s.now = now
+	return s
 }
 
 // SelectedContent is Layer 3's hydrated output for one non-rest day.
-// Exactly one of Session or Exercises is ever set, depending on which
-// path (mesocycle-pinned vs library-selected) produced it.
+// Exactly one of Session, Exercises, or StrengthBlock is ever set,
+// depending on which path produced it.
 type SelectedContent struct {
-	Session   *content.Session
-	Exercises []PrescribedExercise
+	Session       *content.Session
+	Exercises     []PrescribedExercise
+	StrengthBlock *strengthsession.AssembledSession
 
-	// Warmup/Cooldown are populated for the mesocycle-pinned path
-	// (Exercises) only — session-library days carry their own
-	// warmup/cooldown nested inside Session.Content instead, so these
-	// stay nil there rather than duplicating it.
+	// Warmup/Cooldown are populated for the OLD mesocycle-pinned path
+	// (Exercises) AND the real VIV-112 Strength assembly path
+	// (StrengthBlock, from AssembledSession.Warmup/Cooldown) — only
+	// session-library days carry their own warmup/cooldown nested
+	// inside Session.Content instead, so these stay nil only there.
 	Warmup   *content.ContentBlock
 	Cooldown *content.ContentBlock
 }
@@ -92,9 +147,12 @@ func (s *SessionContentSelector) SelectContent(ctx context.Context, draft WeekDr
 		var selected SelectedContent
 		var err error
 
-		if mesocycle.IsMesocycleEligible(d.Assignment.ActivityType) {
+		switch {
+		case d.Assignment.ActivityType == activity.Strength && s.strengthRollout.Enabled(draft.UserID):
+			selected, err = s.selectStrengthBlock(ctx, draft.UserID, d.Assignment)
+		case mesocycle.IsMesocycleEligible(d.Assignment.ActivityType):
 			selected, err = s.selectPinnedExercises(ctx, draft.UserID, d.Assignment)
-		} else {
+		default:
 			selected, err = s.selectSession(d.Assignment)
 		}
 		if err != nil {
@@ -177,4 +235,30 @@ func (s *SessionContentSelector) selectPinnedExercises(ctx context.Context, user
 	warmup, cooldown := wc.Warmup, wc.Cooldown
 
 	return SelectedContent{Exercises: prescribed, Warmup: &warmup, Cooldown: &cooldown}, nil
+}
+
+// selectStrengthBlock is the real VIV-112 path: resolve userID's pinned
+// block for this slot (creating/rotating it via VIV-108 exactly like
+// the OLD path does), then hand it to strengthsession.Assemble —
+// VIV-105's tier decisions, VIV-108's pin, and VIV-117's catalog/config
+// are the only inputs; this method never selects an exercise itself.
+func (s *SessionContentSelector) selectStrengthBlock(ctx context.Context, userID string, a cascade.SlotAssignment) (SelectedContent, error) {
+	pin, err := s.pins.ResolvePinnedBlock(ctx, userID, a.ActivityType, a.MuscleGroup)
+	if err != nil {
+		return SelectedContent{}, fmt.Errorf("resolving pinned block: %w", err)
+	}
+
+	assembled, err := strengthsession.Assemble(a, pin, s.now(), s.strengthLibrary, s.strengthConfig, s.strengthSelector)
+	if err != nil {
+		return SelectedContent{}, fmt.Errorf("assembling strength session: %w", err)
+	}
+
+	if assembled.HighIntensityDowngraded {
+		log.Printf("[content_selection] High intensity downgraded to Medium for user=%s muscle_group=%s (Strength High isn't reviewed yet)", userID, a.MuscleGroup)
+	}
+
+	warmup := content.ContentBlock{DurationMinutes: assembled.Warmup.DurationMinutes, Movements: assembled.Warmup.Movements}
+	cooldown := content.ContentBlock{DurationMinutes: assembled.Cooldown.DurationMinutes, Movements: assembled.Cooldown.Movements}
+
+	return SelectedContent{StrengthBlock: &assembled, Warmup: &warmup, Cooldown: &cooldown}, nil
 }

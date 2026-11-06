@@ -57,8 +57,12 @@ func (uc *UserEditSlotUsecase) Execute(ctx context.Context, in UserEditSlotInput
 		return DayPlan{}, fmt.Errorf("user edit slot: userID is required")
 	}
 	if in.NewAssignment.ActivityType != "" {
-		if _, ok := activity.ByID(in.NewAssignment.ActivityType); !ok {
+		t, ok := activity.ByID(in.NewAssignment.ActivityType)
+		if !ok {
 			return DayPlan{}, fmt.Errorf("user edit slot: unknown activity id %q", in.NewAssignment.ActivityType)
+		}
+		if err := validateAssignmentAgainstTaxonomy(in.NewAssignment, t); err != nil {
+			return DayPlan{}, fmt.Errorf("user edit slot: %w", err)
 		}
 	}
 
@@ -99,6 +103,56 @@ func (uc *UserEditSlotUsecase) Execute(ctx context.Context, in UserEditSlotInput
 	}
 
 	return day, nil
+}
+
+// validateAssignmentAgainstTaxonomy rejects a manual edit whose
+// Intensity/Impact/MuscleGroup isn't a combination t's own taxonomy
+// entry (activity.Type) actually allows — a syntactically valid-looking
+// request (e.g. activity_type=hiit, intensity=L, when HIIT's
+// IntensityRange is fixed to [H]) would otherwise sail through this
+// usecase's only prior check (that the activity ID itself is known) and
+// fail later, opaquely, inside content selection's library lookup —
+// exactly the failure shape that surfaced the content.SessionLibrary
+// gap for Running/Cycling/Swimming at LoadTier=Reduced.
+//
+// MuscleGroup is checked against DefaultMuscleGroup even for a
+// UserSelectable type (HIIT, Functional): nothing in this codebase yet
+// lets a user actually choose a non-default muscle group for either —
+// GenerateWeeklyPlanUsecase always proposes DefaultMuscleGroup
+// (generate_weekly_plan.go), and AdaptDailySlotUsecase only ever carries
+// forward whatever was already resolved — and content.SessionLibrary has
+// zero session content for HIIT/Functional at lower/upper/core. Relaxing
+// this check to allow the other 3 groups is a real next-iteration task
+// (building the actual muscle-group selection UI/flow plus its content),
+// not something to allow silently ahead of that content existing.
+func validateAssignmentAgainstTaxonomy(a cascade.SlotAssignment, t activity.Type) error {
+	intensityOK := false
+	for _, level := range t.IntensityRange {
+		if level == a.Intensity {
+			intensityOK = true
+			break
+		}
+	}
+	if !intensityOK {
+		return fmt.Errorf("intensity %q is not valid for activity %q (allowed: %v)", a.Intensity, t.ID, t.IntensityRange)
+	}
+
+	impactOK := false
+	for _, level := range t.ImpactRange {
+		if level == a.Impact {
+			impactOK = true
+			break
+		}
+	}
+	if !impactOK {
+		return fmt.Errorf("impact %q is not valid for activity %q (allowed: %v)", a.Impact, t.ID, t.ImpactRange)
+	}
+
+	if a.MuscleGroup != t.DefaultMuscleGroup {
+		return fmt.Errorf("muscle group %q is not valid for activity %q (only %q is supported today)", a.MuscleGroup, t.ID, t.DefaultMuscleGroup)
+	}
+
+	return nil
 }
 
 // dayIndexForDate finds which of a WeekDraft's 7 days matches date (by

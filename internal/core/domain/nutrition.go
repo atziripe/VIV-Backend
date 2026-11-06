@@ -53,6 +53,10 @@ type MealOption struct {
 	FlagReason  *string          `json:"flag_reason,omitempty"`
 	Ingredients []MealIngredient `json:"ingredients"`
 	Macros      DayMacros        `json:"macros"`
+	// ImageURL is the originating template's hero photo — see
+	// MealTemplate.ImageURL. Empty when the option wasn't built from a
+	// template (e.g. LLM-generated content) or the template has no photo.
+	ImageURL string `json:"image_url,omitempty"`
 }
 
 // MealIngredient represents a single ingredient in a meal option.
@@ -60,6 +64,10 @@ type MealIngredient struct {
 	Name    string  `json:"name"`
 	AmountG float64 `json:"amount_g"`
 	Approx  string  `json:"approx"`
+	// ImageURL is this ingredient's photo — see Ingredient.ImageURL. Empty
+	// when the ingredient wasn't resolved from the library (e.g.
+	// LLM-generated content) or has no photo yet.
+	ImageURL string `json:"image_url,omitempty"`
 }
 
 // ============================================================================

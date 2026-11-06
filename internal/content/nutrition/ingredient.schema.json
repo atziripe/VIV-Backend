@@ -78,6 +78,11 @@
     },
 
     "author": { "type": ["string", "null"] },
-    "created_at": { "type": "string", "format": "date" }
+    "created_at": { "type": "string", "format": "date" },
+    "image_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "Photo representing this ingredient — reused across every template/combination it appears in, since the ingredient itself (not its combination with others) is what the photo shows."
+    }
   }
 }

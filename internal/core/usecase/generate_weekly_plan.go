@@ -133,6 +133,13 @@ func (uc *GenerateWeeklyPlanUsecase) Execute(
 	if len(catalog.Activities) == 0 {
 		catalog = DefaultCatalog()
 	}
+	// Stamp this call's own already-validated userID onto the catalog,
+	// overriding whatever (if anything) the caller set — ResolveSlotConflict
+	// passes catalog.UserID through to ContentLibrary.HasVariant for a
+	// per-user rollout decision (e.g. Strength's VIV-112 assembly), and
+	// that must always be THIS user, never a caller-supplied value that
+	// could be empty or mismatched.
+	catalog.UserID = userID
 
 	// ── VIV-103: readiness dimensions ────────────────────────────
 	//

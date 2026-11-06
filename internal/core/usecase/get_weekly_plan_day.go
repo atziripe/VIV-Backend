@@ -42,12 +42,37 @@ type WeeklyPlanDayExercise struct {
 	RestSeconds  int
 	LoadGuidance string
 	FormCue      string
+
+	// Slot/Priority/Equipment/PrescriptionText are populated for the
+	// real VIV-112 Strength assembly path only (StrengthBlock) — that
+	// path's prescription is a single piece of config-authored text,
+	// kept as written rather than decomposed back into Reps/
+	// LoadGuidance/FormCue, so those stay zero there. ID, Sets and
+	// RestSeconds ARE populated for this path too (ID from
+	// strengthlibrary.Exercise.ID, Sets parsed off the leading "N ×" of
+	// PrescriptionText, RestSeconds from rest_seconds_by_type) — the
+	// same numbers usecase.LogSetUseCase needs to accept a logged set,
+	// so a Strength day is just as loggable as the old mesocycle-pinned
+	// path. See strengthsession.AssembledExercise.
+	Slot             string
+	Priority         string
+	Equipment        []string
+	PrescriptionText string
 }
 
 type WeeklyPlanDayBlock struct {
 	DurationMinutes int
 	Description     string
 	Movements       []string
+}
+
+// WeeklyPlanTierChange is one cascade (VIV-105) tier decision that
+// actually changed something about a Strength day's assembly, surfaced
+// as plain data so the client can say why. Mirrors
+// strengthsession.TierChange.
+type WeeklyPlanTierChange struct {
+	Lever  string
+	Detail string
 }
 
 type WeeklyPlanDayDetail struct {
@@ -62,11 +87,12 @@ type WeeklyPlanDayDetail struct {
 	Substituted  bool
 	Warning      string
 
-	// Loggable is true for a mesocycle-pinned day (Strength, and
-	// Functional if ever enabled) — the only days with discrete
-	// sets/reps/weight to log in real time today. Derived from which
-	// half of Content was actually populated at generation time (never
-	// both), so it always matches what MainExercises actually is.
+	// Loggable is true for a mesocycle-pinned day (old path, or
+	// Functional if ever enabled) or a real VIV-112 Strength assembly
+	// day (StrengthBlock) — the days with discrete sets to log in real
+	// time. Derived from which part of Content was actually populated
+	// at generation time (never more than one), so it always matches
+	// what MainExercises actually is.
 	Loggable bool
 
 	// Title and LoadLabel are mechanical taxonomy labels ("Lower" +
@@ -84,13 +110,43 @@ type WeeklyPlanDayDetail struct {
 	DurationIsEstimated bool
 
 	// Warmup/Cooldown come from the session library for session-library
-	// days, or from a generic per-muscle-group pair for mesocycle-pinned
-	// days (see content.MesocycleWarmupCooldownLibrary) — nil only if
-	// Content was never hydrated at all (shouldn't happen once
-	// generation completes, but never fabricated to fill the gap).
+	// days, from a generic per-muscle-group pair for mesocycle-pinned
+	// days (see content.MesocycleWarmupCooldownLibrary), or from the
+	// config's own per-zone warmup_cooldown for a real VIV-112 Strength
+	// assembly day — nil only if Content was never hydrated at all
+	// (shouldn't happen once generation completes, but never
+	// fabricated to fill the gap).
 	Warmup        *WeeklyPlanDayBlock
 	MainExercises []WeeklyPlanDayExercise
 	Cooldown      *WeeklyPlanDayBlock
+
+	// StrengthBlockNumber/StrengthWeek/StrengthConfigStatus/
+	// StrengthTierChanges are populated for the real VIV-112 Strength
+	// assembly path only (day.Content.StrengthBlock != nil) — zero
+	// otherwise. StrengthConfigStatus is
+	// VIV_Strength_Block_Config.json's own "status" field verbatim
+	// (e.g. "draft_not_reviewed_by_sport_scientist"); the task that
+	// built the Strength assembly requires this stay traceable all the
+	// way to the client, so it is never dropped here either.
+	StrengthBlockNumber  int
+	StrengthWeek         int
+	StrengthConfigStatus string
+	StrengthTierChanges  []WeeklyPlanTierChange
+
+	// StrengthRampUpNote is warmup_cooldown.ramp_up_note verbatim,
+	// shown once per session before the first Main exercise — never
+	// per-exercise. StrengthWarmupCooldownStatus is
+	// warmup_cooldown._status verbatim, passed through next to
+	// StrengthConfigStatus so it stays just as traceable. Both empty
+	// outside the real Strength assembly path.
+	StrengthRampUpNote           string
+	StrengthWarmupCooldownStatus string
+
+	// StrengthRestSecondsStatus is rest_seconds_by_type._status
+	// verbatim, passed through next to StrengthConfigStatus/
+	// StrengthWarmupCooldownStatus so it stays just as traceable. Empty
+	// outside the real Strength assembly path.
+	StrengthRestSecondsStatus string
 
 	// Session is the in-progress or completed real-time log for this day
 	// — nil when Loggable is false, or when Loggable is true but the user
@@ -187,6 +243,49 @@ func (uc *GetWeeklyPlanDayUseCase) Execute(ctx context.Context, in GetWeeklyPlan
 		}
 		detail.DurationMinutes = (totalSeconds + 30) / 60 // rounded to the nearest minute
 		detail.DurationIsEstimated = true
+		if day.Content.Warmup != nil {
+			detail.Warmup = &WeeklyPlanDayBlock{
+				DurationMinutes: day.Content.Warmup.DurationMinutes,
+				Description:     day.Content.Warmup.Description,
+				Movements:       day.Content.Warmup.Movements,
+			}
+		}
+		if day.Content.Cooldown != nil {
+			detail.Cooldown = &WeeklyPlanDayBlock{
+				DurationMinutes: day.Content.Cooldown.DurationMinutes,
+				Description:     day.Content.Cooldown.Description,
+				Movements:       day.Content.Cooldown.Movements,
+			}
+		}
+
+	case day.Content != nil && day.Content.StrengthBlock != nil:
+		detail.Loggable = true
+		sb := day.Content.StrengthBlock
+		detail.StrengthBlockNumber = sb.BlockNumber
+		detail.StrengthWeek = sb.Week
+		detail.StrengthConfigStatus = sb.ConfigStatus
+		detail.StrengthRampUpNote = sb.RampUpNote
+		detail.StrengthWarmupCooldownStatus = sb.WarmupCooldownStatus
+		detail.StrengthRestSecondsStatus = sb.RestSecondsStatus
+		for _, tc := range sb.TierChanges {
+			detail.StrengthTierChanges = append(detail.StrengthTierChanges, WeeklyPlanTierChange{Lever: tc.Lever, Detail: tc.Detail})
+		}
+		for _, e := range sb.Exercises {
+			detail.MainExercises = append(detail.MainExercises, WeeklyPlanDayExercise{
+				ID:               e.ExerciseID,
+				Name:             e.ExerciseName,
+				Sets:             e.Sets,
+				RestSeconds:      e.RestSeconds,
+				Slot:             e.Slot,
+				Priority:         string(e.Priority),
+				Equipment:        e.Equipment,
+				PrescriptionText: e.PrescriptionText,
+			})
+		}
+		// Warmup/Cooldown come from day.Content.Warmup/Cooldown (set by
+		// usecase.selectStrengthBlock from this same AssembledSession) —
+		// applies_to_all_tiers is validated true at config load time, so
+		// this is never shortened for a Short-tier session either.
 		if day.Content.Warmup != nil {
 			detail.Warmup = &WeeklyPlanDayBlock{
 				DurationMinutes: day.Content.Warmup.DurationMinutes,

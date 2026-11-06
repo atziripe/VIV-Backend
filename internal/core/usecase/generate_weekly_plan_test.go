@@ -417,3 +417,59 @@ func TestNoopLayers_PassDataThroughUnchanged(t *testing.T) {
 		t.Errorf("NoopContentSelectionLayer changed the draft or errored: %+v, %v", got, err)
 	}
 }
+
+// ============================================================================
+// GenerateWeeklyPlanUsecase stamps its own validated userID onto the
+// cascade.UserCatalog it hands to ResolveSlotConflict — the root-cause
+// fix for a per-user Strength rollout decision reaching cascade's own
+// ReduceDuration/SimplifyComplexity levers (see cascade.UserCatalog.UserID
+// and strengthsession.ContentLibraryAdapter).
+// ============================================================================
+
+type spyContentLibrary struct{ seenUserIDs []string }
+
+func (s *spyContentLibrary) HasVariant(userID string, _ activity.ID, _ cascade.Variant) bool {
+	s.seenUserIDs = append(s.seenUserIDs, userID)
+	return false
+}
+
+func TestGenerateWeeklyPlan_StampsRealUserIDOntoCatalogForCascade(t *testing.T) {
+	spy := &spyContentLibrary{}
+	orig := cascade.DefaultContentLibrary
+	defer func() { cascade.DefaultContentLibrary = orig }()
+	cascade.DefaultContentLibrary = spy
+
+	drafts := &fakeDraftRepo{}
+	uc := newTestUsecase(fakePhaseLookup{phase: domain.PhaseFollicular}, drafts)
+
+	// ConsistencyWellbeing's lever order starts with ReduceDuration
+	// (before even RelaxIntensity/RelaxImpact), and Strength's highest-
+	// intensity candidate (EffectStrength) never matches this goal's
+	// Mobility/Recovery priorities — so every training day deterministically
+	// reaches ReduceDuration, calling HasVariant, regardless of readiness.
+	catalog := cascade.UserCatalog{
+		Activities: []activity.ID{activity.Strength},
+		// Deliberately wrong — proves Execute overrides this with its
+		// own validated input.UserID rather than trusting the caller.
+		UserID: "someone_else_entirely",
+	}
+
+	_, err := uc.Execute(context.Background(), usecase.GenerateWeeklyPlanInput{
+		UserID:         "user-1",
+		GenerationDate: time.Date(2026, time.March, 2, 0, 0, 0, 0, time.UTC),
+		GoalID:         goal.ConsistencyWellbeing,
+		Catalog:        catalog,
+	})
+	if err != nil {
+		t.Fatalf("Execute returned error: %v", err)
+	}
+
+	if len(spy.seenUserIDs) == 0 {
+		t.Fatal("expected HasVariant to have been called at least once (ReduceDuration should run for every Strength training day)")
+	}
+	for _, got := range spy.seenUserIDs {
+		if got != "user-1" {
+			t.Errorf("HasVariant saw userID %q, want %q (Execute's own input.UserID, not the caller-supplied catalog.UserID)", got, "user-1")
+		}
+	}
+}

@@ -633,3 +633,69 @@ func TestSuggestSafetyRelax_InvalidInputsError(t *testing.T) {
 		}
 	})
 }
+
+// ============================================================================
+// UserCatalog.UserID -> HasVariant's userID parameter: the per-user
+// rollout plumbing ResolveSlotConflict itself is responsible for,
+// independent of any real ContentLibrary's decision.
+// ============================================================================
+
+// spyContentLibrary records every (userID, activityType, variant) it's
+// asked about, and answers however the test configures it to — never
+// used in production, only to prove ResolveSlotConflict passes
+// UserCatalog.UserID through to HasVariant exactly once per lever it
+// reaches, without this package ever needing to know what the caller
+// does with it (e.g. usecase.StrengthSessionsRollout's per-user
+// decision).
+type spyContentLibrary struct {
+	calls  []spyCall
+	answer bool
+}
+
+type spyCall struct {
+	userID string
+	id     activity.ID
+	v      cascade.Variant
+}
+
+func (s *spyContentLibrary) HasVariant(userID string, id activity.ID, v cascade.Variant) bool {
+	s.calls = append(s.calls, spyCall{userID, id, v})
+	return s.answer
+}
+
+func TestResolveSlotConflict_PassesUserCatalogUserIDToContentLibrary(t *testing.T) {
+	spy := &spyContentLibrary{}
+	orig := cascade.DefaultContentLibrary
+	defer func() { cascade.DefaultContentLibrary = orig }()
+	cascade.DefaultContentLibrary = spy
+
+	g := mustGoal(t, goal.StrengthMuscle) // lever order: ..., ReduceDuration, SimplifyComplexity, SubstituteType
+	// A target Strength can never satisfy at any intensity/impact —
+	// EffectAerobicBase is never one of Strength's TrainingEffect
+	// entries — so every lever up to SubstituteType actually runs,
+	// including ReduceDuration/SimplifyComplexity.
+	target := weeklytarget.WeeklyTarget{
+		CompositionPriorities: []goal.CompositionPriority{{Effect: activity.EffectAerobicBase, Tier: goal.PriorityPrimary}},
+		IntensityCap:          activity.IntensityH,
+		ImpactCap:             activity.ImpactM,
+		SessionBudget:         3,
+	}
+	candidate := cascade.Activity{ActivityType: activity.Strength, Intensity: activity.IntensityH, Impact: activity.ImpactM, MuscleGroup: activity.MuscleGroupFullBody}
+	catalog := cascade.UserCatalog{Activities: []activity.ID{activity.Strength, activity.Running}, UserID: "u_42"}
+
+	if _, err := cascade.ResolveSlotConflict(target, candidate, catalog, g, 0); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(spy.calls) == 0 {
+		t.Fatal("expected HasVariant to be called at least once (ReduceDuration/SimplifyComplexity should both run)")
+	}
+	for _, c := range spy.calls {
+		if c.userID != "u_42" {
+			t.Errorf("HasVariant called with userID %q, want %q (from catalog.UserID)", c.userID, "u_42")
+		}
+		if c.id != activity.Strength {
+			t.Errorf("HasVariant called with activity %q, want %q", c.id, activity.Strength)
+		}
+	}
+}

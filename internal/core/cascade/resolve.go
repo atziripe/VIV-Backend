@@ -43,6 +43,19 @@ type UserCatalog struct {
 	// "let the catalog decide" — ResolveProtectedType then picks the
 	// first of Running/Cycling/Swimming actually present in Activities.
 	PrimaryEndurance *activity.ID
+
+	// UserID identifies whose catalog this is — passed through to
+	// ContentLibrary.HasVariant so a per-user rollout (e.g. a staged
+	// Strength assembly rollout) can decide per call, without
+	// ResolveSlotConflict itself taking a userID parameter (its
+	// signature is otherwise fixed — see DefaultContentLibrary's doc
+	// comment). Callers that build GenerateWeeklyPlanInput/
+	// AdaptDailySlotInput.Catalog don't need to set this themselves:
+	// GenerateWeeklyPlanUsecase and AdaptDailySlotUsecase both stamp
+	// their own already-validated userID onto it before calling
+	// ResolveSlotConflict, so this is always trustworthy by the time
+	// HasVariant sees it.
+	UserID string
 }
 
 // Has reports whether id is in the catalog.
@@ -177,16 +190,21 @@ const (
 // ContentLibrary is what the cascade needs from the content library to
 // know whether a pre-built short/simplified variant exists for a given
 // activity. Modeled as an interface so a real implementation can be
-// swapped in later without touching this package.
+// swapped in later without touching this package. userID is
+// UserCatalog.UserID, passed through unchanged — it exists so a real
+// implementation can answer "does THIS variant exist for THIS specific
+// user" (e.g. a staged per-user rollout), not just "does it exist at
+// all"; a ContentLibrary that doesn't need per-user granularity is free
+// to ignore it.
 type ContentLibrary interface {
-	HasVariant(id activity.ID, v Variant) bool
+	HasVariant(userID string, id activity.ID, v Variant) bool
 }
 
 // stubContentLibrary always reports no variants exist. It's the initial
 // value of DefaultContentLibrary below, before anything real is wired in.
 type stubContentLibrary struct{}
 
-func (stubContentLibrary) HasVariant(activity.ID, Variant) bool { return false }
+func (stubContentLibrary) HasVariant(string, activity.ID, Variant) bool { return false }
 
 // DefaultContentLibrary is what ResolveSlotConflict checks for
 // ReduceDuration/SimplifyComplexity applicability. ResolveSlotConflict's
@@ -290,7 +308,7 @@ func ResolveSlotConflict(
 			}
 
 		case goal.ReduceDuration:
-			if !DefaultContentLibrary.HasVariant(candidate.ActivityType, VariantShort) {
+			if !DefaultContentLibrary.HasVariant(catalog.UserID, candidate.ActivityType, VariantShort) {
 				continue // always true today — see the ContentLibrary stub's TODO
 			}
 			// Unreachable until VIV-112 provides real variant data, but
@@ -302,7 +320,7 @@ func ResolveSlotConflict(
 			}
 
 		case goal.SimplifyComplexity:
-			if !DefaultContentLibrary.HasVariant(candidate.ActivityType, VariantSimplified) {
+			if !DefaultContentLibrary.HasVariant(catalog.UserID, candidate.ActivityType, VariantSimplified) {
 				continue // always true today — see the ContentLibrary stub's TODO
 			}
 			assignment := baseAssignment(working, candidate.ActivityType, AdjustmentSimplifyComplexity, loadTierOf(loadReduced))

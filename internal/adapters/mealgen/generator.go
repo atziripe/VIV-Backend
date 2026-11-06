@@ -291,9 +291,10 @@ func toMealOption(tpl domain.MealTemplate, result nutrition.SolveResult) domain.
 	var nameParts []string
 	for _, c := range result.Components {
 		ingredients = append(ingredients, domain.MealIngredient{
-			Name:    c.Ingredient.Name,
-			AmountG: c.Grams,
-			Approx:  c.Approx,
+			Name:     c.Ingredient.Name,
+			AmountG:  c.Grams,
+			Approx:   c.Approx,
+			ImageURL: c.Ingredient.ImageURL,
 		})
 		nameParts = append(nameParts, c.Ingredient.Name)
 	}
@@ -302,6 +303,7 @@ func toMealOption(tpl domain.MealTemplate, result nutrition.SolveResult) domain.
 		Summary:     strings.Join(nameParts, ", "),
 		Ingredients: ingredients,
 		Macros:      result.AchievedMacros,
+		ImageURL:    tpl.ImageURL,
 	}
 }
 
