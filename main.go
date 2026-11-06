@@ -381,7 +381,7 @@ func main() {
 
 	nutritionUC := usecase.NewGetNutritionPlanUseCase(userRepo, planRepo, checkinRepo, cyclePhaseLookup, nutritionPlanRepo)
 	mealSelectionUC := usecase.NewSaveMealSelectionUseCase(planRepo)
-	saveNutritionMealSelectionUC := usecase.NewSaveNutritionMealSelectionUseCase(nutritionPlanRepo)
+	saveNutritionMealSelectionUC := usecase.NewSaveNutritionMealSelectionUseCase(nutritionPlanRepo, planRepo)
 
 	// New pipeline: nutrition is generated on demand once the user opts
 	// into the nutrition module (see submit_nutrition_onboarding.go), not
