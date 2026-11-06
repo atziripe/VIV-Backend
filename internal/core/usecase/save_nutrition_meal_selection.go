@@ -20,10 +20,20 @@ type SaveNutritionMealSelectionInput struct {
 
 type SaveNutritionMealSelectionUseCase struct {
 	NutritionPlans NutritionPlanRepository
+
+	// Plans is the OLD pipeline's repository — the fallback for a user who
+	// was onboarded before the new standalone nutrition pipeline existed
+	// and has never generated a new-pipeline NutritionPlan.
+	// GetNutritionPlanUseCase already falls back to this same legacy
+	// domain.Plan for reads (GET /nutrition/plan), so a user like that
+	// sees a real plan in the app; without the identical fallback here,
+	// she could see it but never save a meal swap, since this usecase
+	// only knew about the new pipeline. See Execute.
+	Plans PlanRepository
 }
 
-func NewSaveNutritionMealSelectionUseCase(nutritionPlans NutritionPlanRepository) *SaveNutritionMealSelectionUseCase {
-	return &SaveNutritionMealSelectionUseCase{NutritionPlans: nutritionPlans}
+func NewSaveNutritionMealSelectionUseCase(nutritionPlans NutritionPlanRepository, plans PlanRepository) *SaveNutritionMealSelectionUseCase {
+	return &SaveNutritionMealSelectionUseCase{NutritionPlans: nutritionPlans, Plans: plans}
 }
 
 func (uc *SaveNutritionMealSelectionUseCase) Execute(ctx context.Context, in SaveNutritionMealSelectionInput) error {
@@ -45,18 +55,36 @@ func (uc *SaveNutritionMealSelectionUseCase) Execute(ctx context.Context, in Sav
 	if err != nil {
 		return fmt.Errorf("loading nutrition plan: %w", err)
 	}
-	if existing == nil {
+	if existing != nil {
+		plan := existing.Plan
+		if plan.MealSelections == nil {
+			plan.MealSelections = make(map[string]map[string]int)
+		}
+		if plan.MealSelections[weekday] == nil {
+			plan.MealSelections[weekday] = make(map[string]int)
+		}
+		plan.MealSelections[weekday][slot] = in.OptionIndex
+		return uc.NutritionPlans.Save(ctx, userID, plan)
+	}
+
+	// No new-pipeline plan for this user — fall back to the legacy
+	// domain.Plan, mirroring GetNutritionPlanUseCase's own read-side
+	// fallback exactly.
+	legacy, err := uc.Plans.GetLatest(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("loading plan: %w", err)
+	}
+	if legacy == nil {
 		return fmt.Errorf("no nutrition plan found for user: %s", userID)
 	}
 
-	plan := existing.Plan
-	if plan.MealSelections == nil {
-		plan.MealSelections = make(map[string]map[string]int)
+	if legacy.MealSelections == nil {
+		legacy.MealSelections = make(map[string]map[string]int)
 	}
-	if plan.MealSelections[weekday] == nil {
-		plan.MealSelections[weekday] = make(map[string]int)
+	if legacy.MealSelections[weekday] == nil {
+		legacy.MealSelections[weekday] = make(map[string]int)
 	}
-	plan.MealSelections[weekday][slot] = in.OptionIndex
+	legacy.MealSelections[weekday][slot] = in.OptionIndex
 
-	return uc.NutritionPlans.Save(ctx, userID, plan)
+	return uc.Plans.UpdateMealSelections(ctx, userID, legacy.ID, legacy.MealSelections)
 }

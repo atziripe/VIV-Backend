@@ -89,6 +89,9 @@ func (f *fakePlanRepo) UpdatePhaseFeedback(_ context.Context, userID, planID str
 	return nil
 }
 func (f *fakePlanRepo) UpdateMealSelections(_ context.Context, userID, planID string, selections map[string]map[string]int) error {
+	if p, ok := f.latest[userID]; ok && p.ID == planID {
+		p.MealSelections = selections
+	}
 	return nil
 }
 func (f *fakePlanRepo) IsTrainingDay(_ context.Context, userID, weekday string) (bool, error) {
